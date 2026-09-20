@@ -1,5 +1,5 @@
 import { getGuildConfig } from '../database/models/GuildConfig.js';
-import { getUserData, saveUserData } from '../database/models/User.js';
+import { getUserData, saveUserData, claimMessageLock } from '../database/models/User.js';
 import { calculateSentimentChange, updateMood, getMoodReactionEmoji } from '../services/moodService.js';
 import { addXp } from '../services/rpgService.js';
 import { generateChatReply } from '../services/aiService.js';
@@ -27,6 +27,13 @@ export const execute = async (message) => {
   // Deduplication Check: Prevent double reply to the same message ID
   if (processedMessages.has(message.id)) return;
   processedMessages.add(message.id);
+
+  // Distributed atomic claim check across processes
+  const lockAcquired = await claimMessageLock(message.id);
+  if (!lockAcquired) {
+    logger.info(`[DEDUP] Message ${message.id} already claimed by another bot process. Aborting duplicate.`);
+    return;
+  }
 
   // Keep cache lightweight (max 500 recent message IDs)
   if (processedMessages.size > 500) {

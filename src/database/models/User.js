@@ -199,3 +199,49 @@ export const saveUserSessionData = async ({ userId, username, accessToken, conne
   }
   return sessionData;
 };
+
+const globalMessageLocks = new Set();
+const lockTimestamps = new Map();
+
+export const claimMessageLock = async (messageId) => {
+  if (!messageId) return true;
+
+  if (globalMessageLocks.has(messageId)) {
+    return false;
+  }
+  globalMessageLocks.add(messageId);
+  lockTimestamps.set(messageId, Date.now());
+
+  if (globalMessageLocks.size > 1000) {
+    const first = globalMessageLocks.values().next().value;
+    globalMessageLocks.delete(first);
+    lockTimestamps.delete(first);
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      const lockRef = doc(db, 'message_locks', messageId);
+      const lockSnap = await getDoc(lockRef);
+
+      if (lockSnap.exists()) {
+        const data = lockSnap.data();
+        const lockAge = Date.now() - (data.timestamp ? new Date(data.timestamp).getTime() : 0);
+        if (lockAge < 15000) {
+          return false;
+        }
+      }
+
+      await setDoc(lockRef, {
+        claimedAt: new Date().toISOString(),
+        timestamp: new Date().toISOString(),
+        pid: process.pid || 'node'
+      });
+      return true;
+    } catch (err) {
+      return true;
+    }
+  }
+
+  return true;
+};

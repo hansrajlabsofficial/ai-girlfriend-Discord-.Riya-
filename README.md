@@ -1,16 +1,69 @@
-# 👩🏻‍❤️‍👩🏻 Advanced AI-Girlfriend Discord Bot (Riya - Amdavadi Gamer Girl Persona)
+# 👩🏻‍❤️‍👩🏻 Riya AI Girlfriend & Global Economy Discord Bot + Web Hub ☕💖
 
-A production-ready, feature-rich **AI Girlfriend Discord Bot** featuring **Riya**—a 20-year-old CS student and gamer girl from Ahmedabad, India—built with **Node.js (Discord.js v14)**, **Express**, **MongoDB (Mongoose)**, **OpenAI (GPT-4o, Whisper, TTS)**, **Tenor GIF API**, and interactive Discord components.
+[![Build Status](https://img.shields.io/badge/Status-Online-00FF7F?style=for-the-badge)](https://riya-ai-girlfriend-discord-bot-full.vercel.app/)
+[![Node Version](https://img.shields.io/badge/Node.js-v18%2B-5865F2?style=for-the-badge)](https://nodejs.org/)
+[![Discord.js](https://img.shields.io/badge/Discord.js-v14-FF1493?style=for-the-badge)](https://discord.js.org/)
+[![Firebase](https://img.shields.io/badge/Database-Firebase_Firestore-FFCA28?style=for-the-badge)](https://firebase.google.com/)
+
+> **© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.**
+
+A production-ready, feature-rich **AI Girlfriend Discord Bot & Web Dashboard** featuring **Riya**—a 20-year-old CS student and gamer girl from Ahmedabad, India—built with **Node.js (Discord.js v14)**, **Express**, **Firebase Firestore**, **OpenAI & Gemini AI**, **Karuta-Style Anime Card Collection System**, **Inter-Server Global Chat/Calls**, **Metallic Banking Economy**, **Vercel Serverless Architecture**, and an **Anti-Tamper DevTools Security Guard**.
 
 ---
 
-## 🎭 Persona Profile: Riya
-- **Name**: Riya
-- **Age**: 20
-- **Location**: Ahmedabad, Gujarat, India (SG Highway, Sabarmati Riverfront cafes)
-- **Vibe**: Sweet, tech-savvy, loyal gamer girl who mixes English with natural Amdavadi Gujarati slang (*"Baka", "Su chale chhe?", "Bov mast", "Chalo ramiye", "Arrey yaar"*).
-- **Hobbies**: Hype-woman for streams (*"HANSRAJ IS LIVE"*), Discord mod, testing Python/Discord bots & TTS scripts, competitive FPS PC gamer, Otaku (Demon Slayer, Solo Leveling, Your Name), and movie watch parties.
-- **Support**: Always ready with virtual chai (☕) when code compiling fails or Render deployments crash!
+## 🌟 Key Features & Systems
+
+### 1. 🎭 Amdavadi AI Girlfriend Persona: Riya
+- **Location**: Ahmedabad, Gujarat, India (Sabarmati Riverfront, SG Highway cafes).
+- **Vibe**: Tech-savvy, sweet gamer girl mixing English with natural Amdavadi slang (*"Baka", "Su chale chhe?", "Bov mast", "Chalo ramiye", "Arrey yaar"*).
+- **Affection System**: Mood state machine (`NEUTRAL`, `HAPPY`, `LOVING`, `SHY`), affection level progression, relationship titles, level-up cash bonuses, and persistent user memories.
+
+### 2. 🎴 Anime Card Collection System (Karuta Style)
+- **160,000+ Collectible Cards**: High-res anime character cards with custom print numbers, condition grades, and owner tracking.
+- **Interactive Dropping & Grabbing**: `/card_drop` (`xdrop`) drops 4 cards with `1️⃣ 2️⃣ 3️⃣ 4️⃣` interactive buttons.
+- **Card Economy & Management**: Wishlists (`/card_wishlist`), Card Collection viewer (`/card_collection`), Burn cards for Dust (`/card_burn`), and Player-to-Player Trading (`/card_trade`).
+
+### 3. 🌐 Inter-Server Global Chat & Hotline Calls
+- **Global Text Chat**: `/setup_global setchannel` (`xsetup_global setchannel`) links channels across all servers to chat live in real-time.
+- **Global 1-on-1 Hotline Calls**: `/globalcall start` (`xcall`) dials out live server-to-server phone calls with `📵 End Call` buttons.
+- **Private DM Calls**: `/globalprivatecall start` (`xprivatecall`) creates encrypted 1-on-1 DM hotline calls.
+
+### 4. 💳 Metallic Banking & Global Economy
+- **Banking Suite**: `/bank_balance` (`xbal`), `/deposit` (`xdep`), `/withdraw` (`xwith`), `/wallet` (`xw`), `/add_bank_balance`.
+- **Metallic Rank Cards**: Gold, Platinum, and Diamond rank perks with `/globalbankbalance` (`xglobalbank`).
+
+### 5. 🔑 Web Dashboard & Dedicated Login Portal
+- **Web App**: Hosted live at [`https://riya-ai-girlfriend-discord-bot-full.vercel.app/`](https://riya-ai-girlfriend-discord-bot-full.vercel.app/).
+- **Dedicated Login Page (`/login`)**: Featuring **Connect with Discord OAuth2** and **⚡ Skip Login (Guest Mode)**.
+- **Circular Server Picker**: Dynamic Discord server picker grid displaying user admin servers and real-time connected bot servers.
+- **Live 1-Second Ticking Uptime**: Dynamic uptime clock updating live on-screen in `Xd Xh Xm Xs` format (`3d 2h 12m 28s`).
+
+### 6. 🔒 DevTools Protection & Anti-Inspect Security Guard
+- **Anti-Tamper Security**: Disables Right-Click context menu and inspect shortcuts (`F12`, `Ctrl+Shift+I`, `Ctrl+Shift+J`, `Ctrl+Shift+C`, `Ctrl+U`, `Ctrl+S`).
+- **Auto-Hide Security Screen**: Automatically hides/clears page contents if Developer Tools are opened (docked or split-screen) and displays a `🔒 Security Protection Active` screen.
+- **Console Log Suppression**: Overrides console methods to prevent inspect data tampering.
+
+### 7. 🛡️ Distributed Atomic Claim Lock (`claimMessageLock`)
+- **Zero Double Messages**: Uses Firestore atomic message locks (`message_locks`) and process claims to prevent duplicate responses when multiple bot processes or serverless functions execute concurrently.
+
+### 8. 💾 User Data & Privacy Session Storage
+- **Session Tracking**: Persists user Discord ID, OAuth access tokens, and connected server counts securely in Firestore under `user_sessions/session_<userId>`.
+
+---
+
+## 🎮 Command Directory (85+ Commands - Dual Slash & Prefix)
+
+All commands support both **Slash Commands (`/`)** and **Text Prefixes (`x` or `k!`)** (e.g. `xhelp`, `xdrop`, `xbal`, `xkiss`, `xdate`):
+
+| Category | Example Commands | Description |
+| :--- | :--- | :--- |
+| **🎴 Anime Cards** | `/card_drop`, `/card_view`, `/card_collection`, `/card_wishlist`, `/card_burn`, `/card_trade`, `/card_lookup` | Karuta-style card drops, wishlist, trading, burning & database lookup |
+| **⚔️ RPG & Combat** | `/attributes`, `/health`, `/cd`, `/attack`, `/battle`, `/rob` | Upgrade stats, PvP arena, dungeon raids & robbery |
+| **🌍 Exploration & Mining**| `/explore`, `/mine`, `/dungeon`, `/craft`, `/trade`, `/bulksell` | Mine ores, craft gear, explore caverns & bulk sell loot |
+| **🎰 Casino & Gambling** | `/blackjack`, `/slots`, `/mines`, `/crash`, `/war`, `/cups`, `/stack`, `/chance`, `/horseracing`, `/coinflip`, `/roulette` | Interactive minigames with live multipliers |
+| **💳 Banking & Economy** | `/wallet`, `/deposit`, `/withdraw`, `/bank_balance`, `/globalbankbalance`, `/add_bank_balance` | Manage cash, bank accounts & global wealth leaderboards |
+| **💖 Dating & Relationship**| `/date`, `/hug`, `/kiss`, `/compliment`, `/aura`, `/bestie`, `/daily_quiz`, `/daily_task` | Virtual dates, hugs, kisses, quizzes & affection XP |
+| **🌐 System & Global** | `/setup_global`, `/globalcall`, `/globalprivatecall`, `/select_channel`, `/settings`, `/about` | Link global chat channels, phone calls & server channel binding |
 
 ---
 
@@ -18,41 +71,44 @@ A production-ready, feature-rich **AI Girlfriend Discord Bot** featuring **Riya*
 
 ```
 👩🏻‍❤️‍👩🏻︱ᴀɪ-ɢɪʀʟꜰʀɪᴇɴᴅ/
-├── package.json                   # Project dependencies and scripts
-├── .env.example                   # Environment variable template
-├── .env                           # Secret tokens (Discord, OpenAI, MongoDB, Tenor)
-├── README.md                      # Complete documentation & UptimeRobot setup guide
+├── package.json                   # Project dependencies and deployment scripts
+├── .env.example                   # Environment configuration template
+├── README.md                      # Comprehensive project documentation & guide
+├── api/
+│   └── index.js                   # Vercel Serverless Express API router (/health, /login, /connect, /api/user/session)
 └── src/
-    ├── index.js                   # Entry point: Express server & Discord Client init
-    ├── config.js                  # Environment configuration & Riya defaults loader
+    ├── index.js                   # Main application entry point: Express server & Discord Client initialization
+    ├── config.js                  # Environment variable configuration & defaults loader
     ├── database/
-    │   ├── connect.js             # MongoDB Mongoose connection module
+    │   ├── connect.js             # Firebase Firestore connection initializer
     │   └── models/
-    │       ├── User.js            # User Schema (XP, level, mood score/state, memories)
-    │       └── GuildConfig.js     # Server Config Schema (bound channel ID)
+    │       ├── User.js            # User document schema, session tracking & claimMessageLock
+    │       ├── GuildConfig.js     # Guild server settings & channel binding schema
+    │       └── Gang.js            # Gang syndicate schema
     ├── services/
-    │   ├── aiService.js           # OpenAI GPT-4o chat completions & Riya system prompt
-    │   ├── voiceService.js        # OpenAI Whisper voice transcription & TTS audio reply
-    │   ├── moodService.js         # Sentiment analysis & mood state machine
-    │   ├── tenorService.js        # Tenor GIF API v2 search wrapper
-    │   └── rpgService.js          # Relationship XP, levels, daily tasks & Riya quizzes
+    │   ├── aiService.js           # OpenAI & Gemini AI chat completion engine with Riya persona
+    │   ├── cardService.js         # Karuta anime card generator & Firestore card database engine
+    │   ├── economyService.js      # Global banking, transactions & metallic card tiers
+    │   ├── globalChatService.js   # Inter-server text broadcast relay service
+    │   ├── globalCallService.js   # Inter-server hotline call relay service
+    │   ├── globalPrivateCallService.js # 1-on-1 private DM hotline relay service
+    │   ├── guildService.js        # Discord REST API connected server fetching service
+    │   ├── moodService.js         # Sentiment analysis & dynamic mood state machine
+    │   ├── rpgService.js          # Affection XP, leveling, attributes & daily tasks
+    │   └── voiceService.js        # Whisper audio transcription & TTS engine
     ├── events/
-    │   ├── ready.js               # Bot login & global slash command REST registration
-    │   ├── messageCreate.js       # Auto-emoji reactions, sentiment shift, voice & AI chat
-    │   └── interactionCreate.js   # Slash command & button interaction router
-    ├── commands/
-    │   ├── select_channel.js      # /select_channel [channel] command
-    │   ├── stats.js               # /stats relationship level & mood viewer
-    │   ├── daily_quiz.js          # /daily_quiz trivia mini-game for XP
-    │   ├── daily_task.js          # /daily_task daily activity system
-    │   ├── hug.js                 # /hug [@user] action command
-    │   ├── kiss.js                # /kiss [@user] action command
-    │   ├── date.js                # /date interactive text-adventure mini-date
-    │   ├── rps.js                 # /rps Rock-Paper-Scissors button mini-game
-    │   └── guess.js               # /guess Number guessing button mini-game
+    │   ├── ready.js               # Bot startup & slash command registration
+    │   ├── messageCreate.js       # Atomic claim lock, prefix adapter & message processing router
+    │   └── interactionCreate.js   # Slash command router & button interaction handler
+    ├── web/
+    │   ├── dashboard.js           # Web dashboard UI module with live 1s ticking uptime & server picker
+    │   └── login.js               # Dedicated glassmorphism /login page with Connect Discord & Skip Login options
+    ├── commands/                  # 85+ modular Discord command files
     └── utils/
+        ├── prefixAdapter.js       # Dual prefix parsing adapter (x & k!) & mock interaction generator
+        ├── commandLoader.js       # Automatic command file loader
         ├── logger.js              # Timestamped console logging utility
-        └── randomEvents.js        # Spontaneous channel event triggers
+        └── randomEvents.js        # Spontaneous channel activity events
 ```
 
 ---
@@ -62,63 +118,53 @@ A production-ready, feature-rich **AI Girlfriend Discord Bot** featuring **Riya*
 Create a `.env` file in the root directory:
 
 ```env
-# Discord Credentials (from Discord Developer Portal)
+# Discord Bot Credentials (from Discord Developer Portal)
 DISCORD_TOKEN=your_discord_bot_token_here
-CLIENT_ID=your_discord_client_id_here
+CLIENT_ID=1479052475368607926
+REDIRECT_URI=https://riya-ai-girlfriend-discord-bot-full.vercel.app/auth/callback
 
-# AI Services Credentials (from OpenAI Platform & Tenor API)
+# AI Engine Credentials (OpenAI & Gemini)
 OPENAI_API_KEY=your_openai_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 TENOR_API_KEY=your_tenor_api_key_here
 
-# Database URI (MongoDB Atlas or Local MongoDB)
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/ai_girlfriend?retryWrites=true&w=majority
+# Firebase Firestore Configuration
+FIREBASE_API_KEY=AIzaSyDBpJp36BBdG_fh5WiiFS4e8WnBbPN5dGg
+FIREBASE_AUTH_DOMAIN=riya-ai-girlfriend-discord-bot.firebaseapp.com
+FIREBASE_DATABASE_URL=https://riya-ai-girlfriend-discord-bot-default-rtdb.firebaseio.com
+FIREBASE_PROJECT_ID=riya-ai-girlfriend-discord-bot
+FIREBASE_STORAGE_BUCKET=riya-ai-girlfriend-discord-bot.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=1016322069093
+FIREBASE_APP_ID=1:1016322069093:web:51cc280facd87caa5d2c8c
 
-# Express Web Server Port
+# Server Port
 PORT=3000
 ```
 
 ---
 
-## 🎮 Slash Commands Overview
+## 🚀 Deployment Guide
 
-- `/select_channel [channel]` - Binds Riya's AI chatting, reactions, and random events to a specific channel.
-- `/stats` - Displays your Relationship Level, Title, XP progress, Riya's Mood State, and saved memories.
-- `/daily_quiz` - Take a daily Amdavadi gamer trivia quiz to earn bonus XP.
-- `/daily_task` - Get a daily relationship task to complete in chat.
-- `/hug [@user]` - Give a warm hug (with cute GIF) to Riya or another user.
-- `/kiss [@user]` - Give a romantic kiss (with cute GIF) to Riya or another user.
-- `/date` - Start an interactive rooftop or Riverfront date with choice buttons.
-- `/rps` - Play Rock, Paper, Scissors against Riya with UI buttons.
-- `/guess` - Guess Riya's secret number (1-10) with interactive buttons.
+### Vercel Serverless Deployment
+1. Import repository into **Vercel**.
+2. Set Environment Variables (`DISCORD_TOKEN`, `CLIENT_ID`, `FIREBASE_*`).
+3. Deploy! Output URL: `https://riya-ai-girlfriend-discord-bot-full.vercel.app/`
+
+### Local / Self-Hosted Running
+```bash
+# Install dependencies
+npm install
+
+# Check Node.js syntax
+node --check src/index.js api/index.js src/web/dashboard.js src/web/login.js
+
+# Start Bot Server
+npm start
+```
 
 ---
 
-## 🌐 Render Hosting & UptimeRobot 24/7 Setup Guide
+## 📄 License & Copyright
 
-### 1. Deploying to Render (Free Web Service)
-1. Push your repository to **GitHub**.
-2. Log into [Render.com](https://render.com) and click **New +** -> **Web Service**.
-3. Connect your GitHub repository.
-4. Set the following configuration:
-   - **Environment**: `Node`
-   - **Build Command**: `npm install`
-   - **Start Command**: `npm start`
-5. Under **Environment Variables**, add:
-   - `DISCORD_TOKEN`
-   - `CLIENT_ID`
-   - `OPENAI_API_KEY`
-   - `TENOR_API_KEY`
-   - `MONGODB_URI`
-   - `PORT` = `3000`
-6. Click **Create Web Service**. Once deployed, copy your Render service URL (e.g. `https://ai-girlfriend-bot.onrender.com`).
-
-### 2. Setting Up UptimeRobot for 24/7 Uptime
-1. Go to [UptimeRobot.com](https://uptimerobot.com) and create a free account.
-2. Click **+ Add New Monitor**.
-3. Fill out the monitor details:
-   - **Monitor Type**: `HTTP(s)`
-   - **Friendly Name**: `AI Girlfriend Bot (Riya)`
-   - **URL (or IP)**: Enter your Render URL (e.g., `https://ai-girlfriend-bot.onrender.com/`)
-   - **Monitoring Interval**: `5 minutes`
-4. Click **Create Monitor**.
-5. UptimeRobot will ping the Express health checker endpoint (`/`) every 5 minutes, keeping your bot online 24/7/365!
+**© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.**  
+*All code, assets, and branding for Riya AI Girlfriend Discord Bot are protected under copyright.*

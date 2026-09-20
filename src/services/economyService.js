@@ -91,6 +91,20 @@ export const formatMoney = (amount) => {
 };
 
 /**
+ * Clean text for Canvas rendering to remove emojis, non-printable characters, 
+ * and special Unicode symbols that turn into hollow boxes (🗌) on Node Canvas.
+ */
+export function cleanCanvasText(str) {
+  if (!str) return 'Valued Member';
+  let cleaned = str
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{27BF}\u{2B50}]/gu, '')
+    .replace(/[^\x20-\x7E\u00C0-\u024F]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return cleaned || 'Valued Member';
+}
+
+/**
  * Renders a visual Bank Card Image using @napi-rs/canvas
  */
 export const renderBankCard = async (user, userDoc, partnerName = null) => {
@@ -177,15 +191,15 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
   // User Details (Right of Avatar)
   const infoX = 210;
 
-  // Username
+  // Username (Sanitized to prevent hollow square boxes)
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = 'bold 32px sans-serif';
-  const usernameText = user.displayName || user.username || 'Valued User';
+  ctx.font = 'bold 30px sans-serif';
+  const usernameText = cleanCanvasText(user.displayName || user.username || 'Valued User');
   ctx.fillText(usernameText, infoX, 155);
 
   // Level & Relationship Title
   const level = userDoc.level || 1;
-  const title = getRelationshipTitle(level);
+  const title = cleanCanvasText(getRelationshipTitle(level));
   ctx.fillStyle = '#FFB6C1';
   ctx.font = 'bold 20px sans-serif';
   ctx.fillText(`Level ${level} • ${title}`, infoX, 190);
@@ -198,18 +212,29 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
   ctx.lineTo(750, 270);
   ctx.stroke();
 
-  // Balance Display Section
+  // Bank Savings Balance Section
   ctx.fillStyle = 'rgba(255, 215, 0, 0.85)';
-  ctx.font = '16px sans-serif';
-  ctx.fillText('CURRENT BANK BALANCE', 50, 310);
+  ctx.font = '14px sans-serif';
+  ctx.fillText('BANK SAVINGS BALANCE', 50, 300);
 
-  const balance = getBalance(userDoc);
+  const bankSavings = userDoc.bank || 0;
   ctx.fillStyle = '#50FFB1'; // Emerald Green
-  ctx.font = 'bold 44px sans-serif';
-  ctx.fillText(formatMoney(balance), 50, 360);
+  ctx.font = 'bold 34px sans-serif';
+  ctx.fillText(formatMoney(bankSavings), 50, 340);
+
+  // Wallet Cash Section
+  ctx.fillStyle = 'rgba(255, 182, 193, 0.85)';
+  ctx.font = '13px sans-serif';
+  ctx.fillText('WALLET CASH', 50, 372);
+
+  const walletCash = getBalance(userDoc);
+  ctx.fillStyle = '#FFB6C1'; // Soft Pink
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(formatMoney(walletCash), 50, 398);
 
   // Partner Section (Middle Right)
-  const currentPartner = partnerName || (userDoc.isDailyPartner ? "👑 Riya's Partner of the Day" : "Riya 💕");
+  const rawPartner = partnerName || (userDoc.isDailyPartner ? "Riya Partner of the Day" : "Riya");
+  const currentPartner = cleanCanvasText(rawPartner);
   ctx.fillStyle = 'rgba(255, 182, 193, 0.85)';
   ctx.font = '14px sans-serif';
   ctx.fillText('OFFICIAL PARTNER', 480, 295);
@@ -234,8 +259,8 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
 
   // Cursive Signature Text
   ctx.fillStyle = '#FFD700'; // Gold Calligraphy
-  ctx.font = 'italic bold 24px Georgia, serif';
-  ctx.fillText(signatureText, 495, 392);
+  ctx.font = 'italic bold 22px Georgia, serif';
+  ctx.fillText(cleanCanvasText(signatureText), 495, 392);
 
   // Return PNG Buffer
   return canvas.toBuffer('image/png');
@@ -245,7 +270,7 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
  * Generates official signature string: First Initial + Dot + Last Name (e.g. HANSRAJ VAGHELA -> H.VAGHELA)
  */
 export function generateUserSignature(user) {
-  const rawName = (user?.displayName || user?.username || 'HANSRAJ VAGHELA').trim();
+  const rawName = cleanCanvasText(user?.displayName || user?.username || 'HANSRAJ VAGHELA');
   const words = rawName.split(/[\s._-]+/).filter(Boolean);
 
   if (words.length >= 2) {

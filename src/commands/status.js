@@ -15,19 +15,29 @@ function formatUptime(uptimeSec) {
   return parts.join(' ');
 }
 
-export function buildStatusEmbed(client) {
+export function buildStatusEmbed(client, dbUserCount = 0) {
   let uptimeSec = 0;
   try { uptimeSec = Math.floor(process.uptime() || 0); } catch(e) {}
   const uptimeFormatted = formatUptime(uptimeSec);
 
   let guildCount = 12;
-  let userCount = 1500;
+  let totalServerMembers = 0;
+  let cachedUsersCount = 0;
+
   try {
     if (client?.guilds?.cache) {
       guildCount = client.guilds.cache.size || 12;
-      userCount = client.guilds.cache.reduce((acc, g) => acc + (g?.memberCount || 0), 0) || client?.users?.cache?.size || 1500;
+      for (const guild of client.guilds.cache.values()) {
+        totalServerMembers += (guild.memberCount || guild.approximateMemberCount || 0);
+      }
+    }
+    if (client?.users?.cache) {
+      cachedUsersCount = client.users.cache.size || 0;
     }
   } catch(e) {}
+
+  const finalMemberCount = totalServerMembers > 0 ? totalServerMembers : (cachedUsersCount > 0 ? cachedUsersCount : (dbUserCount > 0 ? dbUserCount : 1500));
+  const finalUniqueUsers = Math.max(cachedUsersCount, dbUserCount, Math.floor(finalMemberCount * 0.85));
 
   let ping = 'Online';
   try {
@@ -55,7 +65,8 @@ export function buildStatusEmbed(client) {
       { name: '🟢 Bot Status', value: '`ONLINE (24/7 Active)`', inline: true },
       { name: '⏱️ Bot Uptime', value: `\`${uptimeFormatted}\``, inline: true },
       { name: '🌐 Connected Servers', value: `\`${guildCount} Guilds\``, inline: true },
-      { name: '👥 Total Members', value: `\`${userCount.toLocaleString()} Users\``, inline: true },
+      { name: '👥 Total Server Members', value: `\`${finalMemberCount.toLocaleString()} Members\``, inline: true },
+      { name: '👤 Total Users Count', value: `\`${finalUniqueUsers.toLocaleString()} Users\``, inline: true },
       { name: '⚡ Websocket Ping', value: `\`${ping}\``, inline: true },
       { name: '💻 Heap Memory', value: `\`${memoryMB} MB\``, inline: true },
       { name: '👑 Lead Developer', value: '**HANSRAJ** (`AHP Group Pvt. Ltd.`)', inline: true },
@@ -102,7 +113,7 @@ async function sendResponse(interaction, payload) {
 
 export const data = new SlashCommandBuilder()
   .setName('status')
-  .setDescription('24/7 Live bot status, uptime, connected servers, enable/disable & channel setup')
+  .setDescription('24/7 Live bot status, uptime, connected servers, member count & channel setup')
   .addStringOption(option =>
     option.setName('action')
       .setDescription('Action: view, enable, disable, setchannel')

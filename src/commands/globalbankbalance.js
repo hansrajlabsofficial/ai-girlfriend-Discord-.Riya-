@@ -39,7 +39,7 @@ export const execute = async (interaction) => {
     const embed = new EmbedBuilder()
       .setTitle('🌐 Global Bank Balance Leaderboard (Top 10)')
       .setColor('#FFD700')
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/3135/3135706.png')
+      .setThumbnail('https://i.postimg.cc/63xkK4YM/HANSRAJ-AYAN-OFFICIAL-COMMUNITY-Global-Bank-discord-server.png')
       .setDescription(
         `🏆 **Top 10 Wealthiest Global Accounts**\n` +
         `⭐ **VIP Elite Perks**: All Top 10 players automatically earn **Extra Bonus Cash Perks** (+2% to +0.05%) on EVERY economy reward earned across all minigames & daily tasks!\n\n` +

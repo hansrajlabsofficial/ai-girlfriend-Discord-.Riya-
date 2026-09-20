@@ -130,12 +130,21 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
 
   // Bank Header Title
   ctx.fillStyle = '#FFD700';
-  ctx.font = 'bold 28px sans-serif';
+  ctx.font = 'bold 26px sans-serif';
   ctx.fillText('RIYA OFFICIAL BANK & AFFECTION CARD', 50, 65);
 
   ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
   ctx.font = '14px sans-serif';
   ctx.fillText('CARD ID: ' + (user.id ? user.id.slice(0, 12) : '000000000000') + ' • PREMIUM MEMBER', 50, 90);
+
+  // Draw Official Bank Logo (Top Right)
+  try {
+    const logoUrl = 'https://i.postimg.cc/63xkK4YM/HANSRAJ-AYAN-OFFICIAL-COMMUNITY-Global-Bank-discord-server.png';
+    const logoImg = await loadImage(logoUrl);
+    ctx.drawImage(logoImg, 655, 30, 90, 90);
+  } catch (err) {
+    // Ignore logo draw error if offline
+  }
 
   // Draw Avatar
   try {

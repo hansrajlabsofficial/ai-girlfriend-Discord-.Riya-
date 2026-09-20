@@ -21,6 +21,7 @@ export const execute = async (interaction) => {
   const embed = new EmbedBuilder()
     .setTitle(`🏦 Official Bank Savings Account: ${targetUser.username}`)
     .setColor('#FF69B4')
+    .setThumbnail('https://i.postimg.cc/63xkK4YM/HANSRAJ-AYAN-OFFICIAL-COMMUNITY-Global-Bank-discord-server.png')
     .setDescription(`**Bank Balance:** ${formatMoney(userDoc.bank || 0)}\n**Wallet Cash:** ${formatMoney(userDoc.balance || 0)}\n\n💡 *Money in the bank cannot be robbed by other players via \`/rob\`!*`)
     .setImage('attachment://bank_card.png')
     .setFooter({ text: 'Riya AI Girlfriend • Bank Card Generated' });

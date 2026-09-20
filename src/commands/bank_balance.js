@@ -37,6 +37,7 @@ export const execute = async (interaction) => {
     const embed = new EmbedBuilder()
       .setColor('#FF1493')
       .setTitle(`💳 ${targetUser.username}'s Bank Balance & Relationship Card`)
+      .setThumbnail('https://i.postimg.cc/63xkK4YM/HANSRAJ-AYAN-OFFICIAL-COMMUNITY-Global-Bank-discord-server.png')
       .setDescription(
         `💰 **Bank Balance:** **${formatMoney(balance)}**\n` +
         `📊 **Level:** **${userDoc.level || 1}** (${userDoc.xp || 0} XP)\n` +

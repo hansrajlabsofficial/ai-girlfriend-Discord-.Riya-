@@ -1,11 +1,11 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getGlobalTopBankUsers } from '../database/models/User.js';
-import { formatMoney } from '../services/economyService.js';
+import { formatMoney, TOP_RANK_PERKS } from '../services/economyService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
   .setName('globalbankbalance')
-  .setDescription('View top 10 global bank accounts with +0.5% reward multiplier!');
+  .setDescription('View top 10 global bank accounts with tiered +2% to +0.05% reward perks!');
 
 export const execute = async (interaction) => {
   await interaction.deferReply().catch(() => {});
@@ -23,13 +23,16 @@ export const execute = async (interaction) => {
 
     for (let i = 0; i < topUsers.length; i++) {
       const u = topUsers[i];
-      const rankEmoji = rankEmojis[i] || `#${i + 1}`;
+      const rankNum = i + 1;
+      const rankEmoji = rankEmojis[i] || `#${rankNum}`;
       const wallet = u.balance !== undefined ? u.balance : 10000;
       const bank = u.bank || 0;
       const total = u.total || (wallet + bank);
 
+      const perk = TOP_RANK_PERKS[rankNum] ? TOP_RANK_PERKS[rankNum].pct : '+0.05%';
+
       leaderboardLines.push(
-        `${rankEmoji} <@${u.userId}> — **${formatMoney(total)}** *(Wallet: ${formatMoney(wallet)} | Bank: ${formatMoney(bank)})* ✨ **+0.5% Extra Reward**`
+        `${rankEmoji} <@${u.userId}> — **${formatMoney(total)}** *(Wallet: ${formatMoney(wallet)} | Bank: ${formatMoney(bank)})* ✨ **${perk} Extra Money Perk**`
       );
     }
 
@@ -39,7 +42,7 @@ export const execute = async (interaction) => {
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/3135/3135706.png')
       .setDescription(
         `🏆 **Top 10 Wealthiest Global Accounts**\n` +
-        `⭐ **VIP Elite Perk**: All Top 10 players automatically receive **+0.5% Extra Money Perk** on EVERY economy reward earned across all minigames & daily tasks! 💸\n\n` +
+        `⭐ **VIP Elite Perks**: All Top 10 players automatically earn **Extra Bonus Cash Perks** (+2% to +0.05%) on EVERY economy reward earned across all minigames & daily tasks!\n\n` +
         leaderboardLines.join('\n\n')
       )
       .setFooter({ text: 'Riya Global Banking & Financial Network ☕✨' });

@@ -39,15 +39,32 @@ export const hasBalance = (userDoc, amount) => {
 
 import { getGlobalTopBankUsers } from '../database/models/User.js';
 
+export const TOP_RANK_PERKS = {
+  1: { pct: '+2.0%', mult: 0.020 },
+  2: { pct: '+1.0%', mult: 0.010 },
+  3: { pct: '+0.90%', mult: 0.0090 },
+  4: { pct: '+0.80%', mult: 0.0080 },
+  5: { pct: '+0.70%', mult: 0.0070 },
+  6: { pct: '+0.60%', mult: 0.0060 },
+  7: { pct: '+0.50%', mult: 0.0050 },
+  8: { pct: '+0.30%', mult: 0.0030 },
+  9: { pct: '+0.10%', mult: 0.0010 },
+  10: { pct: '+0.05%', mult: 0.0005 }
+};
+
 export const addBalance = async (userDoc, amount) => {
   let finalAmount = amount;
   if (amount > 0 && userDoc.userId) {
     try {
       const topUsers = await getGlobalTopBankUsers(10);
-      const isTop10 = topUsers.some(u => u.userId === userDoc.userId);
-      if (isTop10) {
-        const perkBonus = Math.max(1, Math.round(amount * 0.005)); // +0.5% Extra Money Perk
-        finalAmount += perkBonus;
+      const rankIdx = topUsers.findIndex(u => u.userId === userDoc.userId);
+      if (rankIdx !== -1) {
+        const rank = rankIdx + 1;
+        const perk = TOP_RANK_PERKS[rank];
+        if (perk) {
+          const perkBonus = Math.max(1, Math.round(amount * perk.mult));
+          finalAmount += perkBonus;
+        }
       }
     } catch (err) {
       // Ignore perk check error if fails

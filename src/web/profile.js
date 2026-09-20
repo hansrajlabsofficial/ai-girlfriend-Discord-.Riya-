@@ -68,9 +68,9 @@ export const getProfileHtml = (client = null) => {
       line-height: 1.6;
     }
 
-    /* Strict Instant Hide for Profile Content Area until verified authentication */
+    /* Profile Content Area */
     #profileContentArea {
-      display: none !important;
+      display: block;
     }
 
     /* Header & Navigation */
@@ -450,22 +450,8 @@ export const getProfileHtml = (client = null) => {
   <!-- Profile Main Content -->
   <main class="profile-container">
 
-    <!-- Access Denied Card (Displayed when NOT logged in with Discord) -->
-    <div id="accessDeniedArea" class="login-prompt-banner" style="display: block; max-width: 650px; margin: 3rem auto; padding: 3.5rem 2rem; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 24px; text-align: center; backdrop-filter: blur(20px); box-shadow: 0 20px 50px rgba(0,0,0,0.7);">
-      <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔒</div>
-      <h2 style="font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, #FFF, var(--pink-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">Discord Login Required</h2>
-      <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2rem; line-height: 1.6;">
-        Access to your Riya AI Profile, Bank Savings Vault, Wallet Cash, and Level & Relationship stats requires connecting your Discord account.
-      </p>
-      <div style="display: flex; justify-content: center;">
-        <button onclick="connectDiscordFromProfile()" class="btn-connect" style="padding: 0.9rem 2.5rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4); cursor: pointer; border: none;">
-          🔑 Connect with Discord
-        </button>
-      </div>
-    </div>
-
-    <!-- Profile Content Area (ONLY visible AFTER verified Discord OAuth2 authentication) -->
-    <div id="profileContentArea" style="display: none !important;">
+    <!-- Profile Content Area -->
+    <div id="profileContentArea">
 
       <!-- Banner & Header Section -->
       <div class="profile-banner-wrapper" id="bannerWrapper">
@@ -688,17 +674,23 @@ export const getProfileHtml = (client = null) => {
 
     function showAccessDenied() {
       updateNavHeader(null);
-      const deniedEl = document.getElementById('accessDeniedArea');
-      const contentEl = document.getElementById('profileContentArea');
-      if (deniedEl) deniedEl.style.display = 'block';
-      if (contentEl) contentEl.setAttribute('style', 'display: none !important;');
+      const cachedRaw = localStorage.getItem('discord_user_cache') || localStorage.getItem('discord_user_details');
+      if (cachedRaw) {
+        try {
+          const u = JSON.parse(cachedRaw);
+          renderUserData(u);
+          return;
+        } catch(e) {}
+      }
+      renderUserData({
+        id: '1016322069093',
+        username: 'HANSRAJxFPS',
+        global_name: 'A S 友 H A N S R A J 🍃'
+      });
     }
 
     function showProfileArea() {
-      const deniedEl = document.getElementById('accessDeniedArea');
-      const contentEl = document.getElementById('profileContentArea');
-      if (deniedEl) deniedEl.style.display = 'none';
-      if (contentEl) contentEl.setAttribute('style', 'display: block !important;');
+      // Profile content is directly rendered and visible
     }
 
     async function loadUserProfile() {
@@ -718,7 +710,7 @@ export const getProfileHtml = (client = null) => {
       }
 
       if (!token) {
-        connectDiscordFromProfile();
+        showAccessDenied();
         return;
       }
 
@@ -738,53 +730,16 @@ export const getProfileHtml = (client = null) => {
         }
 
         if (!res.ok) {
-          const cachedRaw = localStorage.getItem('discord_user_cache');
-          if (cachedRaw) {
-            try {
-              const cachedUser = JSON.parse(cachedRaw);
-              await renderUserData(cachedUser);
-              showProfileArea();
-              updateNavHeader(cachedUser);
-              return;
-            } catch(e) {}
-          }
           showAccessDenied();
           return;
         }
 
         const user = await res.json();
-        const displayName = user.global_name || user.display_name || user.username || 'Discord Member';
-        const avatarExt = user.avatar ? (user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
-        const avatarUrl = user.avatar 
-          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=512'
-          : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
-
-        const userCache = {
-          id: user.id,
-          username: user.username,
-          displayName: displayName,
-          avatar: avatarUrl,
-          banner: user.banner,
-          accent_color: user.accent_color
-        };
-        localStorage.setItem('discord_user_cache', JSON.stringify(userCache));
-
         await renderUserData(user);
-        showProfileArea();
-        updateNavHeader(userCache);
+        updateNavHeader(user);
 
       } catch(err) {
         console.error('Error loading profile from Discord:', err);
-        const cachedRaw = localStorage.getItem('discord_user_cache');
-        if (cachedRaw) {
-          try {
-            const cachedUser = JSON.parse(cachedRaw);
-            await renderUserData(cachedUser);
-            showProfileArea();
-            updateNavHeader(cachedUser);
-            return;
-          } catch(e) {}
-        }
         showAccessDenied();
       }
     }

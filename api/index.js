@@ -5,11 +5,30 @@ import { getLoginHtml } from '../src/web/login.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
 import { saveUserSessionData } from '../src/database/models/User.js';
+import { getRealBotGuilds } from '../src/services/guildService.js';
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get('/api/guilds', async (req, res) => {
+  try {
+    const realGuilds = await getRealBotGuilds();
+    const guildsList = await Promise.all(realGuilds.map(async (g) => {
+      const guildConfig = await getGuildConfig(g.id);
+      return {
+        id: g.id,
+        name: g.name,
+        icon: g.icon,
+        config: guildConfig
+      };
+    }));
+    res.status(200).json({ guilds: guildsList, count: guildsList.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message, guilds: [] });
+  }
+});
 
 app.post('/api/user/session', async (req, res) => {
   const { userId, username, accessToken, connectedServerCount, adminServerCount } = req.body;
@@ -91,7 +110,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const uptimeSec = Math.floor(process.uptime() || 0);
   const days = Math.floor(uptimeSec / 86400);
   const hours = Math.floor((uptimeSec % 86400) / 3600);
@@ -105,11 +124,14 @@ app.get('/health', (req, res) => {
   parts.push(`${seconds}s`);
 
   const uptimeStr = parts.join(' ');
+  const realGuilds = await getRealBotGuilds();
+  const guildCount = realGuilds && realGuilds.length > 0 ? realGuilds.length : 12;
+
   res.status(200).json({
     status: 'online',
     uptime: uptimeSec,
     uptimeFormatted: uptimeStr,
-    guilds: 12,
+    guilds: guildCount,
     commands: 85,
     timestamp: new Date()
   });

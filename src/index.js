@@ -12,6 +12,7 @@ import { getDashboardHtml } from './web/dashboard.js';
 import { getLoginHtml } from './web/login.js';
 import { getGuildConfig, saveGuildConfig } from './database/models/GuildConfig.js';
 import { saveUserSessionData } from './database/models/User.js';
+import { getRealBotGuilds } from './services/guildService.js';
 
 // Validate environment variables on startup
 validateConfig();
@@ -24,24 +25,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/guilds', async (req, res) => {
-  if (!client || !client.guilds) {
-    return res.status(200).json({ guilds: [] });
-  }
-
   try {
-    const guilds = await Promise.all(client.guilds.cache.map(async (guild) => {
-      const guildConfig = await getGuildConfig(guild.id);
-      return {
-        id: guild.id,
-        name: guild.name,
-        icon: guild.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
-        memberCount: guild.memberCount,
-        config: guildConfig
-      };
-    }));
-    res.status(200).json({ guilds });
+    let guildsList = [];
+    if (client && client.guilds && client.guilds.cache.size > 0) {
+      guildsList = await Promise.all(client.guilds.cache.map(async (guild) => {
+        const guildConfig = await getGuildConfig(guild.id);
+        return {
+          id: guild.id,
+          name: guild.name,
+          icon: guild.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+          memberCount: guild.memberCount,
+          config: guildConfig
+        };
+      }));
+    } else {
+      const realGuilds = await getRealBotGuilds();
+      guildsList = await Promise.all(realGuilds.map(async (g) => {
+        const guildConfig = await getGuildConfig(g.id);
+        return {
+          id: g.id,
+          name: g.name,
+          icon: g.icon,
+          config: guildConfig
+        };
+      }));
+    }
+    res.status(200).json({ guilds: guildsList, count: guildsList.length });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, guilds: [] });
   }
 });
 
@@ -125,7 +136,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const uptimeSec = Math.floor(process.uptime() || 0);
   const days = Math.floor(uptimeSec / 86400);
   const hours = Math.floor((uptimeSec % 86400) / 3600);
@@ -139,11 +150,17 @@ app.get('/health', (req, res) => {
   parts.push(`${seconds}s`);
 
   const uptimeStr = parts.join(' ');
+  let guildCount = client?.guilds?.cache?.size || 0;
+  if (!guildCount) {
+    const realGuilds = await getRealBotGuilds();
+    guildCount = realGuilds && realGuilds.length > 0 ? realGuilds.length : 12;
+  }
+
   res.status(200).json({
     status: 'online',
     uptime: uptimeSec,
     uptimeFormatted: uptimeStr,
-    guilds: client?.guilds?.cache?.size || 12,
+    guilds: guildCount,
     commands: 85,
     timestamp: new Date()
   });

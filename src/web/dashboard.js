@@ -569,7 +569,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       <!-- Greeting Title -->
       <div style="text-align: center; margin-bottom: 2.5rem;">
         <h2 style="font-size: 1.8rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.4rem;">
-          Hello, <span id="userGreetingName" style="color: var(--pink-primary);">${authData?.username || 'Authorized Discord User'}</span>! Please select a server to get started
+          Hello, <span id="userGreetingName" style="color: var(--pink-primary);">${authData?.username || 'Username'}</span>! Please select a server to get started
         </h2>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
           Click any active server below to open configuration settings, or click an unjoined server to add Riya Bot.

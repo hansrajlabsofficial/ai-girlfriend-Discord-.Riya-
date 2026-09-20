@@ -272,6 +272,8 @@ export function createInteractionMock(message, commandName, args, commandModule)
 
 // In-memory set to prevent duplicate execution of prefix commands for the exact same message ID
 const processedPrefixMessages = new Set();
+const userPrefixDebounce = new Map();
+const PREFIX_DEBOUNCE_MS = 1500;
 
 export async function handlePrefixCommand(message) {
   const content = message.content.trim();
@@ -307,6 +309,14 @@ export async function handlePrefixCommand(message) {
     const firstItem = processedPrefixMessages.values().next().value;
     processedPrefixMessages.delete(firstItem);
   }
+
+  // Per-User Execution Debounce (prevents rapid-fire duplicate prefix triggers)
+  const now = Date.now();
+  const lastExec = userPrefixDebounce.get(message.author.id) || 0;
+  if (now - lastExec < PREFIX_DEBOUNCE_MS) {
+    return true;
+  }
+  userPrefixDebounce.set(message.author.id, now);
 
   const parts = rawWithoutPrefix.split(/\s+/);
   const rawCmd = parts[0].toLowerCase();

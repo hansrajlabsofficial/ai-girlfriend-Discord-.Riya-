@@ -1,26 +1,42 @@
+import { initializeApp as initAdminApp, cert, getApps as getAdminApps } from 'firebase-admin/app';
+import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
 
 let db = null;
+let adminDb = null;
 let isConnected = false;
 
+export const getAdminDb = () => {
+  if (!adminDb) {
+    try {
+      const app = getAdminApps().length === 0 
+        ? initAdminApp({ credential: cert(config.serviceAccount) }) 
+        : getAdminApps()[0];
+      adminDb = getAdminFirestore(app);
+      isConnected = true;
+    } catch (err) {
+      logger.warn(`Firebase Admin SDK init failed: ${err.message}`);
+    }
+  }
+  return adminDb;
+};
+
 export const initializeAutoCollections = async () => {
-  const db = getDb();
-  if (!db) return;
+  const admin = getAdminDb();
+  if (!admin) return;
   try {
-    const { doc, setDoc } = await import('firebase/firestore');
-    const sysRef = doc(db, 'system', 'status');
-    await setDoc(sysRef, {
+    await admin.collection('system').doc('status').set({
       status: 'online',
       botName: 'Riya AI Girlfriend',
+      adminAuth: true,
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
     const ownerId = '1016322069093';
-    const ownerRef = doc(db, 'users', `global_${ownerId}`);
-    await setDoc(ownerRef, {
+    await admin.collection('users').doc(`global_${ownerId}`).set({
       userId: ownerId,
       username: 'HANSRAJxFPS',
       displayName: 'A S 友 H A N S R A J 🍃',
@@ -31,8 +47,7 @@ export const initializeAutoCollections = async () => {
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
-    const sessionRef = doc(db, 'user_sessions', `session_${ownerId}`);
-    await setDoc(sessionRef, {
+    await admin.collection('user_sessions').doc(`session_${ownerId}`).set({
       userId: ownerId,
       username: 'HANSRAJxFPS',
       displayName: 'A S 友 H A N S R A J 🍃',
@@ -42,7 +57,7 @@ export const initializeAutoCollections = async () => {
       updatedAt: new Date().toISOString()
     }, { merge: true });
 
-    logger.info('Auto-seeded system, users, and user_sessions collections in Firestore!');
+    logger.info('Auto-seeded system, users, and user_sessions collections in Firestore using Admin SDK!');
   } catch (err) {
     logger.warn(`Could not auto-seed collections: ${err.message}`);
   }
@@ -50,6 +65,7 @@ export const initializeAutoCollections = async () => {
 
 export const connectDatabase = async () => {
   try {
+    getAdminDb();
     const app = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
     db = getFirestore(app);
     isConnected = true;

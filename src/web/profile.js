@@ -503,9 +503,6 @@ export const getProfileHtml = (client = null) => {
           <button onclick="syncProfile()" class="btn-action primary">
             🔄 Sync Profile
           </button>
-          <a href="/dashboard" class="btn-action">
-            🌐 Server Picker
-          </a>
           <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.4);">
             🚪 Disconnect
           </button>

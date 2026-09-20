@@ -478,7 +478,6 @@ export const getDashboardHtml = (client = null, authData = null) => {
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
         <a href="/profile">👤 Profile</a>
-        <a href="#servers">Manage Servers</a>
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>
         ${authData?.connected ? `
@@ -562,11 +561,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
     <!-- Manage Servers & Configuration Section (Carl-bot / Dyno Style Circular Server Picker) -->
     <section id="servers" style="margin-bottom: 3.5rem; background: rgba(30, 27, 46, 0.85); border: 1px solid rgba(255, 20, 147, 0.3); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(16px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);">
       
-      <!-- Top Breadcrumb Bar -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem;">
-        <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
-          ☰ Server picker
-        </span>
+      <!-- Top Refresh Bar -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem;">
         <button onclick="refreshServers()" class="btn-connect" style="background: rgba(155, 81, 224, 0.25); border: 1px solid var(--purple-accent); color: #fff; cursor: pointer; padding: 0.4rem 0.9rem; font-size: 0.85rem;">
           🔄 Refresh
         </button>

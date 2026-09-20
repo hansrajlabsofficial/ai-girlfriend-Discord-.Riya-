@@ -99,6 +99,10 @@ app.get('/auth/callback', (req, res) => {
   res.status(200).send(getDashboardHtml(client, { connected: true, code }));
 });
 
+app.get('/logout', (req, res) => {
+  res.redirect('/');
+});
+
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date(), guilds: client?.guilds?.cache?.size || 0 });
 });

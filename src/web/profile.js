@@ -724,6 +724,13 @@ export const getProfileHtml = (client = null) => {
 
       localStorage.setItem('discord_user_id', cleanId);
       localStorage.setItem('discord_auth', cleanId);
+      
+      // Update browser URL query parameter without full reload
+      if (window.history.pushState) {
+        const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?id=' + cleanId;
+        window.history.pushState({ path: newUrl }, '', newUrl);
+      }
+
       await fetchAndRenderProfile(cleanId);
 
       if (btn) {
@@ -755,7 +762,7 @@ export const getProfileHtml = (client = null) => {
 
       localStorage.setItem('discord_user_id', cleanId);
       localStorage.setItem('discord_auth', cleanId);
-      location.reload();
+      window.location.href = '/profile?id=' + cleanId;
     }
 
     async function fetchAndRenderProfile(userId) {
@@ -779,8 +786,15 @@ export const getProfileHtml = (client = null) => {
     }
 
     async function loadUserProfile() {
-      const activeId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
-      if (activeId && /^\d{5,25}$/.test(activeId)) {
+      const urlParams = new URLSearchParams(window.location.search);
+      let activeId = urlParams.get('id') || urlParams.get('userId') || localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth') || '1016322069093';
+      activeId = String(activeId).replace(/[^0-9]/g, '');
+
+      if (activeId && activeId.length >= 3) {
+        localStorage.setItem('discord_user_id', activeId);
+        localStorage.setItem('discord_auth', activeId);
+        const searchInput = document.getElementById('quickSearchIdInput');
+        if (searchInput) searchInput.value = activeId;
         fetchAndRenderProfile(activeId);
       } else {
         showIdConnectPrompt();

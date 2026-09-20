@@ -12,7 +12,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
   );
 
-const COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes cooldown
+const COOLDOWN_MS = 5 * 60 * 60 * 1000; // 5 hours cooldown (18,000,000 ms)
 
 export const execute = async (interaction) => {
   try {
@@ -30,13 +30,13 @@ export const execute = async (interaction) => {
     const robberDoc = await getUserData(authorUser.id, interaction.guildId);
     const targetDoc = await getUserData(targetUser.id, interaction.guildId);
 
-    // Cooldown check
+    // Cooldown check (5 Hours)
     const now = Date.now();
     const lastRob = robberDoc.lastRobTimestamp || 0;
     if (now - lastRob < COOLDOWN_MS) {
-      const remainingSec = Math.ceil((COOLDOWN_MS - (now - lastRob)) / 1000);
+      const nextAvailableUnix = Math.floor((lastRob + COOLDOWN_MS) / 1000);
       return await interaction.reply({
-        content: `⏳ **Cooldown Active!** Hide from the police! Wait **${remainingSec}s** before robbing again! 🚓`,
+        content: `⏳ **Cooldown Active!** Hide from the police! Next rob is available <t:${nextAvailableUnix}:R> (<t:${nextAvailableUnix}:t>)! 🚓`,
         ephemeral: true
       });
     }

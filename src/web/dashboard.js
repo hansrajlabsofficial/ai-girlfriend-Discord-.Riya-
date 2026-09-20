@@ -545,38 +545,51 @@ export const getDashboardHtml = (client = null, authData = null) => {
     </div>
     `}
 
-    <!-- Manage Servers & Configuration Section -->
-    <section id="servers" style="margin-bottom: 3.5rem;">
-      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
-        <div>
-          <h2>⚙️ Manage Authorized Servers & Configuration</h2>
-          <p>Select any server where you have administrative permissions to customize prefix, AI persona, and channel bindings.</p>
-        </div>
-        <button onclick="refreshServers()" class="btn-connect" style="background: rgba(155, 81, 224, 0.3); border: 1px solid var(--purple-accent); color: #fff; cursor: pointer;">
-          🔄 Refresh Servers
+    <!-- Manage Servers & Configuration Section (Carl-bot / Dyno Style Circular Server Picker) -->
+    <section id="servers" style="margin-bottom: 3.5rem; background: rgba(30, 27, 46, 0.85); border: 1px solid rgba(255, 20, 147, 0.3); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(16px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);">
+      
+      <!-- Top Breadcrumb Bar -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem;">
+        <span style="color: var(--text-muted); font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+          ☰ Server picker
+        </span>
+        <button onclick="refreshServers()" class="btn-connect" style="background: rgba(155, 81, 224, 0.25); border: 1px solid var(--purple-accent); color: #fff; cursor: pointer; padding: 0.4rem 0.9rem; font-size: 0.85rem;">
+          🔄 Refresh
         </button>
       </div>
 
-      <div class="guide-grid" id="serverGrid">
+      <!-- Greeting Title -->
+      <div style="text-align: center; margin-bottom: 2.5rem;">
+        <h2 style="font-size: 1.8rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.4rem;">
+          Hello, <span style="color: var(--pink-primary);">hansraj1</span>! Please select a server to get started
+        </h2>
+        <p style="color: var(--text-muted); font-size: 0.95rem;">
+          Click any active server below to open configuration settings, or click an unjoined server to add Riya Bot.
+        </p>
+      </div>
+
+      <!-- Circular Icons Flex-Wrap Grid -->
+      <div id="serverGrid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.75rem; max-width: 1100px; margin: 0 auto;">
         ${guildsList.map(g => `
-        <div class="guide-card" style="border-color: var(--pink-primary); position: relative;">
-          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-            <img src="${g.icon}" alt="Server Icon" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--pink-primary); object-fit: cover;">
-            <div>
-              <h3 style="font-size: 1.2rem; margin: 0; color: #fff;">${g.name}</h3>
-              <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">ID: ${g.id} • ${g.memberCount} Members</p>
-            </div>
+        <div class="server-picker-item" onclick="openConfigModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; transition: transform 0.2s ease;">
+          <div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">
+            <img src="${g.icon}" alt="${g.name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
           </div>
-          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
-            <span class="cmd-badge" style="background: rgba(0, 255, 127, 0.2); color: #00FF7F;">🟢 Bot Active</span>
-            <span class="cmd-badge">Manager Authorized</span>
-          </div>
-          <button onclick="openConfigModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')" class="btn-invite" style="width: 100%; justify-content: center; cursor: pointer; border: none;">
-            ⚙️ Configure Server Settings
-          </button>
+          <span style="font-size: 0.75rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${g.name}">
+            ${g.name}
+          </span>
         </div>
         `).join('')}
+
+        <!-- Add Server Plus Icon -->
+        <div class="server-picker-item" onclick="window.open('${inviteUrl}', '_blank')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s ease;">
+          <div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 255, 255, 0.4); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.05); transition: all 0.2s ease;">
+            <span style="font-size: 1.8rem; color: #fff;">+</span>
+          </div>
+          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-align: center;">Add Server</span>
+        </div>
       </div>
+
     </section>
 
     <!-- Setup Guide Section -->
@@ -999,23 +1012,14 @@ export const getDashboardHtml = (client = null, authData = null) => {
           if (data.guilds && data.guilds.length > 0) {
             const grid = document.getElementById('serverGrid');
             grid.innerHTML = data.guilds.map(function(g) {
-              const prefix = (g.config && g.config.prefix) ? g.config.prefix : 'x';
               const safeName = g.name.replace(/'/g, "\\'");
-              return '<div class="guide-card" style="border-color: var(--pink-primary); position: relative;">' +
-                '<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">' +
-                  '<img src="' + g.icon + '" alt="Server Icon" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--pink-primary); object-fit: cover;">' +
-                  '<div>' +
-                    '<h3 style="font-size: 1.2rem; margin: 0; color: #fff;">' + g.name + '</h3>' +
-                    '<p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">ID: ' + g.id + ' • ' + g.memberCount + ' Members</p>' +
-                  '</div>' +
+              return '<div class="server-picker-item" onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; transition: transform 0.2s ease;">' +
+                '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">' +
+                  '<img src="' + g.icon + '" alt="' + g.name + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">' +
                 '</div>' +
-                '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">' +
-                  '<span class="cmd-badge" style="background: rgba(0, 255, 127, 0.2); color: #00FF7F;">🟢 Bot Active</span>' +
-                  '<span class="cmd-badge">Prefix: ' + prefix + '</span>' +
-                '</div>' +
-                '<button onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" class="btn-invite" style="width: 100%; justify-content: center; cursor: pointer; border: none;">' +
-                  '⚙️ Configure Server Settings' +
-                '</button>' +
+                '<span style="font-size: 0.75rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="' + g.name + '">' +
+                  g.name +
+                '</span>' +
               '</div>';
             }).join('');
           }

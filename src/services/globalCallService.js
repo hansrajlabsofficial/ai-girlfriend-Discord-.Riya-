@@ -1,10 +1,60 @@
 import { EmbedBuilder } from 'discord.js';
 import { logger } from '../utils/logger.js';
+import { getUserData } from '../database/models/User.js';
+import { getBalance, hasBalance, deductBalance, addBalance, formatMoney } from './economyService.js';
 
 // Global Call State Store
 let waitingLine = null; // { guildId, channelId, userId, guildName, timestamp }
-const activeCalls = new Map(); // guildId -> { peerGuildId, peerChannelId, peerGuildName, callId, startTime }
+const activeCalls = new Map(); // guildId -> { peerGuildId, peerChannelId, peerGuildName, channelId, callId, startTime, callerUserId, billingInterval }
 
+/**
+ * Auto-hangup call when a caller runs out of funds
+ */
+const autoHangupCall = async (client, guildId, peerGuildId, reason, failedUserId) => {
+  const callA = activeCalls.get(guildId);
+  const callB = activeCalls.get(peerGuildId);
+
+  if (callA?.billingInterval) clearInterval(callA.billingInterval);
+  if (callB?.billingInterval) clearInterval(callB.billingInterval);
+
+  activeCalls.delete(guildId);
+  activeCalls.delete(peerGuildId);
+
+  const autoHangupEmbed = new EmbedBuilder()
+    .setColor('#FF0000')
+    .setTitle('📵 GLOBAL CALL DISCONNECTED')
+    .setDescription(
+      `💸 **Call Terminated!** <@${failedUserId}> ran out of wallet cash ($10/min rate required to stay connected).\n` +
+      `The global hotline connection has automatically closed.`
+    )
+    .setFooter({ text: 'Riya Inter-Server Hotline Engine ☕✨' });
+
+  // Send to Guild A channel
+  if (callA?.channelId) {
+    try {
+      const channelA = client.channels.cache.get(callA.channelId) ||
+        await client.channels.fetch(callA.channelId).catch(() => null);
+      if (channelA) await channelA.send({ embeds: [autoHangupEmbed] });
+    } catch (err) {
+      logger.warn(`Failed to send auto-hangup to channel A: ${err.message}`);
+    }
+  }
+
+  // Send to Guild B channel
+  if (callA?.peerChannelId) {
+    try {
+      const channelB = client.channels.cache.get(callA.peerChannelId) ||
+        await client.channels.fetch(callA.peerChannelId).catch(() => null);
+      if (channelB) await channelB.send({ embeds: [autoHangupEmbed] });
+    } catch (err) {
+      logger.warn(`Failed to send auto-hangup to channel B: ${err.message}`);
+    }
+  }
+};
+
+/**
+ * Start or Match a Global Call
+ */
 export const startGlobalCall = async (interaction) => {
   const guildId = interaction.guildId;
   const channelId = interaction.channelId;
@@ -28,7 +78,26 @@ export const startGlobalCall = async (interaction) => {
     });
   }
 
-  // 3. Match with waiting server if available
+  // 3. Check caller balance ($100 connection fee required)
+  const userDoc = await getUserData(userId, guildId);
+  if (!hasBalance(userDoc, 100)) {
+    const insufficientEmbed = new EmbedBuilder()
+      .setColor('#FF0000')
+      .setTitle('❌ INSUFFICIENT FUNDS FOR CALL')
+      .setDescription(
+        `💵 **Connection Fee Required:** **$100** cash\n` +
+        `💼 **Your Balance:** **${formatMoney(getBalance(userDoc))}**\n\n` +
+        `You need at least **$100** in wallet cash to initiate a Global Call! ($10/min while connected)`
+      )
+      .setFooter({ text: 'Riya Inter-Server Hotline Engine ☕✨' });
+
+    return await interaction.reply({ embeds: [insufficientEmbed], ephemeral: true });
+  }
+
+  // 4. Deduct $100 Connection Fee
+  await deductBalance(userDoc, 100);
+
+  // 5. Match with waiting server if available
   if (waitingLine && waitingLine.guildId !== guildId) {
     const peer = waitingLine;
     waitingLine = null; // Clear waiting line
@@ -36,20 +105,54 @@ export const startGlobalCall = async (interaction) => {
     const callId = `call_${Date.now()}`;
     const startTime = Date.now();
 
+    // Setup billing interval for Guild A (peer caller)
+    const intervalA = setInterval(async () => {
+      try {
+        const callerDoc = await getUserData(peer.userId, peer.guildId);
+        const success = await deductBalance(callerDoc, 10);
+        if (!success) {
+          logger.info(`Global call billing failed for user ${peer.userId}`);
+          autoHangupCall(interaction.client, peer.guildId, guildId, 'insufficient_funds', peer.userId);
+        }
+      } catch (err) {
+        logger.error(`Call billing error for guild ${peer.guildId}:`, err);
+      }
+    }, 60000);
+
+    // Setup billing interval for Guild B (current caller)
+    const intervalB = setInterval(async () => {
+      try {
+        const callerDoc = await getUserData(userId, guildId);
+        const success = await deductBalance(callerDoc, 10);
+        if (!success) {
+          logger.info(`Global call billing failed for user ${userId}`);
+          autoHangupCall(interaction.client, guildId, peer.guildId, 'insufficient_funds', userId);
+        }
+      } catch (err) {
+        logger.error(`Call billing error for guild ${guildId}:`, err);
+      }
+    }, 60000);
+
     activeCalls.set(guildId, {
       peerGuildId: peer.guildId,
       peerChannelId: peer.channelId,
       peerGuildName: peer.guildName,
+      channelId,
       callId,
-      startTime
+      startTime,
+      callerUserId: userId,
+      billingInterval: intervalB
     });
 
     activeCalls.set(peer.guildId, {
       peerGuildId: guildId,
       peerChannelId: channelId,
       peerGuildName: guildName,
+      channelId: peer.channelId,
       callId,
-      startTime
+      startTime,
+      callerUserId: peer.userId,
+      billingInterval: intervalA
     });
 
     // Send Connection Embeds to both channels
@@ -59,6 +162,8 @@ export const startGlobalCall = async (interaction) => {
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/3059/3059502.png')
       .setDescription(
         `🎉 **Line Connected!** You are now connected live to **${peer.guildName}**!\n\n` +
+        `💵 **Fee Deducted:** $100 Connection Fee\n` +
+        `⏱️ **Rate:** $10 per minute active billing\n` +
         `💬 **How to talk:** Type messages or upload images in this channel to talk live across servers!\n` +
         `📵 Type \`/globalcall hangup\` or \`xhangup\` to end the call.`
       )
@@ -70,6 +175,8 @@ export const startGlobalCall = async (interaction) => {
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/3059/3059502.png')
       .setDescription(
         `🎉 **Line Connected!** You are now connected live to **${guildName}**!\n\n` +
+        `💵 **Fee Deducted:** $100 Connection Fee\n` +
+        `⏱️ **Rate:** $10 per minute active billing\n` +
         `💬 **How to talk:** Type messages or upload images in this channel to talk live across servers!\n` +
         `📵 Type \`/globalcall hangup\` or \`xhangup\` to end the call.`
       )
@@ -92,7 +199,7 @@ export const startGlobalCall = async (interaction) => {
     return;
   }
 
-  // 4. No server waiting: Put this server on the waiting line
+  // 6. No server waiting: Put this server on the waiting line
   waitingLine = {
     guildId,
     channelId,
@@ -107,6 +214,8 @@ export const startGlobalCall = async (interaction) => {
     .setThumbnail('https://cdn-icons-png.flaticon.com/512/3059/3059502.png')
     .setDescription(
       `☎️ *Ringing...* **${guildName}** is on the global phone line!\n\n` +
+      `💵 **Connection Fee Paid:** $100 deducted from <@${userId}>\n` +
+      `⏱️ **Billing Rate:** $10/min starts when call connects!\n` +
       `Waiting for another Discord server to dial in and pick up the call...\n` +
       `💡 *Stay tuned! As soon as another server calls, the line will connect automatically!*`
     )
@@ -118,13 +227,22 @@ export const startGlobalCall = async (interaction) => {
 export const hangupGlobalCall = async (interaction) => {
   const guildId = interaction.guildId;
 
-  // If waiting on line, cancel call waiting
+  // If waiting on line, cancel call waiting and refund $100 connection fee
   if (waitingLine && waitingLine.guildId === guildId) {
+    const callerId = waitingLine.userId;
     waitingLine = null;
+
+    try {
+      const userDoc = await getUserData(callerId, guildId);
+      await addBalance(userDoc, 100);
+    } catch (err) {
+      logger.error('Failed to refund connection fee on call cancel:', err);
+    }
+
     const cancelEmbed = new EmbedBuilder()
       .setColor('#FF4500')
       .setTitle('📵 CALL CANCELLED')
-      .setDescription('✅ Cancelled hotline dialing. Your server is no longer waiting for a call.');
+      .setDescription('✅ Cancelled hotline dialing. Your server is no longer waiting for a call. **$100 Connection Fee refunded!**');
     return await interaction.reply({ embeds: [cancelEmbed] });
   }
 
@@ -134,6 +252,11 @@ export const hangupGlobalCall = async (interaction) => {
     const peerGuildId = call.peerGuildId;
     const peerChannelId = call.peerChannelId;
     const peerGuildName = call.peerGuildName;
+
+    const peerCall = activeCalls.get(peerGuildId);
+
+    if (call.billingInterval) clearInterval(call.billingInterval);
+    if (peerCall?.billingInterval) clearInterval(peerCall.billingInterval);
 
     activeCalls.delete(guildId);
     activeCalls.delete(peerGuildId);
@@ -184,7 +307,8 @@ export const getCallStatus = async (interaction) => {
       .setDescription(
         `🟢 **Status:** Connected Live\n` +
         `🤝 **Connected Server:** **${call.peerGuildName}**\n` +
-        `⏱️ **Call Duration:** **${mins}m ${secs}s**\n\n` +
+        `⏱️ **Call Duration:** **${mins}m ${secs}s**\n` +
+        `💵 **Active Rate:** $10/min\n\n` +
         `📵 Type \`/globalcall hangup\` to end the call.`
       );
     return await interaction.reply({ embeds: [embed] });
@@ -214,7 +338,7 @@ export const handleGlobalCallRelay = async (message) => {
     const call = activeCalls.get(guildId);
 
     // Verify message is in the connected call channel
-    if (message.channel.id !== message.channel.id) return false;
+    if (message.channel.id !== call.channelId && message.channel.id !== message.channel.id) return false;
 
     // Build Call Relay Embed
     const relayEmbed = new EmbedBuilder()

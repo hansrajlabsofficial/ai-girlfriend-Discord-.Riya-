@@ -215,6 +215,21 @@ export function createInteractionMock(message, commandName, args, commandModule)
     isStringSelectMenu: () => false,
 
     async reply(options) {
+      if (mockInteraction.replied) return replyMessage;
+
+      // Deduplication check: Check channel cache to see if our bot user already sent a reply referencing this message ID
+      const botId = message.client?.user?.id;
+      if (botId && message.channel?.messages?.cache) {
+        const existingReply = message.channel.messages.cache.find(m => 
+          m.author.id === botId && m.reference?.messageId === message.id
+        );
+        if (existingReply) {
+          mockInteraction.replied = true;
+          replyMessage = existingReply;
+          return existingReply;
+        }
+      }
+
       try {
         let payload = options;
         if (typeof options === 'string') {
@@ -308,6 +323,18 @@ export async function handlePrefixCommand(message) {
   if (processedPrefixMessages.size > 500) {
     const firstItem = processedPrefixMessages.values().next().value;
     processedPrefixMessages.delete(firstItem);
+  }
+
+  // Cross-instance check: If channel cache already contains a reply from our bot to this message ID, abort
+  const botId = message.client?.user?.id;
+  if (botId && message.channel?.messages?.cache) {
+    const existingReply = message.channel.messages.cache.find(m => 
+      m.author.id === botId && m.reference?.messageId === message.id
+    );
+    if (existingReply) {
+      logger.info(`Skipping duplicate command execution for message ${message.id} (already answered by another bot process)`);
+      return true;
+    }
   }
 
   // Per-User Execution Debounce (prevents rapid-fire duplicate prefix triggers)

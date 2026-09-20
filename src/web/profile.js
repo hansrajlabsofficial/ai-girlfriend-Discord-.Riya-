@@ -475,6 +475,7 @@ export const getProfileHtml = (client = null) => {
               <span class="badge-chip verified">⚡ Discord Connected</span>
               <span class="badge-chip nitro">💎 Premium Member</span>
               <span class="badge-chip partner" id="partnerBadgeChip" style="display: none;">👑 Riya Partner</span>
+              <span class="badge-chip" id="userIpBadgeChip" style="background: rgba(0, 240, 255, 0.15); border-color: var(--cyan-neon); color: var(--cyan-neon);">🌐 IP: Connected</span>
             </div>
           </div>
 
@@ -482,8 +483,8 @@ export const getProfileHtml = (client = null) => {
             <button onclick="syncProfile()" class="btn-action primary">
               🔄 Sync Profile
             </button>
-            <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.4);">
-              🚪 Disconnect
+            <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.5); background: rgba(255, 75, 75, 0.1);">
+              🔌 Disconnect / Change ID
             </button>
           </div>
         </div>
@@ -813,6 +814,12 @@ export const getProfileHtml = (client = null) => {
       if (user.isDailyPartner) {
         const partnerBadge = document.getElementById('partnerBadgeChip');
         if (partnerBadge) partnerBadge.style.display = 'inline-flex';
+      }
+
+      const ipChip = document.getElementById('userIpBadgeChip');
+      if (ipChip) {
+        const userIp = user.ipAddress || localStorage.getItem('discord_user_ip') || 'Verified';
+        ipChip.innerText = '🌐 IP: ' + userIp;
       }
 
       // Save user details into browser localStorage

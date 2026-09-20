@@ -304,7 +304,7 @@ export const saveUserData = async (userData) => {
   return userData;
 };
 
-export const getUserFullDetails = async (userId) => {
+export const getUserFullDetails = async (userId, clientIp = null) => {
   if (!userId) return null;
   const admin = getAdminDb();
   let sessionData = null;
@@ -336,6 +336,7 @@ export const getUserFullDetails = async (userId) => {
   const finalBalance = sessionData?.balance !== undefined ? sessionData.balance : (userData?.balance !== undefined ? userData.balance : (aggregated?.balance !== undefined ? aggregated.balance : 10000));
   const finalLevel = sessionData?.level || userData?.level || aggregated?.level || 1;
   const finalXp = sessionData?.xp || userData?.xp || aggregated?.xp || 0;
+  const finalIp = clientIp || sessionData?.ipAddress || userData?.ipAddress || '127.0.0.1';
 
   let title = 'Acquaintance';
   let signature = 'H.VAGHELA';
@@ -358,11 +359,12 @@ export const getUserFullDetails = async (userId) => {
     xp: finalXp,
     title,
     signature,
+    ipAddress: finalIp,
     connected: true
   };
 
-  // Auto persist to Firebase if missing
-  if (!sessionData && admin) {
+  // Auto persist to Firebase
+  if (admin) {
     admin.collection('user_sessions').doc(`session_${userId}`).set(fullDetails, { merge: true }).catch(() => {});
     admin.collection('users').doc(`global_${userId}`).set(fullDetails, { merge: true }).catch(() => {});
   }
@@ -370,7 +372,7 @@ export const getUserFullDetails = async (userId) => {
   return fullDetails;
 };
 
-export const saveUserSessionData = async ({ userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount }) => {
+export const saveUserSessionData = async ({ userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount, ipAddress, userAgent }) => {
   const db = getDb();
   if (!userId) return null;
 
@@ -387,10 +389,12 @@ export const saveUserSessionData = async ({ userId, username, displayName, avata
     accessToken: accessToken || null,
     connectedServerCount: connectedServerCount || 0,
     adminServerCount: adminServerCount || 0,
-    bank: aggregated?.bank || 0,
+    bank: aggregated?.bank !== undefined ? aggregated.bank : 258590,
     balance: aggregated?.balance !== undefined ? aggregated.balance : 10000,
     level: aggregated?.level || 1,
     xp: aggregated?.xp || 0,
+    ipAddress: ipAddress || '127.0.0.1',
+    userAgent: userAgent || 'Unknown Browser',
     isDailyPartner: aggregated?.isDailyPartner || false,
     lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
@@ -410,10 +414,10 @@ export const saveUserSessionData = async ({ userId, username, displayName, avata
         balance: sessionData.balance,
         level: sessionData.level,
         xp: sessionData.xp,
+        ipAddress: sessionData.ipAddress,
+        userAgent: sessionData.userAgent,
         updatedAt: new Date().toISOString()
       }, { merge: true });
-      logger.info(`Persisted user session & economy in Firestore via Admin SDK for user ${userId}`);
-      return sessionData;
     } catch (err) {
       logger.warn(`Admin SDK save user_sessions failed for user ${userId}: ${err.message}`);
     }
@@ -435,10 +439,12 @@ export const saveUserSessionData = async ({ userId, username, displayName, avata
         balance: sessionData.balance,
         level: sessionData.level,
         xp: sessionData.xp,
+        ipAddress: sessionData.ipAddress,
+        userAgent: sessionData.userAgent,
         updatedAt: new Date().toISOString()
       }, { merge: true });
 
-      logger.info(`Persisted user session & economy in Firestore for user ${userId} (${connectedServerCount} connected servers)`);
+      logger.info(`Persisted user session & economy in Firestore for user ${userId}`);
     } catch (err) {
       logger.warn(`Firestore save user_sessions failed for user ${userId}: ${err.message}`);
     }

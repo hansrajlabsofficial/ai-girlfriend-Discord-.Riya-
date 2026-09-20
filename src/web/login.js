@@ -292,10 +292,11 @@ export const getLoginHtml = () => {
 
         const user = data.user;
 
-        // Save complete profile & economy details to LocalStorage
+        // Save complete profile, IP & economy details to LocalStorage
         localStorage.setItem('discord_user_id', user.userId);
         localStorage.setItem('discord_user_name', user.displayName || user.username);
         localStorage.setItem('discord_username', user.username);
+        if (user.ipAddress || data.ipAddress) localStorage.setItem('discord_user_ip', user.ipAddress || data.ipAddress);
         if (user.avatar) localStorage.setItem('discord_user_avatar', user.avatar);
         if (user.banner) localStorage.setItem('discord_user_banner', user.banner);
         if (user.bank !== undefined) localStorage.setItem('discord_user_bank', user.bank);
@@ -311,7 +312,7 @@ export const getLoginHtml = () => {
         localStorage.removeItem('skip_login');
 
         status.style.color = '#00FF7F';
-        status.innerText = '✅ Account connected! Loading profile...';
+        status.innerText = '✅ Account connected! (IP: ' + (user.ipAddress || 'Verified') + ') Loading profile...';
 
         setTimeout(function() {
           window.location.href = '/profile';

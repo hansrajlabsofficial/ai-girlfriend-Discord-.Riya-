@@ -1320,6 +1320,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
       updateRealTimeStats();
       setInterval(updateRealTimeStats, 10000);
 
+      updateDashboardHeaderNav();
+
       setInterval(function() {
         if (clientUptimeSec !== null) {
           clientUptimeSec++;
@@ -1330,6 +1332,44 @@ export const getDashboardHtml = (client = null, authData = null) => {
         }
       }, 1000);
     });
+
+    function updateDashboardHeaderNav() {
+      const authBtn = document.getElementById('headerAuthBtn');
+      if (!authBtn) return;
+      const userId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
+      const userName = localStorage.getItem('discord_user_name') || localStorage.getItem('discord_username');
+
+      if (userId) {
+        authBtn.href = '/profile';
+        authBtn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
+        authBtn.style.color = '#0B0314';
+        authBtn.innerHTML = '👤 ' + (userName || 'My Profile');
+
+        let logoutBtn = document.getElementById('headerLogoutBtn');
+        if (!logoutBtn) {
+          logoutBtn = document.createElement('a');
+          logoutBtn.id = 'headerLogoutBtn';
+          logoutBtn.href = 'javascript:void(0)';
+          logoutBtn.onclick = function() {
+            ['discord_access_token', 'discord_auth', 'discord_user_cache', 'discord_user_details', 'discord_user_id', 'discord_user_name', 'discord_username', 'discord_user_avatar', 'discord_user_bank', 'discord_user_balance', 'discord_user_level', 'discord_user_xp', 'discord_user_title', 'discord_user_signature', 'discord_user_ip', 'pre_login_redirect', 'skip_login'].forEach(function(k) {
+              localStorage.removeItem(k);
+            });
+            window.location.href = '/login';
+          };
+          logoutBtn.className = 'btn-connect';
+          logoutBtn.style.background = 'rgba(255, 75, 75, 0.25)';
+          logoutBtn.style.border = '1px solid rgba(255, 75, 75, 0.5)';
+          logoutBtn.style.color = '#FF4B4B';
+          logoutBtn.innerHTML = '🔌 Disconnect';
+          authBtn.parentNode.insertBefore(logoutBtn, authBtn.nextSibling);
+        }
+      } else {
+        authBtn.href = '/login';
+        authBtn.style.background = 'linear-gradient(135deg, #FF1493, #9B51E0)';
+        authBtn.style.color = '#FFF';
+        authBtn.innerHTML = '🔑 Connect Discord ID';
+      }
+    }
 
     (function() {
       // 1. Disable Right Click Context Menu

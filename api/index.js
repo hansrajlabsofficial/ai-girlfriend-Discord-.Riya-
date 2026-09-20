@@ -36,14 +36,24 @@ app.get('/api/guilds', async (req, res) => {
   }
 });
 
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (forwarded) {
+    return String(forwarded).split(',')[0].trim();
+  }
+  return req.headers['x-real-ip'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+};
+
 app.get('/api/user/:userId/profile', async (req, res) => {
   const { userId } = req.params;
+  const clientIp = getClientIp(req);
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
 
   try {
-    const details = await getUserFullDetails(userId);
+    const details = await getUserFullDetails(userId, clientIp);
+    details.ipAddress = clientIp;
     res.status(200).json(details);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -56,16 +66,25 @@ app.post('/api/login/discord-id', async (req, res) => {
     return res.status(400).json({ error: 'Please enter a valid numeric Discord User ID.' });
   }
   const cleanId = String(userId).trim();
+  const clientIp = getClientIp(req);
+  const userAgent = req.headers['user-agent'] || 'Unknown Browser';
+
   try {
-    const userDetails = await getUserFullDetails(cleanId);
+    const userDetails = await getUserFullDetails(cleanId, clientIp);
+    userDetails.ipAddress = clientIp;
+    userDetails.userAgent = userAgent;
+
     await saveUserSessionData({
       userId: cleanId,
       username: userDetails.username,
       displayName: userDetails.displayName,
       avatar: userDetails.avatar,
-      banner: userDetails.banner
+      banner: userDetails.banner,
+      ipAddress: clientIp,
+      userAgent: userAgent
     });
-    res.status(200).json({ success: true, user: userDetails });
+
+    res.status(200).json({ success: true, user: userDetails, ipAddress: clientIp });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

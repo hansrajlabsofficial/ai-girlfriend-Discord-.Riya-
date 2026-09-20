@@ -82,7 +82,7 @@ app.get('/commands', (req, res) => {
 });
 
 app.get('/connect', (req, res) => {
-  const clientId = config.clientId || '';
+  const clientId = config.clientId || '1479052475368607926';
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'http';
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
   const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;

@@ -3,7 +3,7 @@ dotenv.config();
 
 export const config = {
   discordToken: process.env.DISCORD_TOKEN || '',
-  clientId: process.env.CLIENT_ID || '',
+  clientId: process.env.CLIENT_ID || '1479052475368607926',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   tenorApiKey: process.env.TENOR_API_KEY || '',

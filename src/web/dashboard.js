@@ -1,7 +1,7 @@
 import { config } from '../config.js';
 
 export const getDashboardHtml = (client = null, authData = null) => {
-  const clientId = config.clientId || 'YOUR_CLIENT_ID';
+  const clientId = config.clientId || '1479052475368607926';
   const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=51200&integration_type=0&scope=bot+applications.commands`;
   const oauthConnectUrl = `/connect`;
 

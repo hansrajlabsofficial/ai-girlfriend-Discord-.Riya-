@@ -1029,7 +1029,10 @@ export const getDashboardHtml = (client = null, authData = null) => {
         token = localStorage.getItem('discord_access_token');
       }
 
-      if (!token) return;
+      if (!token) {
+        renderUnauthenticatedServerPicker();
+        return;
+      }
 
       try {
         const userRes = await fetch('https://discord.com/api/v10/users/@me', {
@@ -1038,10 +1041,14 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
         if (userRes.status === 401) {
           localStorage.removeItem('discord_access_token');
+          renderUnauthenticatedServerPicker();
           return;
         }
 
-        if (!userRes.ok) return;
+        if (!userRes.ok) {
+          renderUnauthenticatedServerPicker();
+          return;
+        }
 
         const user = await userRes.json();
         const displayName = user.global_name || user.username || 'Authorized User';
@@ -1081,18 +1088,49 @@ export const getDashboardHtml = (client = null, authData = null) => {
         if (!guildsRes.ok) return;
 
         const guilds = await guildsRes.json();
-        const adminGuilds = guilds.filter(function(g) {
-          const perms = BigInt(g.permissions || '0');
-          const isAdmin = (perms & 0x8n) === 0x8n;
-          const isManageGuild = (perms & 0x20n) === 0x20n;
-          return g.owner || isAdmin || isManageGuild;
+        let adminGuilds = guilds.filter(function(g) {
+          if (g.owner === true || g.owner === 'true') return true;
+          try {
+            const perms = BigInt(g.permissions || '0');
+            const isAdmin = (perms & 0x8n) === 0x8n;
+            const isManageGuild = (perms & 0x20n) === 0x20n;
+            const isManageChannels = (perms & 0x10n) === 0x10n;
+            return isAdmin || isManageGuild || isManageChannels;
+          } catch(e) {
+            return false;
+          }
         });
+
+        if (adminGuilds.length === 0 && guilds.length > 0) {
+          adminGuilds = guilds;
+        }
 
         renderServerPickerGrid(adminGuilds);
 
       } catch(e) {
         console.error('Error in initDiscordOAuth:', e);
       }
+    }
+
+    function renderUnauthenticatedServerPicker() {
+      const grid = document.getElementById('serverGrid');
+      if (!grid) return;
+
+      const oauthUrl = '/connect';
+      const clientId = window.CLIENT_ID || '1479052475368607926';
+      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands';
+
+      grid.innerHTML = '<div style="width: 100%; text-align: center; padding: 1.5rem; background: rgba(88, 101, 242, 0.1); border: 1px dashed rgba(88, 101, 242, 0.4); border-radius: 16px; margin-bottom: 1rem;">' +
+        '<h4 style="font-size: 1.1rem; color: #5865F2; margin-bottom: 0.5rem;">🔑 Connect Your Discord Account</h4>' +
+        '<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Click below to log in with Discord and load your admin servers into the server picker.</p>' +
+        '<a href="' + oauthUrl + '" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem;">Login with Discord OAuth2</a>' +
+      '</div>' +
+      '<div class="server-picker-item" onclick="window.open(\'' + inviteUrl + '\', \'_blank\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; opacity: 0.85; transition: opacity 0.2s ease;">' +
+        '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 20, 147, 0.6); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 20, 147, 0.1); transition: all 0.2s ease;">' +
+          '<span style="font-size: 2rem; color: #FF1493; font-weight: 700;">+</span>' +
+        '</div>' +
+        '<span style="font-size: 0.78rem; font-weight: 600; color: var(--pink-primary); text-align: center;">Add Server</span>' +
+      '</div>';
     }
 
     function renderServerPickerGrid(guilds) {

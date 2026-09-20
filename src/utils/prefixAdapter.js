@@ -270,9 +270,12 @@ export function createInteractionMock(message, commandName, args, commandModule)
   return mockInteraction;
 }
 
+// In-memory set to prevent duplicate execution of prefix commands for the exact same message ID
+const processedPrefixMessages = new Set();
+
 export async function handlePrefixCommand(message) {
   const content = message.content.trim();
-  if (!content) return false;
+  if (!content || message.author.bot) return false;
 
   let prefixUsed = null;
   let rawWithoutPrefix = null;
@@ -294,6 +297,16 @@ export async function handlePrefixCommand(message) {
   }
 
   if (!prefixUsed || !rawWithoutPrefix) return false;
+
+  // Deduplication Check: Prevent double execution of the exact same message ID
+  if (processedPrefixMessages.has(message.id)) {
+    return true;
+  }
+  processedPrefixMessages.add(message.id);
+  if (processedPrefixMessages.size > 500) {
+    const firstItem = processedPrefixMessages.values().next().value;
+    processedPrefixMessages.delete(firstItem);
+  }
 
   const parts = rawWithoutPrefix.split(/\s+/);
   const rawCmd = parts[0].toLowerCase();

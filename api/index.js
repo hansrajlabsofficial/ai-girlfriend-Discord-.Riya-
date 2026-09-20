@@ -5,7 +5,7 @@ import { getLoginHtml } from '../src/web/login.js';
 import { getProfileHtml } from '../src/web/profile.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
-import { saveUserSessionData, getUserData, getAggregatedUserData } from '../src/database/models/User.js';
+import { saveUserSessionData, getUserData, getAggregatedUserData, getUserFullDetails } from '../src/database/models/User.js';
 import { getRealBotGuilds } from '../src/services/guildService.js';
 import { getRelationshipTitle } from '../src/services/rpgService.js';
 import { generateUserSignature } from '../src/services/economyService.js';
@@ -43,21 +43,29 @@ app.get('/api/user/:userId/profile', async (req, res) => {
   res.setHeader('Expires', '0');
 
   try {
-    const userDoc = await getAggregatedUserData(userId);
-    const level = userDoc.level || 1;
-    const title = getRelationshipTitle(level);
-    const sig = generateUserSignature({ displayName: userDoc.username || 'Member', username: userDoc.username });
-    res.status(200).json({
-      userId: userId,
-      bank: userDoc.bank || 0,
-      balance: userDoc.balance !== undefined ? userDoc.balance : 10000,
-      level: level,
-      xp: userDoc.xp || 0,
-      title: title,
-      isDailyPartner: userDoc.isDailyPartner || false,
-      partnerId: userDoc.partnerId || null,
-      signature: sig
+    const details = await getUserFullDetails(userId);
+    res.status(200).json(details);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/login/discord-id', async (req, res) => {
+  const { userId } = req.body;
+  if (!userId || !/^\d{5,25}$/.test(String(userId).trim())) {
+    return res.status(400).json({ error: 'Please enter a valid numeric Discord User ID.' });
+  }
+  const cleanId = String(userId).trim();
+  try {
+    const userDetails = await getUserFullDetails(cleanId);
+    await saveUserSessionData({
+      userId: cleanId,
+      username: userDetails.username,
+      displayName: userDetails.displayName,
+      avatar: userDetails.avatar,
+      banner: userDetails.banner
     });
+    res.status(200).json({ success: true, user: userDetails });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -134,13 +142,7 @@ app.get('/commands', (req, res) => {
 });
 
 app.get('/connect', (req, res) => {
-  const clientId = config.clientId || '1479052475368607926';
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-  const host = req.headers['x-forwarded-host'] || req.get('host') || 'riya-ai-girlfriend-discord-bot-full.vercel.app';
-  const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;
-
-  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20guilds`;
-  res.redirect(oauthConnectUrl);
+  res.redirect('/login');
 });
 
 app.get('/auth/callback', (req, res) => {

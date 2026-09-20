@@ -674,167 +674,149 @@ export const getProfileHtml = (client = null) => {
 
     function showAccessDenied() {
       updateNavHeader(null);
-      const cachedRaw = localStorage.getItem('discord_user_cache') || localStorage.getItem('discord_user_details');
-      if (cachedRaw) {
-        try {
-          const u = JSON.parse(cachedRaw);
-          renderUserData(u);
-          return;
-        } catch(e) {}
-      }
-      renderUserData({
-        id: '1016322069093',
-        username: 'HANSRAJxFPS',
-        global_name: 'A S 友 H A N S R A J 🍃'
-      });
+      const activeId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth') || '1016322069093';
+      fetchAndRenderProfile(activeId);
     }
 
-    function showProfileArea() {
-      // Profile content is directly rendered and visible
+    function showIdConnectPrompt() {
+      const container = document.querySelector('.profile-container');
+      if (!container) return;
+      container.innerHTML = '<div style="max-width: 500px; margin: 4rem auto; padding: 2.5rem; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); border-radius: 24px; backdrop-filter: blur(20px); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.7);">' +
+        '<img src="https://cdn-icons-png.flaticon.com/512/3081/3081840.png" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid var(--pink-primary); margin-bottom: 1rem;">' +
+        '<h2 style="font-size: 1.8rem; font-weight: 800; color: #FFF; margin-bottom: 0.5rem;">Connect Discord Account ☕💖</h2>' +
+        '<p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.5rem; line-height: 1.5;">Enter your Discord User ID below to load your connected profile and Firebase stats.</p>' +
+        '<input type="text" id="promptDiscordIdInput" placeholder="Enter Discord ID (e.g. 1016322069093)" style="width: 100%; padding: 0.95rem 1.2rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,20,147,0.4); border-radius: 14px; color: #fff; font-family: monospace; font-size: 1.05rem; outline: none; margin-bottom: 1rem;">' +
+        '<button onclick="submitPromptDiscordId()" id="btnPromptSubmit" style="width: 100%; padding: 0.95rem; background: linear-gradient(135deg, var(--pink-primary), var(--purple-accent)); color: #fff; border: none; border-radius: 14px; font-weight: 700; font-size: 1.05rem; cursor: pointer;">🔍 Search & Connect Account</button>' +
+        '<div style="margin-top: 1rem;"><span onclick="document.getElementById(\\'promptDiscordIdInput\\').value=\\'1016322069093\\'; submitPromptDiscordId();" style="color: var(--cyan-neon); font-size: 0.85rem; font-family: monospace; cursor: pointer; text-decoration: underline;">⚡ Preset Owner ID: 1016322069093</span></div>' +
+        '<div id="promptStatusMsg" style="margin-top: 1rem; font-size: 0.9rem; font-weight: 600;"></div>' +
+      '</div>';
     }
 
-    async function loadUserProfile() {
-      let token = null;
-      if (window.location.hash && window.location.hash.includes('access_token=')) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        token = params.get('access_token');
-        if (token) {
-          localStorage.setItem('discord_access_token', token);
-          localStorage.setItem('discord_auth', token);
-          history.replaceState(null, '', window.location.pathname);
+    async function submitPromptDiscordId() {
+      const input = document.getElementById('promptDiscordIdInput');
+      const status = document.getElementById('promptStatusMsg');
+      const btn = document.getElementById('btnPromptSubmit');
+      const rawId = input ? input.value.trim() : '';
+
+      if (!rawId || !/^\d{5,25}$/.test(rawId)) {
+        if (status) {
+          status.style.color = '#FF4B4B';
+          status.innerText = '❌ Please enter a valid numeric Discord User ID.';
         }
-      }
-
-      if (!token) {
-        token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
-      }
-
-      if (!token) {
-        showAccessDenied();
         return;
       }
 
-      try {
-        const res = await fetch('https://discord.com/api/v10/users/@me', {
-          headers: { 
-            'Authorization': 'Bearer ' + token,
-            'Cache-Control': 'no-cache, no-store'
-          },
-          cache: 'no-store'
-        });
-
-        if (res.status === 401) {
-          clearAuthSession();
-          showAccessDenied();
-          return;
-        }
-
-        if (!res.ok) {
-          showAccessDenied();
-          return;
-        }
-
-        const user = await res.json();
-        await renderUserData(user);
-        updateNavHeader(user);
-
-      } catch(err) {
-        console.error('Error loading profile from Discord:', err);
-        showAccessDenied();
+      if (status) {
+        status.style.color = '#00FF7F';
+        status.innerText = '⏳ Connecting to Firebase Cloud...';
       }
+      if (btn) btn.disabled = true;
+
+      localStorage.setItem('discord_user_id', rawId);
+      localStorage.setItem('discord_auth', rawId);
+      location.reload();
     }
 
-    async function renderUserData(user) {
-      const displayName = user.global_name || user.display_name || user.username || 'Discord Member';
-      const username = '@' + (user.username || 'username');
-
-      document.getElementById('userDisplayName').innerText = displayName;
-      document.getElementById('userUsernameTag').innerText = username + ' • ID: ' + user.id;
-
-      // Avatar Parsing (Supports GIF and PNG)
-      let avatarUrl = 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
-      if (user.avatar) {
-        const ext = user.avatar.startsWith('a_') ? 'gif' : 'png';
-        avatarUrl = 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + ext + '?size=512';
-      }
-      document.getElementById('profileAvatarImg').src = avatarUrl;
-
-      // Banner Parsing (Supports GIF, PNG, and Accent Gradient)
-      const bannerWrapper = document.getElementById('bannerWrapper');
-      const bannerImg = document.getElementById('profileBannerImg');
-
-      if (user.banner) {
-        const ext = user.banner.startsWith('a_') ? 'gif' : 'png';
-        const bannerUrl = 'https://cdn.discordapp.com/banners/' + user.id + '/' + user.banner + '.' + ext + '?size=1024';
-        bannerImg.src = bannerUrl;
-        bannerImg.style.display = 'block';
-      } else if (user.accent_color) {
-        const hex = '#' + user.accent_color.toString(16).padStart(6, '0');
-        bannerWrapper.style.background = 'linear-gradient(135deg, ' + hex + ', #1E0638)';
-        bannerImg.style.display = 'none';
-      } else {
-        bannerWrapper.style.background = 'linear-gradient(135deg, #1E0638, #3B0A45, #660F45)';
-        bannerImg.style.display = 'none';
-      }
-
-      // Generate Signature
-      const sig = generateSignature(displayName, user.username);
-      document.getElementById('sigTextDisplay').innerText = sig;
-
-      // Fetch Bot Firestore Stats for User with cache-busting
+    async function fetchAndRenderProfile(userId) {
       try {
-        const statsRes = await fetch('/api/user/' + user.id + '/profile?t=' + Date.now(), {
+        const res = await fetch('/api/user/' + userId + '/profile?t=' + Date.now(), {
           headers: { 'Cache-Control': 'no-cache, no-store' },
           cache: 'no-store'
         });
 
-        if (statsRes.ok) {
-          const stats = await statsRes.json();
-          document.getElementById('bankSavingsVal').innerText = formatMoney(stats.bank || 0);
-          document.getElementById('walletCashVal').innerText = formatMoney(stats.balance !== undefined ? stats.balance : 10000);
-
-          const lvl = stats.level || 1;
-          const title = stats.title || 'Acquaintance';
-          document.getElementById('levelTitleVal').innerText = 'Level ' + lvl + ' • ' + title;
-
-          const xp = stats.xp || 0;
-          const nextLvlXp = lvl * 200;
-          const pct = Math.min(100, Math.floor((xp / nextLvlXp) * 100));
-          document.getElementById('xpProgressFill').style.width = pct + '%';
-          document.getElementById('xpTextSub').innerText = 'XP Progress: ' + xp + ' / ' + nextLvlXp + ' XP (' + pct + '%)';
-
-          if (stats.signature) {
-            document.getElementById('sigTextDisplay').innerText = stats.signature;
-          }
-
-          if (stats.isDailyPartner) {
-            document.getElementById('partnerBadgeChip').style.display = 'inline-flex';
-          }
-
-          // Save complete user details & economy stats into browser localStorage
-          saveLocalUserDetails(user, stats);
-
-          // Automatically persist full Discord profile and economy stats into Firebase Firestore
-          const token = localStorage.getItem('discord_access_token');
-          fetch('/api/user/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: user.id,
-              username: user.username,
-              displayName: displayName,
-              avatar: avatarUrl,
-              banner: user.banner ? 'https://cdn.discordapp.com/banners/' + user.id + '/' + user.banner + '.' + (user.banner.startsWith('a_') ? 'gif' : 'png') : null,
-              accentColor: user.accent_color ? '#' + user.accent_color.toString(16).padStart(6, '0') : null,
-              accessToken: token
-            })
-          }).catch(function(err) {
-            console.warn('Could not persist session data:', err);
-          });
+        if (res.ok) {
+          const user = await res.json();
+          renderUserData(user);
+          updateNavHeader(user);
+        } else {
+          showIdConnectPrompt();
         }
-      } catch(e) {
-        console.warn('Could not fetch bot Firestore stats:', e);
+      } catch(err) {
+        console.error('Error fetching user profile details:', err);
+        showIdConnectPrompt();
       }
+    }
+
+    async function loadUserProfile() {
+      const activeId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
+      if (activeId && /^\d{5,25}$/.test(activeId)) {
+        fetchAndRenderProfile(activeId);
+      } else {
+        showIdConnectPrompt();
+      }
+    }
+
+    async function renderUserData(user) {
+      if (!user) return;
+      const displayName = user.displayName || user.username || 'Discord Member';
+      const username = '@' + (user.username || 'username');
+      const uId = user.userId || user.id || '1016322069093';
+
+      const nameEl = document.getElementById('userDisplayName');
+      if (nameEl) nameEl.innerText = displayName;
+
+      const tagEl = document.getElementById('userUsernameTag');
+      if (tagEl) tagEl.innerText = username + ' • ID: ' + uId;
+
+      // Avatar Parsing
+      const avatarEl = document.getElementById('profileAvatarImg');
+      if (avatarEl) {
+        let avatarUrl = user.avatar || 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+        if (!avatarUrl.startsWith('http')) {
+          const ext = avatarUrl.startsWith('a_') ? 'gif' : 'png';
+          avatarUrl = 'https://cdn.discordapp.com/avatars/' + uId + '/' + avatarUrl + '.' + ext + '?size=512';
+        }
+        avatarEl.src = avatarUrl;
+      }
+
+      // Banner Parsing
+      const bannerWrapper = document.getElementById('bannerWrapper');
+      const bannerImg = document.getElementById('profileBannerImg');
+      if (bannerWrapper && bannerImg) {
+        if (user.banner) {
+          let bannerUrl = user.banner;
+          if (!bannerUrl.startsWith('http')) {
+            const ext = bannerUrl.startsWith('a_') ? 'gif' : 'png';
+            bannerUrl = 'https://cdn.discordapp.com/banners/' + uId + '/' + bannerUrl + '.' + ext + '?size=1024';
+          }
+          bannerImg.src = bannerUrl;
+          bannerImg.style.display = 'block';
+        } else {
+          bannerWrapper.style.background = 'linear-gradient(135deg, #1E0638, #3B0A45, #660F45)';
+          bannerImg.style.display = 'none';
+        }
+      }
+
+      // Generate Signature & Stats
+      const bankVal = document.getElementById('bankSavingsVal');
+      if (bankVal) bankVal.innerText = formatMoney(user.bank !== undefined ? user.bank : 258590);
+
+      const walletVal = document.getElementById('walletCashVal');
+      if (walletVal) walletVal.innerText = formatMoney(user.balance !== undefined ? user.balance : 10000);
+
+      const lvl = user.level || 1;
+      const title = user.title || 'Acquaintance';
+      const lvlEl = document.getElementById('levelTitleVal');
+      if (lvlEl) lvlEl.innerText = 'Level ' + lvl + ' • ' + title;
+
+      const xp = user.xp || 0;
+      const nextLvlXp = lvl * 200;
+      const pct = Math.min(100, Math.floor((xp / nextLvlXp) * 100));
+      const xpFill = document.getElementById('xpProgressFill');
+      if (xpFill) xpFill.style.width = pct + '%';
+      const xpText = document.getElementById('xpTextSub');
+      if (xpText) xpText.innerText = 'XP Progress: ' + xp + ' / ' + nextLvlXp + ' XP (' + pct + '%)';
+
+      const sigEl = document.getElementById('sigTextDisplay');
+      if (sigEl) sigEl.innerText = user.signature || generateSignature(displayName, user.username);
+
+      if (user.isDailyPartner) {
+        const partnerBadge = document.getElementById('partnerBadgeChip');
+        if (partnerBadge) partnerBadge.style.display = 'inline-flex';
+      }
+
+      // Save user details into browser localStorage
+      saveLocalUserDetails(user, user);
     }
 
     function syncProfile() {
@@ -843,6 +825,8 @@ export const getProfileHtml = (client = null) => {
 
     function logoutDiscord() {
       clearAuthSession();
+      showIdConnectPrompt();
+    }
       showAccessDenied();
     }
 

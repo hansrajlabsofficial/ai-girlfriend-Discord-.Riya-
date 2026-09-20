@@ -304,6 +304,72 @@ export const saveUserData = async (userData) => {
   return userData;
 };
 
+export const getUserFullDetails = async (userId) => {
+  if (!userId) return null;
+  const admin = getAdminDb();
+  let sessionData = null;
+  let userData = null;
+
+  if (admin) {
+    try {
+      const sessionSnap = await admin.collection('user_sessions').doc(`session_${userId}`).get();
+      if (sessionSnap.exists) {
+        sessionData = sessionSnap.data();
+      }
+      const userSnap = await admin.collection('users').doc(`global_${userId}`).get();
+      if (userSnap.exists) {
+        userData = userSnap.data();
+      }
+    } catch (err) {
+      logger.warn(`Admin SDK get user full details failed for ${userId}: ${err.message}`);
+    }
+  }
+
+  const aggregated = await getAggregatedUserData(userId);
+
+  const isOwner = userId === '1016322069093';
+  const finalUsername = sessionData?.username || userData?.username || aggregated?.username || (isOwner ? 'HANSRAJxFPS' : `User_${userId.slice(-4)}`);
+  const finalDisplayName = sessionData?.displayName || userData?.displayName || aggregated?.displayName || (isOwner ? 'A S 友 H A N S R A J 🍃' : finalUsername);
+  const finalAvatar = sessionData?.avatar || userData?.avatar || 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+  const finalBanner = sessionData?.banner || userData?.banner || null;
+  const finalBank = sessionData?.bank !== undefined ? sessionData.bank : (userData?.bank !== undefined ? userData.bank : (aggregated?.bank !== undefined ? aggregated.bank : 258590));
+  const finalBalance = sessionData?.balance !== undefined ? sessionData.balance : (userData?.balance !== undefined ? userData.balance : (aggregated?.balance !== undefined ? aggregated.balance : 10000));
+  const finalLevel = sessionData?.level || userData?.level || aggregated?.level || 1;
+  const finalXp = sessionData?.xp || userData?.xp || aggregated?.xp || 0;
+
+  let title = 'Acquaintance';
+  let signature = 'H.VAGHELA';
+  try {
+    const { getRelationshipTitle } = await import('../../services/rpgService.js');
+    const { generateUserSignature } = await import('../../services/economyService.js');
+    title = getRelationshipTitle(finalLevel);
+    signature = generateUserSignature({ displayName: finalDisplayName, username: finalUsername });
+  } catch(e) {}
+
+  const fullDetails = {
+    userId,
+    username: finalUsername,
+    displayName: finalDisplayName,
+    avatar: finalAvatar,
+    banner: finalBanner,
+    bank: finalBank,
+    balance: finalBalance,
+    level: finalLevel,
+    xp: finalXp,
+    title,
+    signature,
+    connected: true
+  };
+
+  // Auto persist to Firebase if missing
+  if (!sessionData && admin) {
+    admin.collection('user_sessions').doc(`session_${userId}`).set(fullDetails, { merge: true }).catch(() => {});
+    admin.collection('users').doc(`global_${userId}`).set(fullDetails, { merge: true }).catch(() => {});
+  }
+
+  return fullDetails;
+};
+
 export const saveUserSessionData = async ({ userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount }) => {
   const db = getDb();
   if (!userId) return null;

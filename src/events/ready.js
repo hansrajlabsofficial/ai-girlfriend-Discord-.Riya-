@@ -10,27 +10,28 @@ export const execute = async (client) => {
   logger.info(`Logged in successfully as ${client.user.tag}! Riya is ready to chat! 💕`);
 
   const { commandsJSON } = await loadAllCommands();
-
   const rest = new REST({ version: '10' }).setToken(config.discordToken);
 
   try {
-    logger.info(`Started registering ${commandsJSON.length} application slash commands...`);
+    logger.info(`Cleanly registering ${commandsJSON.length} global slash commands...`);
+    
+    // 1. Register Global Application Commands (Single Source of Truth)
     await rest.put(
       Routes.applicationCommands(config.clientId),
       { body: commandsJSON }
     );
-    logger.info('Successfully registered all slash commands globally! ✨');
+    logger.info('Successfully registered all global slash commands cleanly! ✨');
 
-    // Also register per-guild for instant update without waiting for global cache propagation
+    // 2. Clear any duplicate per-guild command overrides to eliminate double command list in Discord UI
     for (const [guildId, guild] of client.guilds.cache) {
       try {
         await rest.put(
           Routes.applicationGuildCommands(config.clientId, guildId),
-          { body: commandsJSON }
+          { body: [] }
         );
-        logger.info(`Instantly registered slash commands for guild: ${guild.name} (${guildId}) ✨`);
+        logger.info(`Cleared per-guild command duplicates for server: ${guild.name} (${guildId}) ✨`);
       } catch (gErr) {
-        logger.error(`Failed to register slash commands for guild ${guildId}:`, gErr);
+        logger.error(`Failed to clear per-guild commands for guild ${guildId}:`, gErr);
       }
     }
   } catch (error) {

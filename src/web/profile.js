@@ -604,8 +604,59 @@ export const getProfileHtml = (client = null) => {
       localStorage.removeItem('discord_access_token');
       localStorage.removeItem('discord_auth');
       localStorage.removeItem('discord_user_cache');
+      localStorage.removeItem('discord_user_details');
+      localStorage.removeItem('discord_user_id');
+      localStorage.removeItem('discord_user_name');
+      localStorage.removeItem('discord_username');
+      localStorage.removeItem('discord_user_avatar');
+      localStorage.removeItem('discord_user_bank');
+      localStorage.removeItem('discord_user_balance');
+      localStorage.removeItem('discord_user_level');
+      localStorage.removeItem('discord_user_xp');
+      localStorage.removeItem('discord_user_title');
+      localStorage.removeItem('discord_user_signature');
       localStorage.removeItem('pre_login_redirect');
       localStorage.removeItem('skip_login');
+    }
+
+    function saveLocalUserDetails(user, stats = null) {
+      if (!user) return null;
+      const displayName = user.global_name || user.display_name || user.displayName || user.username || 'Discord Member';
+      const avatarExt = user.avatar ? (typeof user.avatar === 'string' && user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
+      const avatarUrl = user.avatar 
+        ? (user.avatar.startsWith('http') ? user.avatar : 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=512')
+        : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+
+      const details = {
+        userId: user.id || user.userId,
+        username: user.username,
+        displayName: displayName,
+        avatar: avatarUrl,
+        banner: user.banner ? (user.banner.startsWith('http') ? user.banner : 'https://cdn.discordapp.com/banners/' + user.id + '/' + user.banner + '.' + (user.banner.startsWith('a_') ? 'gif' : 'png')) : null,
+        accentColor: user.accent_color ? '#' + user.accent_color.toString(16).padStart(6, '0') : null,
+        bank: stats?.bank !== undefined ? stats.bank : Number(localStorage.getItem('discord_user_bank') || 0),
+        balance: stats?.balance !== undefined ? stats.balance : Number(localStorage.getItem('discord_user_balance') || 10000),
+        level: stats?.level !== undefined ? stats.level : Number(localStorage.getItem('discord_user_level') || 1),
+        xp: stats?.xp !== undefined ? stats.xp : Number(localStorage.getItem('discord_user_xp') || 0),
+        title: stats?.title || localStorage.getItem('discord_user_title') || 'Acquaintance',
+        signature: stats?.signature || localStorage.getItem('discord_user_signature') || '',
+        lastLoginAt: new Date().toISOString()
+      };
+
+      localStorage.setItem('discord_user_cache', JSON.stringify(details));
+      localStorage.setItem('discord_user_details', JSON.stringify(details));
+      if (details.userId) localStorage.setItem('discord_user_id', details.userId);
+      if (details.displayName) localStorage.setItem('discord_user_name', details.displayName);
+      if (details.username) localStorage.setItem('discord_username', details.username);
+      if (details.avatar) localStorage.setItem('discord_user_avatar', details.avatar);
+      if (details.bank !== undefined) localStorage.setItem('discord_user_bank', details.bank);
+      if (details.balance !== undefined) localStorage.setItem('discord_user_balance', details.balance);
+      if (details.level !== undefined) localStorage.setItem('discord_user_level', details.level);
+      if (details.xp !== undefined) localStorage.setItem('discord_user_xp', details.xp);
+      if (details.title) localStorage.setItem('discord_user_title', details.title);
+      if (details.signature) localStorage.setItem('discord_user_signature', details.signature);
+
+      return details;
     }
 
     function updateNavHeader(userCache = null) {
@@ -807,6 +858,9 @@ export const getProfileHtml = (client = null) => {
           if (stats.isDailyPartner) {
             document.getElementById('partnerBadgeChip').style.display = 'inline-flex';
           }
+
+          // Save complete user details & economy stats into browser localStorage
+          saveLocalUserDetails(user, stats);
 
           // Automatically persist full Discord profile and economy stats into Firebase Firestore
           const token = localStorage.getItem('discord_access_token');

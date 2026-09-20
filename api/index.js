@@ -149,11 +149,9 @@ app.get('/auth/callback', (req, res) => {
 
 app.get('/logout', (req, res) => {
   res.status(200).send(`<!DOCTYPE html><html><head><script>
-    localStorage.removeItem('discord_access_token');
-    localStorage.removeItem('discord_auth');
-    localStorage.removeItem('discord_user_cache');
-    localStorage.removeItem('pre_login_redirect');
-    localStorage.removeItem('skip_login');
+    ['discord_access_token', 'discord_auth', 'discord_user_cache', 'discord_user_details', 'discord_user_id', 'discord_user_name', 'discord_username', 'discord_user_avatar', 'discord_user_bank', 'discord_user_balance', 'discord_user_level', 'discord_user_xp', 'discord_user_title', 'discord_user_signature', 'pre_login_redirect', 'skip_login'].forEach(function(k) {
+      localStorage.removeItem(k);
+    });
     window.location.href = '/';
   </script></head><body>Logging out...</body></html>`);
 });

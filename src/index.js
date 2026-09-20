@@ -101,9 +101,18 @@ app.get('/logout', (req, res) => {
 
 app.get('/health', (req, res) => {
   const uptimeSec = Math.floor(process.uptime() || 0);
-  const hours = Math.floor(uptimeSec / 3600);
+  const days = Math.floor(uptimeSec / 86400);
+  const hours = Math.floor((uptimeSec % 86400) / 3600);
   const minutes = Math.floor((uptimeSec % 3600) / 60);
-  const uptimeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  const seconds = Math.floor(uptimeSec % 60);
+
+  const parts = [];
+  if (days > 0) parts.push(`${days}d`);
+  if (hours > 0 || days > 0) parts.push(`${hours}h`);
+  if (minutes > 0 || hours > 0 || days > 0) parts.push(`${minutes}m`);
+  parts.push(`${seconds}s`);
+
+  const uptimeStr = parts.join(' ');
   res.status(200).json({
     status: 'online',
     uptime: uptimeSec,

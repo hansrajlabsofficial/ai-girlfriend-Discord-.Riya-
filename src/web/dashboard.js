@@ -7,7 +7,12 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
   const serverCount = client?.guilds?.cache?.size || 12;
   const userCount = client?.users?.cache?.size || 1500;
-  const uptimeHours = Math.floor((process.uptime() || 3600) / 3600);
+  const uptimeSec = Math.floor(process.uptime() || 0);
+  const uDays = Math.floor(uptimeSec / 86400);
+  const uHours = Math.floor((uptimeSec % 86400) / 3600);
+  const uMins = Math.floor((uptimeSec % 3600) / 60);
+  const uSecs = Math.floor(uptimeSec % 60);
+  const uptimeFormatted = uDays > 0 ? `${uDays}d ${uHours}h ${uMins}m ${uSecs}s` : (uHours > 0 ? `${uHours}h ${uMins}m ${uSecs}s` : (uMins > 0 ? `${uMins}m ${uSecs}s` : `${uSecs}s`));
 
   const guildsList = client?.guilds?.cache?.map(g => ({
     id: g.id,
@@ -513,7 +518,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
           <div class="stat-label">Commands Available</div>
         </div>
         <div class="stat-card">
-          <div id="statUptime" class="stat-number">${uptimeHours}h</div>
+          <div id="statUptime" class="stat-number">${uptimeFormatted}</div>
           <div class="stat-label">Uptime</div>
         </div>
       </div>
@@ -1185,6 +1190,23 @@ export const getDashboardHtml = (client = null, authData = null) => {
       initDiscordOAuth();
     }
 
+    let clientUptimeSec = null;
+
+    function formatUptime(uptimeSec) {
+      const days = Math.floor(uptimeSec / 86400);
+      const hours = Math.floor((uptimeSec % 86400) / 3600);
+      const minutes = Math.floor((uptimeSec % 3600) / 60);
+      const seconds = Math.floor(uptimeSec % 60);
+
+      const parts = [];
+      if (days > 0) parts.push(days + 'd');
+      if (hours > 0 || days > 0) parts.push(hours + 'h');
+      if (minutes > 0 || hours > 0 || days > 0) parts.push(minutes + 'm');
+      parts.push(seconds + 's');
+
+      return parts.join(' ');
+    }
+
     async function updateRealTimeStats() {
       try {
         const res = await fetch('/health');
@@ -1199,8 +1221,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
           if (document.getElementById('statCommandCount')) {
             document.getElementById('statCommandCount').innerText = (data.commands || 85) + '+';
           }
-          if (document.getElementById('statUptime')) {
-            document.getElementById('statUptime').innerText = data.uptimeFormatted || '1h';
+          if (typeof data.uptime === 'number') {
+            clientUptimeSec = data.uptime;
+            if (document.getElementById('statUptime')) {
+              document.getElementById('statUptime').innerText = formatUptime(clientUptimeSec);
+            }
           }
         }
       } catch(e) {
@@ -1211,7 +1236,17 @@ export const getDashboardHtml = (client = null, authData = null) => {
     window.addEventListener('DOMContentLoaded', function() {
       initDiscordOAuth();
       updateRealTimeStats();
-      setInterval(updateRealTimeStats, 30000);
+      setInterval(updateRealTimeStats, 10000);
+
+      setInterval(function() {
+        if (clientUptimeSec !== null) {
+          clientUptimeSec++;
+          const el = document.getElementById('statUptime');
+          if (el) {
+            el.innerText = formatUptime(clientUptimeSec);
+          }
+        }
+      }, 1000);
     });
   </script>
 </body>

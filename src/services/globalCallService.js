@@ -1,7 +1,16 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getUserData } from '../database/models/User.js';
 import { getBalance, hasBalance, deductBalance, addBalance, formatMoney } from './economyService.js';
+
+export const createCallEndButtonRow = () => {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('btn_globalcall_end')
+      .setLabel('📵 End Call')
+      .setStyle(ButtonStyle.Danger)
+  );
+};
 
 // Global Call State Store
 let waitingLine = null; // { guildId, channelId, userId, guildName, timestamp }
@@ -183,14 +192,14 @@ export const startGlobalCall = async (interaction) => {
       .setFooter({ text: 'Riya Inter-Server Hotline Engine ☕✨' });
 
     // Reply to current caller
-    await interaction.reply({ embeds: [embedA] });
+    await interaction.reply({ embeds: [embedA], components: [createCallEndButtonRow()] });
 
     // Send connection notice to peer channel
     try {
       const peerChannel = interaction.client.channels.cache.get(peer.channelId) ||
         await interaction.client.channels.fetch(peer.channelId).catch(() => null);
       if (peerChannel) {
-        await peerChannel.send({ embeds: [embedB] });
+        await peerChannel.send({ embeds: [embedB], components: [createCallEndButtonRow()] });
       }
     } catch (err) {
       logger.warn(`Failed to send call connected embed to peer channel: ${err.message}`);
@@ -221,7 +230,7 @@ export const startGlobalCall = async (interaction) => {
     )
     .setFooter({ text: 'Riya Inter-Server Hotline Engine ☕✨' });
 
-  return await interaction.reply({ embeds: [dialEmbed] });
+  return await interaction.reply({ embeds: [dialEmbed], components: [createCallEndButtonRow()] });
 };
 
 export const hangupGlobalCall = async (interaction) => {
@@ -309,9 +318,9 @@ export const getCallStatus = async (interaction) => {
         `🤝 **Connected Server:** **${call.peerGuildName}**\n` +
         `⏱️ **Call Duration:** **${mins}m ${secs}s**\n` +
         `💵 **Active Rate:** $10/min\n\n` +
-        `📵 Type \`/globalcall hangup\` to end the call.`
+        `📵 Click **End Call** button below or type \`/globalcall hangup\` to end the call.`
       );
-    return await interaction.reply({ embeds: [embed] });
+    return await interaction.reply({ embeds: [embed], components: [createCallEndButtonRow()] });
   }
 
   if (waitingLine && waitingLine.guildId === guildId) {
@@ -319,7 +328,7 @@ export const getCallStatus = async (interaction) => {
       .setTitle('📞 Global Hotline Status')
       .setColor('#FFD700')
       .setDescription('🟡 **Status:** Dialing... Waiting for another server to pick up!');
-    return await interaction.reply({ embeds: [embed] });
+    return await interaction.reply({ embeds: [embed], components: [createCallEndButtonRow()] });
   }
 
   return await interaction.reply({

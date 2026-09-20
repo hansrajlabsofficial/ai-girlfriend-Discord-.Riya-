@@ -1,6 +1,9 @@
 import { logger } from '../utils/logger.js';
 import { loadAllCommands } from '../utils/commandLoader.js';
 
+import { hangupGlobalCall } from '../services/globalCallService.js';
+import { hangupGlobalPrivateCall } from '../services/globalPrivateCallService.js';
+
 let commandsCache = null;
 
 export const name = 'interactionCreate';
@@ -11,7 +14,19 @@ export const execute = async (interaction) => {
     commandsCache = commandsMap;
   }
 
-  // 1. Handle Slash Chat Input Commands
+  // 1. Handle Button Component Interactions
+  if (interaction.isButton()) {
+    if (interaction.customId === 'btn_globalcall_end') {
+      await hangupGlobalCall(interaction);
+      return;
+    }
+    if (interaction.customId === 'btn_globalprivcall_end') {
+      await hangupGlobalPrivateCall(interaction);
+      return;
+    }
+  }
+
+  // 2. Handle Slash Chat Input Commands
   if (interaction.isChatInputCommand()) {
     const command = commandsCache.get(interaction.commandName);
     if (!command) {
@@ -32,7 +47,7 @@ export const execute = async (interaction) => {
     return;
   }
 
-  // 2. Handle Unhandled Component Interactions (Expired Buttons / Menus)
+  // 3. Handle Unhandled Component Interactions (Expired Buttons / Menus)
   if (interaction.isButton() || interaction.isStringSelectMenu()) {
     // If a button click wasn't consumed by an active collector within 2.5s, give friendly response
     setTimeout(async () => {

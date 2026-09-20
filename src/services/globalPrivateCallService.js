@@ -1,7 +1,16 @@
-import { EmbedBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { logger } from '../utils/logger.js';
 import { getUserData } from '../database/models/User.js';
 import { getBalance, hasBalance, deductBalance, addBalance, formatMoney } from './economyService.js';
+
+export const createPrivateCallEndButtonRow = () => {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId('btn_globalprivcall_end')
+      .setLabel('📵 End Call')
+      .setStyle(ButtonStyle.Danger)
+  );
+};
 
 // Global Private Call State Store
 let privateWaitingLine = null; // { userId, guildId, timestamp }
@@ -168,20 +177,20 @@ export const startGlobalPrivateCall = async (interaction) => {
       .setFooter({ text: 'Riya Private DM Hotline Engine ☕✨' });
 
     // Reply to current caller interaction
-    await interaction.reply({ embeds: [embedB] });
+    await interaction.reply({ embeds: [embedB], components: [createPrivateCallEndButtonRow()] });
 
     // Send DMs to both users
     try {
       const userAObj = interaction.client.users.cache.get(peer.userId) ||
         await interaction.client.users.fetch(peer.userId).catch(() => null);
-      if (userAObj) await userAObj.send({ embeds: [embedA] }).catch(() => {});
+      if (userAObj) await userAObj.send({ embeds: [embedA], components: [createPrivateCallEndButtonRow()] }).catch(() => {});
     } catch (err) {
       logger.warn(`Failed to send private call DM to user A: ${err.message}`);
     }
 
     try {
       const userBObj = interaction.user;
-      if (userBObj) await userBObj.send({ embeds: [embedB] }).catch(() => {});
+      if (userBObj) await userBObj.send({ embeds: [embedB], components: [createPrivateCallEndButtonRow()] }).catch(() => {});
     } catch (err) {
       logger.warn(`Failed to send private call DM to user B: ${err.message}`);
     }
@@ -209,7 +218,7 @@ export const startGlobalPrivateCall = async (interaction) => {
     )
     .setFooter({ text: 'Riya Private DM Hotline Engine ☕✨' });
 
-  return await interaction.reply({ embeds: [dialEmbed] });
+  return await interaction.reply({ embeds: [dialEmbed], components: [createPrivateCallEndButtonRow()] });
 };
 
 export const hangupGlobalPrivateCall = async (interaction) => {
@@ -294,9 +303,9 @@ export const getPrivateCallStatus = async (interaction) => {
         `🤝 **Connected User:** <@${call.peerUserId}>\n` +
         `⏱️ **Call Duration:** **${mins}m ${secs}s**\n` +
         `💵 **Active Rate:** $10/min\n\n` +
-        `📵 Type \`/globalprivatecall hangup\` or \`xprivhangup\` to end the call.`
+        `📵 Click **End Call** button below or type \`/globalprivatecall hangup\` to end the call.`
       );
-    return await interaction.reply({ embeds: [embed] });
+    return await interaction.reply({ embeds: [embed], components: [createPrivateCallEndButtonRow()] });
   }
 
   if (privateWaitingLine && privateWaitingLine.userId === userId) {
@@ -304,7 +313,7 @@ export const getPrivateCallStatus = async (interaction) => {
       .setTitle('🔒 Private Hotline Status')
       .setColor('#FFD700')
       .setDescription('🟡 **Status:** Dialing... Waiting for another user to pick up!');
-    return await interaction.reply({ embeds: [embed] });
+    return await interaction.reply({ embeds: [embed], components: [createPrivateCallEndButtonRow()] });
   }
 
   return await interaction.reply({

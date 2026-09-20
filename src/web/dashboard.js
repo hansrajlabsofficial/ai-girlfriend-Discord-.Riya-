@@ -1141,8 +1141,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
       grid.innerHTML = '<div style="width: 100%; text-align: center; padding: 1.5rem; background: rgba(88, 101, 242, 0.1); border: 1px dashed rgba(88, 101, 242, 0.4); border-radius: 16px; margin-bottom: 1rem;">' +
         '<h4 style="font-size: 1.1rem; color: #5865F2; margin-bottom: 0.5rem;">🔑 Connect Your Discord Account</h4>' +
-        '<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Click below to log in with Discord and load your admin servers into the server picker.</p>' +
-        '<a href="' + oauthUrl + '" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem;">Login with Discord OAuth2</a>' +
+        '<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Log in with Discord to load your servers into the picker, or skip login to continue exploring.</p>' +
+        '<div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">' +
+          '<a href="' + oauthUrl + '" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #5865F2; text-decoration: none;">Login with Discord OAuth2</a>' +
+          '<a href="/login" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: #FFF; text-decoration: none;">⚡ Skip Login (Guest)</a>' +
+        '</div>' +
       '</div>' +
       '<div class="server-picker-item" onclick="window.open(\'' + inviteUrl + '\', \'_blank\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; opacity: 0.85; transition: opacity 0.2s ease;">' +
         '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 20, 147, 0.6); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 20, 147, 0.1); transition: all 0.2s ease;">' +

@@ -9,6 +9,7 @@ import * as interactionCreateEvent from './events/interactionCreate.js';
 import * as messageCreateEvent from './events/messageCreate.js';
 
 import { getDashboardHtml } from './web/dashboard.js';
+import { getLoginHtml } from './web/login.js';
 import { getGuildConfig, saveGuildConfig } from './database/models/GuildConfig.js';
 import { saveUserSessionData } from './database/models/User.js';
 
@@ -88,6 +89,10 @@ app.post('/api/user/session', async (req, res) => {
 
 app.get('/', (req, res) => {
   res.status(200).send(getDashboardHtml(client));
+});
+
+app.get('/login', (req, res) => {
+  res.status(200).send(getLoginHtml());
 });
 
 app.get('/dashboard', (req, res) => {

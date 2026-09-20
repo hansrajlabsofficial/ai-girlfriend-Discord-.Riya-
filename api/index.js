@@ -1,6 +1,7 @@
 import express from 'express';
 import { config } from '../src/config.js';
 import { getDashboardHtml } from '../src/web/dashboard.js';
+import { getLoginHtml } from '../src/web/login.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
 import { saveUserSessionData } from '../src/database/models/User.js';
@@ -54,6 +55,10 @@ app.post('/api/guilds/:guildId/config', async (req, res) => {
 
 app.get('/', (req, res) => {
   res.status(200).send(getDashboardHtml(null));
+});
+
+app.get('/login', (req, res) => {
+  res.status(200).send(getLoginHtml());
 });
 
 app.get('/dashboard', (req, res) => {

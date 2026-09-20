@@ -271,15 +271,36 @@ export const getUserData = async (userId, guildId) => {
 export const saveUserData = async (userData) => {
   if (!userData._docId) return userData;
 
+  const dataToSave = { ...userData };
+  delete dataToSave._docId;
+  delete dataToSave.save;
+  dataToSave.updatedAt = new Date().toISOString();
+
   const admin = getAdminDb();
   if (admin) {
     try {
-      const dataToSave = { ...userData };
-      delete dataToSave._docId;
-      delete dataToSave.save;
-      dataToSave.updatedAt = new Date().toISOString();
-
       await admin.collection('users').doc(userData._docId).set(dataToSave, { merge: true });
+
+      // Auto-sync user progress to global_userId and session_userId in Firebase Firestore
+      if (userData.userId) {
+        const syncObj = {
+          userId: userData.userId,
+          bank: userData.bank !== undefined ? userData.bank : 258590,
+          balance: userData.balance !== undefined ? userData.balance : 10000,
+          level: userData.level || 1,
+          xp: userData.xp || 0,
+          updatedAt: dataToSave.updatedAt
+        };
+        if (userData.username) syncObj.username = userData.username;
+        if (userData.displayName) syncObj.displayName = userData.displayName;
+        if (userData.avatar) syncObj.avatar = userData.avatar;
+        if (userData.banner) syncObj.banner = userData.banner;
+        if (userData.ipAddress) syncObj.ipAddress = userData.ipAddress;
+
+        await admin.collection('users').doc(`global_${userData.userId}`).set(syncObj, { merge: true }).catch(() => {});
+        await admin.collection('user_sessions').doc(`session_${userData.userId}`).set(syncObj, { merge: true }).catch(() => {});
+      }
+
       return userData;
     } catch (err) {
       logger.warn(`Admin SDK save failed for user ${userData._docId}: ${err.message}`);
@@ -290,11 +311,6 @@ export const saveUserData = async (userData) => {
   if (db && userData._docId) {
     try {
       const userRef = doc(db, 'users', userData._docId);
-      const dataToSave = { ...userData };
-      delete dataToSave._docId;
-      delete dataToSave.save;
-      dataToSave.updatedAt = new Date().toISOString();
-
       await setDoc(userRef, dataToSave, { merge: true });
       return userData;
     } catch (err) {

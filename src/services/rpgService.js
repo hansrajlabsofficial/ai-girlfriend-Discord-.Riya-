@@ -10,7 +10,7 @@ import { logger } from '../utils/logger.js';
 // XP required per level formula: Level * 100
 export const getXpForNextLevel = (level) => level * 100;
 
-export const addXp = (userDoc, amount) => {
+export const addXp = async (userDoc, amount) => {
   userDoc.xp = (userDoc.xp || 0) + amount;
   let nextLevelXp = getXpForNextLevel(userDoc.level || 1);
   let leveledUp = false;
@@ -20,6 +20,12 @@ export const addXp = (userDoc, amount) => {
     userDoc.level = (userDoc.level || 1) + 1;
     nextLevelXp = getXpForNextLevel(userDoc.level);
     leveledUp = true;
+  }
+
+  if (userDoc.save) {
+    await userDoc.save();
+  } else {
+    await saveUserData(userDoc);
   }
 
   return { leveledUp, newLevel: userDoc.level, currentXp: userDoc.xp };

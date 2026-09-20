@@ -17,3 +17,6 @@ yarn-error.log*
 # Operating system files
 .DS_Store
 Thumbs.db
+
+# Scratch & temporary test scripts
+scratch/

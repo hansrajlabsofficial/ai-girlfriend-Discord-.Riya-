@@ -72,7 +72,10 @@ const COMMAND_ALIASES = {
   'bind': 'select_channel',
   'config': 'settings',
   'lang': 'language',
-  'info': 'about'
+  'info': 'about',
+  'globalchat': 'setup_global',
+  'setupglobal': 'setup_global',
+  'setup_global': 'setup_global'
 };
 
 function parseAmountToken(token) {

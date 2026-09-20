@@ -11,6 +11,7 @@ import { logger } from '../utils/logger.js';
 import { addBalance, formatMoney } from '../services/economyService.js';
 import { addFriendXp } from '../services/friendService.js';
 import { handlePrefixCommand } from '../utils/prefixAdapter.js';
+import { handleGlobalChatBroadcast } from '../services/globalChatService.js';
 
 export const name = 'messageCreate';
 
@@ -31,7 +32,11 @@ export const execute = async (message) => {
     processedMessages.delete(firstItem);
   }
 
-  // 2. Process Prefix Commands (e.g. xhelp, xdaily, xcard_drop, xbank_balance, k!help, etc.)
+  // 2. Global Chat Inter-Server Broadcast Check
+  const isGlobalBroadcast = await handleGlobalChatBroadcast(message);
+  if (isGlobalBroadcast) return;
+
+  // 3. Process Prefix Commands (e.g. xhelp, xdaily, xcard_drop, xbank_balance, k!help, etc.)
   const isPrefixCmd = await handlePrefixCommand(message);
   if (isPrefixCmd) return;
 

@@ -1,9 +1,38 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { getDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
 // In-memory fallback
 const memoryFallbackGuilds = new Map();
+
+export const getAllGlobalChatChannels = async () => {
+  const channelsMap = new Map();
+
+  // 1. Check memory fallback
+  for (const [gId, conf] of memoryFallbackGuilds.entries()) {
+    if (conf.globalChatChannelId) {
+      channelsMap.set(gId, conf.globalChatChannelId);
+    }
+  }
+
+  // 2. Check Firestore DB
+  const db = getDb();
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'guilds'));
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.guildId && data.globalChatChannelId) {
+          channelsMap.set(data.guildId, data.globalChatChannelId);
+        }
+      });
+    } catch (err) {
+      logger.warn(`Failed to fetch global chat channels from Firestore: ${err.message}`);
+    }
+  }
+
+  return Array.from(channelsMap.entries()).map(([guildId, channelId]) => ({ guildId, channelId }));
+};
 
 export const getGuildConfig = async (guildId) => {
   const db = getDb();
@@ -17,6 +46,7 @@ export const getGuildConfig = async (guildId) => {
         const data = guildSnap.data();
         data._guildId = guildId;
         data.boundChannelId = data.boundChannelId || null;
+        data.globalChatChannelId = data.globalChatChannelId || null;
         data.emojiquizChannelId = data.emojiquizChannelId || null;
         data.antonymquizChannelId = data.antonymquizChannelId || null;
         data.countingChannelId = data.countingChannelId || null;

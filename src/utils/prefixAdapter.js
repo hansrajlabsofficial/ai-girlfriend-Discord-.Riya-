@@ -75,7 +75,11 @@ const COMMAND_ALIASES = {
   'info': 'about',
   'globalchat': 'setup_global',
   'setupglobal': 'setup_global',
-  'setup_global': 'setup_global'
+  'setup_global': 'setup_global',
+  'call': 'globalcall',
+  'phone': 'globalcall',
+  'hangup': 'globalcall',
+  'globalcall': 'globalcall'
 };
 
 function parseAmountToken(token) {

@@ -12,6 +12,7 @@ import { addBalance, formatMoney } from '../services/economyService.js';
 import { addFriendXp } from '../services/friendService.js';
 import { handlePrefixCommand } from '../utils/prefixAdapter.js';
 import { handleGlobalChatBroadcast } from '../services/globalChatService.js';
+import { handleGlobalCallRelay } from '../services/globalCallService.js';
 
 export const name = 'messageCreate';
 
@@ -32,7 +33,11 @@ export const execute = async (message) => {
     processedMessages.delete(firstItem);
   }
 
-  // 2. Global Chat Inter-Server Broadcast Check
+  // 2. Global Call Hotline Live Bridge Check
+  const isCallRelay = await handleGlobalCallRelay(message);
+  if (isCallRelay) return;
+
+  // 3. Global Chat Inter-Server Broadcast Check
   const isGlobalBroadcast = await handleGlobalChatBroadcast(message);
   if (isGlobalBroadcast) return;
 

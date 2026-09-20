@@ -57,11 +57,69 @@ app.get('/connect', (req, res) => {
   res.redirect(oauthConnectUrl);
 });
 
-app.get('/auth/callback', (req, res) => {
+app.get('/auth/callback', async (req, res) => {
   const code = req.query.code;
   if (!code) {
     return res.redirect('/');
   }
+
+  try {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+    const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
+    const redirectUri = `${protocol}://${host}/auth/callback`;
+
+    const tokenResponse = await fetch('https://discord.com/api/v10/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: config.clientId || '',
+        client_secret: process.env.CLIENT_SECRET || '',
+        grant_type: 'authorization_code',
+        code: code,
+        redirect_uri: redirectUri
+      })
+    });
+
+    if (tokenResponse.ok) {
+      const tokenData = await tokenResponse.json();
+      const accessToken = tokenData.access_token;
+
+      const userRes = await fetch('https://discord.com/api/v10/users/@me', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const userData = userRes.ok ? await userRes.json() : null;
+
+      const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+        headers: { Authorization: `Bearer ${accessToken}` }
+      });
+      const guildsData = guildsRes.ok ? await guildsRes.json() : [];
+
+      const userAdminGuilds = guildsData.filter(g => {
+        const perms = BigInt(g.permissions || '0');
+        const isAdmin = (perms & 0x8n) === 0x8n;
+        const isManageGuild = (perms & 0x20n) === 0x20n;
+        return g.owner || isAdmin || isManageGuild;
+      }).map(g => {
+        return {
+          id: g.id,
+          name: g.name,
+          icon: g.icon ? `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.png` : 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+          memberCount: 'Admin Authorized',
+          botActive: true
+        };
+      });
+
+      return res.status(200).send(getDashboardHtml(null, {
+        connected: true,
+        user: userData,
+        username: userData?.global_name || userData?.username || 'Authorized Discord User',
+        userGuilds: userAdminGuilds
+      }));
+    }
+  } catch (err) {
+    console.error('Error in Vercel OAuth callback:', err);
+  }
+
   res.status(200).send(getDashboardHtml(null, { connected: true, code }));
 });
 

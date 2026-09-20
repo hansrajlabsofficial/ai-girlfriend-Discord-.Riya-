@@ -14,9 +14,22 @@ import { handlePrefixCommand } from '../utils/prefixAdapter.js';
 
 export const name = 'messageCreate';
 
+// In-memory set to prevent double replies to the same message
+const processedMessages = new Set();
+
 export const execute = async (message) => {
   // 1. Ignore all messages sent by bots
   if (message.author.bot) return;
+
+  // Deduplication Check: Prevent double reply to the same message ID
+  if (processedMessages.has(message.id)) return;
+  processedMessages.add(message.id);
+
+  // Keep cache lightweight (max 500 recent message IDs)
+  if (processedMessages.size > 500) {
+    const firstItem = processedMessages.values().next().value;
+    processedMessages.delete(firstItem);
+  }
 
   // 2. Process Prefix Commands (e.g. xhelp, xdaily, xcard_drop, xbank_balance, k!help, etc.)
   const isPrefixCmd = await handlePrefixCommand(message);

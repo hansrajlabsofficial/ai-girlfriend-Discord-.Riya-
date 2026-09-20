@@ -5,7 +5,7 @@ import { getLoginHtml } from '../src/web/login.js';
 import { getProfileHtml } from '../src/web/profile.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
-import { saveUserSessionData, getUserData } from '../src/database/models/User.js';
+import { saveUserSessionData, getUserData, getAggregatedUserData } from '../src/database/models/User.js';
 import { getRealBotGuilds } from '../src/services/guildService.js';
 import { getRelationshipTitle } from '../src/services/rpgService.js';
 import { generateUserSignature } from '../src/services/economyService.js';
@@ -36,7 +36,7 @@ app.get('/api/guilds', async (req, res) => {
 app.get('/api/user/:userId/profile', async (req, res) => {
   const { userId } = req.params;
   try {
-    const userDoc = await getUserData(userId, 'global');
+    const userDoc = await getAggregatedUserData(userId);
     const level = userDoc.level || 1;
     const title = getRelationshipTitle(level);
     const sig = generateUserSignature({ displayName: userDoc.username || 'Member', username: userDoc.username });

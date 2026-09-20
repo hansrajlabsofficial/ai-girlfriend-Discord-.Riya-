@@ -43,6 +43,57 @@ export const getGlobalTopBankUsers = async (topLimit = 10) => {
   return sorted.slice(0, topLimit);
 };
 
+export const getAggregatedUserData = async (userId) => {
+  if (!userId) return null;
+  let highestUser = null;
+  let maxScore = -1;
+
+  // 1. Search memory fallback
+  for (const [key, user] of memoryFallbackUsers.entries()) {
+    if (user.userId === userId || key.endsWith(`:${userId}`)) {
+      const bank = user.bank || 0;
+      const balance = user.balance !== undefined ? user.balance : 10000;
+      const score = bank + balance + ((user.level || 1) * 100000) + (user.xp || 0);
+      if (score > maxScore) {
+        maxScore = score;
+        highestUser = user;
+      }
+    }
+  }
+
+  // 2. Search Firestore
+  const db = getDb();
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      snap.forEach(docSnap => {
+        const u = docSnap.data();
+        if (u.userId === userId || docSnap.id.endsWith(`_${userId}`)) {
+          const bank = u.bank || 0;
+          const balance = u.balance !== undefined ? u.balance : 10000;
+          const score = bank + balance + ((u.level || 1) * 100000) + (u.xp || 0);
+          if (score > maxScore) {
+            maxScore = score;
+            highestUser = u;
+          }
+        }
+      });
+    } catch (err) {
+      logger.warn(`Firestore getDocs failed for aggregated user ${userId}: ${err.message}`);
+    }
+  }
+
+  if (highestUser) {
+    highestUser.balance = highestUser.balance !== undefined ? highestUser.balance : 10000;
+    highestUser.bank = highestUser.bank !== undefined ? highestUser.bank : 0;
+    highestUser.level = highestUser.level || 1;
+    highestUser.xp = highestUser.xp || 0;
+    return highestUser;
+  }
+
+  return await getUserData(userId, 'global');
+};
+
 export const getUserData = async (userId, guildId) => {
   const db = getDb();
   const docId = `${guildId}_${userId}`;

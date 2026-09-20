@@ -617,7 +617,7 @@ export const getProfileHtml = (client = null) => {
 
       if (!token) {
         document.getElementById('unauthBanner').style.display = 'block';
-        loadFallbackProfile('118118716435000000');
+        loadFallbackProfile('118118716435');
         return;
       }
 
@@ -629,7 +629,7 @@ export const getProfileHtml = (client = null) => {
         if (res.status === 401) {
           localStorage.removeItem('discord_access_token');
           document.getElementById('unauthBanner').style.display = 'block';
-          loadFallbackProfile('118118716435000000');
+          loadFallbackProfile('118118716435');
           return;
         }
 
@@ -698,6 +698,10 @@ export const getProfileHtml = (client = null) => {
           document.getElementById('xpProgressFill').style.width = pct + '%';
           document.getElementById('xpTextSub').innerText = 'XP Progress: ' + xp + ' / ' + nextLvlXp + ' XP (' + pct + '%)';
 
+          if (stats.signature) {
+            document.getElementById('sigTextDisplay').innerText = stats.signature;
+          }
+
           if (stats.isDailyPartner) {
             document.getElementById('partnerBadgeChip').style.display = 'inline-flex';
           }
@@ -709,7 +713,7 @@ export const getProfileHtml = (client = null) => {
 
     function loadFallbackProfile(userId) {
       renderUserData({
-        id: userId,
+        id: userId || '118118716435',
         username: 'hansraj1',
         global_name: 'A S H A N S R A J',
         avatar: null,

@@ -38,30 +38,7 @@ export default function DiscordServerDashboard() {
       setServers(data.guilds || []);
     } catch (err) {
       setError(err.message || 'Error loading servers');
-      // Fallback mock data for preview/demonstration if API is unavailable
-      setServers([
-        {
-          id: '123456789012345678',
-          name: 'Riya AI Official Community',
-          icon: 'https://cdn-icons-png.flaticon.com/512/3081/3081840.png',
-          memberCount: 1540,
-          config: { prefix: 'x', aiPersona: 'amdavadi', language: 'en' }
-        },
-        {
-          id: '987654321098765432',
-          name: 'Amdavadi Gaming Lounge',
-          icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
-          memberCount: 420,
-          config: { prefix: '!', aiPersona: 'flirty', language: 'gu' }
-        },
-        {
-          id: '555444333222111000',
-          name: 'Anime Karuta & Casino Haven',
-          icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
-          memberCount: 890,
-          config: { prefix: 'k!', aiPersona: 'tsundere', language: 'en' }
-        }
-      ]);
+      setServers([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

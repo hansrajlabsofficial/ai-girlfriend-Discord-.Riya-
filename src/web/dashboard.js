@@ -13,12 +13,9 @@ export const getDashboardHtml = (client = null, authData = null) => {
     id: g.id,
     name: g.name,
     icon: g.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
-    memberCount: g.memberCount
-  })) || [
-    { id: '123456789012345678', name: 'Riya AI Official Community', icon: 'https://cdn-icons-png.flaticon.com/512/3081/3081840.png', memberCount: 1540 },
-    { id: '987654321098765432', name: 'Amdavadi Gaming Lounge', icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png', memberCount: 420 },
-    { id: '555444333222111000', name: 'Anime Karuta & Casino Haven', icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png', memberCount: 890 }
-  ];
+    memberCount: g.memberCount,
+    botActive: true
+  })) || [];
 
   return `<!DOCTYPE html>
 <html lang="en">

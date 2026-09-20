@@ -930,7 +930,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
   <!-- Footer -->
   <footer>
-    <p>© 2026 Riya AI Bot • Built with Node.js & Discord.js • All Rights Reserved</p>
+    <p>© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.</p>
   </footer>
 
   <script>

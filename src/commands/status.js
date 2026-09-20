@@ -1,4 +1,5 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionFlagsBits } from 'discord.js';
+import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
 
 function formatUptime(uptimeSec) {
   const sec = Math.floor(uptimeSec % 60);
@@ -64,13 +65,102 @@ export function buildStatusEmbed(client) {
 
 export const data = new SlashCommandBuilder()
   .setName('status')
-  .setDescription('Check 24/7 live bot online status, uptime, connected server count & dashboard link');
+  .setDescription('24/7 Live bot status, uptime, connected servers, enable/disable & channel setup')
+  .addStringOption(option =>
+    option.setName('action')
+      .setDescription('Action to perform (view, enable, disable, setchannel)')
+      .setRequired(false)
+      .addChoices(
+        { name: '👁️ View Live Status', value: 'view' },
+        { name: '✅ Enable 24/7 Live Auto-Update', value: 'enable' },
+        { name: '❌ Disable 24/7 Live Auto-Update', value: 'disable' },
+        { name: '📌 Set 24/7 Status Channel', value: 'setchannel' }
+      )
+  )
+  .addChannelOption(option =>
+    option.setName('channel')
+      .setDescription('Text channel for 24/7 live status monitoring')
+      .addChannelTypes(ChannelType.GuildText)
+      .setRequired(false)
+  );
 
 export const execute = async (interaction) => {
+  const guildConfig = await getGuildConfig(interaction.guildId);
+  const action = interaction.options?.getString('action') || 'view';
+  const targetChannel = interaction.options?.getChannel('channel');
+
+  if (action === 'setchannel') {
+    if (interaction.member && interaction.member.permissions && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need **Manage Channels** or **Administrator** permissions to configure the 24/7 status channel.', flags: 64 });
+    }
+
+    const chan = targetChannel || interaction.channel;
+    guildConfig.statusChannelId = chan.id;
+    guildConfig.status247Enabled = true;
+    guildConfig.statusMessageId = null;
+    await saveGuildConfig(guildConfig);
+
+    const statusData = buildStatusEmbed(interaction.client);
+    const sentMsg = await chan.send(statusData).catch(() => null);
+    if (sentMsg) {
+      guildConfig.statusMessageId = sentMsg.id;
+      await saveGuildConfig(guildConfig);
+    }
+
+    const embed = new EmbedBuilder()
+      .setColor('#00FF7F')
+      .setTitle('📌 24/7 Live Status Channel Configured!')
+      .setDescription(
+        `✅ Successfully set <#${chan.id}> as the official **24/7 Live Status Monitor Channel**!\n\n` +
+        `Riya Bot will now automatically edit and update the live status message in <#${chan.id}> 24/7 every 30 seconds!`
+      )
+      .setFooter({ text: 'Riya Official 24/7 Status Monitor System • AHP Group' });
+
+    return interaction.reply({ embeds: [embed] });
+  }
+
+  if (action === 'enable') {
+    if (interaction.member && interaction.member.permissions && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need **Manage Channels** or **Administrator** permissions to toggle 24/7 status monitoring.', flags: 64 });
+    }
+
+    const chanId = guildConfig.statusChannelId || interaction.channelId;
+    guildConfig.statusChannelId = chanId;
+    guildConfig.status247Enabled = true;
+    await saveGuildConfig(guildConfig);
+
+    const chan = interaction.client.channels.cache.get(chanId);
+    if (chan) {
+      const statusData = buildStatusEmbed(interaction.client);
+      const sentMsg = await chan.send(statusData).catch(() => null);
+      if (sentMsg) {
+        guildConfig.statusMessageId = sentMsg.id;
+        await saveGuildConfig(guildConfig);
+      }
+    }
+
+    return interaction.reply({
+      content: `✅ **24/7 Live Status Monitoring ENABLED!** Auto-updating live status embed is active in <#${chanId}>! ☕⚡`
+    });
+  }
+
+  if (action === 'disable') {
+    if (interaction.member && interaction.member.permissions && !interaction.member.permissions.has(PermissionFlagsBits.ManageChannels) && !interaction.member.permissions.has(PermissionFlagsBits.Administrator)) {
+      return interaction.reply({ content: '❌ You need **Manage Channels** or **Administrator** permissions to toggle 24/7 status monitoring.', flags: 64 });
+    }
+
+    guildConfig.status247Enabled = false;
+    await saveGuildConfig(guildConfig);
+
+    return interaction.reply({
+      content: '❌ **24/7 Live Status Monitoring DISABLED.** Auto-updating has been paused for this server.'
+    });
+  }
+
+  // Default Action: View Live Status
   const statusData = buildStatusEmbed(interaction.client);
   const msg = await interaction.reply({ ...statusData, fetchReply: true });
 
-  // Auto-updating live loop for 5 minutes per command invoke
   let updateInterval = setInterval(async () => {
     try {
       const refreshed = buildStatusEmbed(interaction.client);
@@ -80,7 +170,6 @@ export const execute = async (interaction) => {
     }
   }, 30000);
 
-  // Button Collector for interactive Live Refresh
   const collector = msg.createMessageComponentCollector({ time: 300000 });
 
   collector.on('collect', async i => {

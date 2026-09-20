@@ -37,4 +37,11 @@ export const execute = async (client) => {
   } catch (error) {
     logger.error('Failed to register slash commands:', error);
   }
+
+  try {
+    const { start247StatusAutoUpdater } = await import('../services/statusService.js');
+    start247StatusAutoUpdater(client);
+  } catch (err) {
+    logger.error('Failed to initialize 24/7 status auto updater service:', err);
+  }
 };

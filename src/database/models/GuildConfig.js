@@ -34,6 +34,33 @@ export const getAllGlobalChatChannels = async () => {
   return Array.from(channelsMap.entries()).map(([guildId, channelId]) => ({ guildId, channelId }));
 };
 
+export const getAll247StatusChannels = async () => {
+  const statusMap = new Map();
+
+  for (const [gId, conf] of memoryFallbackGuilds.entries()) {
+    if (conf.status247Enabled && conf.statusChannelId) {
+      statusMap.set(gId, { guildId: gId, channelId: conf.statusChannelId, messageId: conf.statusMessageId });
+    }
+  }
+
+  const db = getDb();
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'guilds'));
+      snap.forEach(docSnap => {
+        const data = docSnap.data();
+        if (data.guildId && data.status247Enabled && data.statusChannelId) {
+          statusMap.set(data.guildId, { guildId: data.guildId, channelId: data.statusChannelId, messageId: data.statusMessageId });
+        }
+      });
+    } catch (err) {
+      logger.warn(`Failed to fetch 24/7 status channels from Firestore: ${err.message}`);
+    }
+  }
+
+  return Array.from(statusMap.values());
+};
+
 export const getGuildConfig = async (guildId) => {
   const db = getDb();
 
@@ -50,6 +77,9 @@ export const getGuildConfig = async (guildId) => {
         data.emojiquizChannelId = data.emojiquizChannelId || null;
         data.antonymquizChannelId = data.antonymquizChannelId || null;
         data.countingChannelId = data.countingChannelId || null;
+        data.statusChannelId = data.statusChannelId || null;
+        data.statusMessageId = data.statusMessageId || null;
+        data.status247Enabled = data.status247Enabled || false;
         data.currentCountingNumber = data.currentCountingNumber || 0;
         data.lastCountingUserId = data.lastCountingUserId || null;
         data.language = data.language || 'en';
@@ -65,6 +95,9 @@ export const getGuildConfig = async (guildId) => {
           emojiquizChannelId: null,
           antonymquizChannelId: null,
           countingChannelId: null,
+          statusChannelId: null,
+          statusMessageId: null,
+          status247Enabled: false,
           currentCountingNumber: 0,
           lastCountingUserId: null,
           language: 'en',

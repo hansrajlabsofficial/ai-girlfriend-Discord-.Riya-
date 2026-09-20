@@ -71,7 +71,7 @@ app.get('/commands', (req, res) => {
 app.get('/connect', (req, res) => {
   const clientId = config.clientId || '1479052475368607926';
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
-  const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || 'riya-ai-girlfriend-discord-bot-full.vercel.app';
   const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;
 
   const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20guilds`;

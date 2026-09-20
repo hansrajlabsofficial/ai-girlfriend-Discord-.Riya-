@@ -2,7 +2,7 @@ import { config } from '../config.js';
 
 export const getDashboardHtml = (client = null, authData = null) => {
   const clientId = config.clientId || '1479052475368607926';
-  const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=51200&integration_type=0&scope=bot+applications.commands`;
+  const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join`;
   const oauthConnectUrl = `/connect`;
 
   const serverCount = client?.guilds?.cache?.size || 12;
@@ -1137,7 +1137,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
       const oauthUrl = '/connect';
       const clientId = window.CLIENT_ID || '1479052475368607926';
-      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands';
+      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join';
 
       grid.innerHTML = '<div style="width: 100%; text-align: center; padding: 1.5rem; background: rgba(88, 101, 242, 0.1); border: 1px dashed rgba(88, 101, 242, 0.4); border-radius: 16px; margin-bottom: 1rem;">' +
         '<h4 style="font-size: 1.1rem; color: #5865F2; margin-bottom: 0.5rem;">🔑 Connect Your Discord Account</h4>' +
@@ -1157,7 +1157,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       if (!grid) return;
 
       const clientId = window.CLIENT_ID || '1479052475368607926';
-      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands';
+      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join';
 
       let html = '';
 

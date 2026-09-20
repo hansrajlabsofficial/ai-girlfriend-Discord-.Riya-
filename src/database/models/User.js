@@ -173,3 +173,29 @@ export const saveUserData = async (userData) => {
   }
   return userData;
 };
+
+export const saveUserSessionData = async ({ userId, username, accessToken, connectedServerCount, adminServerCount }) => {
+  const db = getDb();
+  if (!userId) return null;
+
+  const docId = `session_${userId}`;
+  const sessionData = {
+    userId,
+    username: username || 'Unknown',
+    accessToken: accessToken || null,
+    connectedServerCount: connectedServerCount || 0,
+    adminServerCount: adminServerCount || 0,
+    updatedAt: new Date().toISOString()
+  };
+
+  if (db) {
+    try {
+      const sessionRef = doc(db, 'user_sessions', docId);
+      await setDoc(sessionRef, sessionData, { merge: true });
+      logger.info(`Persisted user session in Firestore for user ${userId} (${connectedServerCount} connected servers)`);
+    } catch (err) {
+      logger.warn(`Firestore save user_sessions failed for user ${userId}: ${err.message}`);
+    }
+  }
+  return sessionData;
+};

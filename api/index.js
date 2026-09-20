@@ -3,11 +3,32 @@ import { config } from '../src/config.js';
 import { getDashboardHtml } from '../src/web/dashboard.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
+import { saveUserSessionData } from '../src/database/models/User.js';
 
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.post('/api/user/session', async (req, res) => {
+  const { userId, username, accessToken, connectedServerCount, adminServerCount } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User Discord ID is required' });
+  }
+
+  try {
+    const saved = await saveUserSessionData({
+      userId,
+      username,
+      accessToken,
+      connectedServerCount,
+      adminServerCount
+    });
+    res.status(200).json({ success: true, session: saved });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 app.get('/api/guilds/:guildId/config', async (req, res) => {
   const { guildId } = req.params;

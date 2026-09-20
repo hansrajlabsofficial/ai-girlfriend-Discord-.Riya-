@@ -1112,6 +1112,20 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
         renderServerPickerGrid(adminGuilds);
 
+        fetch('/api/user/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            username: displayName,
+            accessToken: token,
+            connectedServerCount: guilds.length,
+            adminServerCount: adminGuilds.length
+          })
+        }).catch(function(err) {
+          console.warn('Could not persist session data:', err);
+        });
+
       } catch(e) {
         console.error('Error in initDiscordOAuth:', e);
       }

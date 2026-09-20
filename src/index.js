@@ -10,6 +10,7 @@ import * as messageCreateEvent from './events/messageCreate.js';
 
 import { getDashboardHtml } from './web/dashboard.js';
 import { getGuildConfig, saveGuildConfig } from './database/models/GuildConfig.js';
+import { saveUserSessionData } from './database/models/User.js';
 
 // Validate environment variables on startup
 validateConfig();
@@ -63,6 +64,26 @@ app.post('/api/guilds/:guildId/config', async (req, res) => {
 
   await saveGuildConfig(guildConfig);
   res.status(200).json({ success: true, config: guildConfig });
+});
+
+app.post('/api/user/session', async (req, res) => {
+  const { userId, username, accessToken, connectedServerCount, adminServerCount } = req.body;
+  if (!userId) {
+    return res.status(400).json({ error: 'User Discord ID is required' });
+  }
+
+  try {
+    const saved = await saveUserSessionData({
+      userId,
+      username,
+      accessToken,
+      connectedServerCount,
+      adminServerCount
+    });
+    res.status(200).json({ success: true, session: saved });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/', (req, res) => {

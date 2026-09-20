@@ -39,8 +39,10 @@ const COMMAND_ALIASES = {
   'with': 'withdraw',
   'p': 'profile',
   'inv': 'inventory',
-  'store': 'shop',
-  'sellall': 'bulksell',
+  'store': 'market',
+  'shop': 'market',
+  'buyall': 'market',
+  'sellall': 'market',
 
   // Casino & Games
   'bj': 'blackjack',

@@ -66,7 +66,18 @@ app.get('/logout', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date() });
+  const uptimeSec = Math.floor(process.uptime() || 0);
+  const hours = Math.floor(uptimeSec / 3600);
+  const minutes = Math.floor((uptimeSec % 3600) / 60);
+  const uptimeStr = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+  res.status(200).json({
+    status: 'online',
+    uptime: uptimeSec,
+    uptimeFormatted: uptimeStr,
+    guilds: 12,
+    commands: 85,
+    timestamp: new Date()
+  });
 });
 
 export default app;

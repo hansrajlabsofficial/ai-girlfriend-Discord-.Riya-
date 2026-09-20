@@ -477,8 +477,10 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </a>
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
+        <a href="/profile">👤 Profile</a>
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>
+        <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">Connect Discord</a>
         <a href="${inviteUrl}" target="_blank" class="btn-invite">Add Bot to Server</a>
       </div>
     </div>

@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
-import { getDb } from '../connect.js';
+import { getDb, getAdminDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
 // In-memory fallback storage if Firestore is unavailable
@@ -250,6 +250,29 @@ export const saveUserSessionData = async ({ userId, username, displayName, avata
     lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
+
+  const admin = getAdminDb();
+  if (admin) {
+    try {
+      await admin.collection('user_sessions').doc(docId).set(sessionData, { merge: true });
+      await admin.collection('users').doc(`global_${userId}`).set({
+        userId,
+        username: sessionData.username,
+        displayName: sessionData.displayName,
+        avatar: sessionData.avatar,
+        banner: sessionData.banner,
+        bank: sessionData.bank,
+        balance: sessionData.balance,
+        level: sessionData.level,
+        xp: sessionData.xp,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      logger.info(`Persisted user session & economy in Firestore via Admin SDK for user ${userId}`);
+      return sessionData;
+    } catch (err) {
+      logger.warn(`Admin SDK save user_sessions failed for user ${userId}: ${err.message}`);
+    }
+  }
 
   if (db) {
     try {

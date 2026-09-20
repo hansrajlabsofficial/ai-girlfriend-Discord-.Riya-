@@ -114,11 +114,11 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.redirect('/');
+  res.status(200).send(getLoginHtml());
 });
 
 app.get('/profile', (req, res) => {
-  res.redirect('/');
+  res.status(200).send(getProfileHtml());
 });
 
 app.get('/dashboard', (req, res) => {

@@ -13,6 +13,7 @@ import { addFriendXp } from '../services/friendService.js';
 import { handlePrefixCommand } from '../utils/prefixAdapter.js';
 import { handleGlobalChatBroadcast } from '../services/globalChatService.js';
 import { handleGlobalCallRelay } from '../services/globalCallService.js';
+import { handleGlobalPrivateCallRelay } from '../services/globalPrivateCallService.js';
 
 export const name = 'messageCreate';
 
@@ -32,6 +33,10 @@ export const execute = async (message) => {
     const firstItem = processedMessages.values().next().value;
     processedMessages.delete(firstItem);
   }
+
+  // 1b. Global Private Call DM Relay Check
+  const isPrivateCallRelay = await handleGlobalPrivateCallRelay(message);
+  if (isPrivateCallRelay) return;
 
   // 2. Global Call Hotline Live Bridge Check
   const isCallRelay = await handleGlobalCallRelay(message);

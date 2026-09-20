@@ -79,7 +79,13 @@ const COMMAND_ALIASES = {
   'call': 'globalcall',
   'phone': 'globalcall',
   'hangup': 'globalcall',
-  'globalcall': 'globalcall'
+  'globalcall': 'globalcall',
+  'privatecall': 'globalprivatecall',
+  'globalprivatecall': 'globalprivatecall',
+  'xprivatecall': 'globalprivatecall',
+  'privcall': 'globalprivatecall',
+  'privhangup': 'globalprivatecall',
+  'xprivhangup': 'globalprivatecall'
 };
 
 function parseAmountToken(token) {

@@ -18,6 +18,28 @@ export const getDashboardHtml = (client = null, authData = null) => {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK & Analytics Setup -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDBpJp36BBdG_fh5WiiFS4e8WnBbPN5dGg",
+      authDomain: "riya-ai-girlfriend-discord-bot.firebaseapp.com",
+      databaseURL: "https://riya-ai-girlfriend-discord-bot-default-rtdb.firebaseio.com",
+      projectId: "riya-ai-girlfriend-discord-bot",
+      storageBucket: "riya-ai-girlfriend-discord-bot.firebasestorage.app",
+      messagingSenderId: "1016322069093",
+      appId: "1:1016322069093:web:51cc280facd87caa5d2c8c",
+      measurementId: "G-9XWSX7RFF7"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    if (typeof window !== 'undefined') {
+      try { getAnalytics(app); } catch(e) { console.log('Analytics loaded'); }
+    }
+  </script>
   <style>
     :root {
       --bg-dark: #0B0314;

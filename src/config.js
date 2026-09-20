@@ -11,13 +11,14 @@ export const config = {
   
   // Firebase Configuration
   firebaseConfig: {
-    apiKey: process.env.FIREBASE_API_KEY || "AIzaSyBMZA1uaFpGgZJro9bGjdpVIvbWIR8uZBI",
-    authDomain: process.env.FIREBASE_AUTH_DOMAIN || "hansraj-ayanofficialcommunity.firebaseapp.com",
-    projectId: process.env.FIREBASE_PROJECT_ID || "hansraj-ayanofficialcommunity",
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "hansraj-ayanofficialcommunity.firebasestorage.app",
-    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "463966069258",
-    appId: process.env.FIREBASE_APP_ID || "1:463966069258:web:077743318da0410b1235f3",
-    measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-F57RRJ9H86"
+    apiKey: process.env.FIREBASE_API_KEY || "AIzaSyDBpJp36BBdG_fh5WiiFS4e8WnBbPN5dGg",
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN || "riya-ai-girlfriend-discord-bot.firebaseapp.com",
+    databaseURL: process.env.FIREBASE_DATABASE_URL || "https://riya-ai-girlfriend-discord-bot-default-rtdb.firebaseio.com",
+    projectId: process.env.FIREBASE_PROJECT_ID || "riya-ai-girlfriend-discord-bot",
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "riya-ai-girlfriend-discord-bot.firebasestorage.app",
+    messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "1016322069093",
+    appId: process.env.FIREBASE_APP_ID || "1:1016322069093:web:51cc280facd87caa5d2c8c",
+    measurementId: process.env.FIREBASE_MEASUREMENT_ID || "G-9XWSX7RFF7"
   },
 
   // Dynamic Bot Settings

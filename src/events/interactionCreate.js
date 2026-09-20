@@ -33,7 +33,12 @@ export const execute = async (interaction) => {
 
   // 2. Handle Slash Chat Input Commands
   if (interaction.isChatInputCommand()) {
-    const command = commandsCache.get(interaction.commandName);
+    let command = commandsCache.get(interaction.commandName);
+    if (!command) {
+      const { commandsMap } = await loadAllCommands();
+      commandsCache = commandsMap;
+      command = commandsCache.get(interaction.commandName);
+    }
     if (!command) {
       logger.warn(`No command matching /${interaction.commandName} was found.`);
       return;

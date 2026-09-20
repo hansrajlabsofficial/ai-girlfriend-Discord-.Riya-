@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder } from 'discord.js';
+import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 const CATEGORIES = {
   anime_card: {
@@ -206,6 +206,13 @@ export const execute = async (interaction) => {
       ])
   );
 
+  const buildLinkRow = () => new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setLabel('🌐 Open Web Dashboard & Server Settings')
+      .setStyle(ButtonStyle.Link)
+      .setURL('https://riya-ai-girlfriend-discord-bot-full.vercel.app/')
+  );
+
   const buildCategoryEmbed = (catKey) => {
     const cat = CATEGORIES[catKey];
     if (!cat) return null;
@@ -245,7 +252,7 @@ export const execute = async (interaction) => {
 
   const msg = await interaction.reply({
     embeds: [initialEmbed],
-    components: [buildSelectMenu(selectedCat || 'overview')],
+    components: [buildSelectMenu(selectedCat || 'overview'), buildLinkRow()],
     fetchReply: true
   });
 
@@ -265,10 +272,10 @@ export const execute = async (interaction) => {
       newEmbed = buildCategoryEmbed(val);
     }
 
-    await i.update({ embeds: [newEmbed], components: [buildSelectMenu(val)] });
+    await i.update({ embeds: [newEmbed], components: [buildSelectMenu(val), buildLinkRow()] });
   });
 
   collector.on('end', () => {
-    interaction.editReply({ components: [] }).catch(() => {});
+    interaction.editReply({ components: [buildLinkRow()] }).catch(() => {});
   });
 };

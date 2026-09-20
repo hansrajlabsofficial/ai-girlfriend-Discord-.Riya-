@@ -53,7 +53,7 @@ app.get('/connect', (req, res) => {
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
   const redirectUri = `${protocol}://${host}/auth/callback`;
 
-  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20guilds%20bot%20applications.commands&permissions=51200&integration_type=0`;
+  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20guilds%20bot%20applications.commands&permissions=51200&integration_type=1`;
   res.redirect(oauthConnectUrl);
 });
 

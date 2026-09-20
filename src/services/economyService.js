@@ -208,16 +208,53 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
   ctx.font = 'bold 44px sans-serif';
   ctx.fillText(formatMoney(balance), 50, 360);
 
-  // Partner Section (Bottom Right)
+  // Partner Section (Middle Right)
   const currentPartner = partnerName || (userDoc.isDailyPartner ? "👑 Riya's Partner of the Day" : "Riya 💕");
   ctx.fillStyle = 'rgba(255, 182, 193, 0.85)';
-  ctx.font = '16px sans-serif';
-  ctx.fillText('OFFICIAL PARTNER', 480, 310);
+  ctx.font = '14px sans-serif';
+  ctx.fillText('OFFICIAL PARTNER', 480, 295);
 
   ctx.fillStyle = '#FF69B4'; // Hot Pink
-  ctx.font = 'bold 24px sans-serif';
-  ctx.fillText(currentPartner, 480, 350);
+  ctx.font = 'bold 20px sans-serif';
+  ctx.fillText(currentPartner, 480, 320);
+
+  // Authorised Signature Strip (Bottom Right)
+  const signatureText = generateUserSignature(user);
+
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.font = '12px sans-serif';
+  ctx.fillText('AUTHORISED SIGNATURE', 480, 355);
+
+  // Signature Box Strip
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+  ctx.lineWidth = 1.5;
+  ctx.fillRect(480, 362, 260, 42);
+  ctx.strokeRect(480, 362, 260, 42);
+
+  // Cursive Signature Text
+  ctx.fillStyle = '#FFD700'; // Gold Calligraphy
+  ctx.font = 'italic bold 24px Georgia, serif';
+  ctx.fillText(signatureText, 495, 392);
 
   // Return PNG Buffer
   return canvas.toBuffer('image/png');
 };
+
+/**
+ * Generates official signature string: First Initial + Dot + Last Name (e.g. HANSRAJ VAGHELA -> H.VAGHELA)
+ */
+export function generateUserSignature(user) {
+  const rawName = (user?.displayName || user?.username || 'HANSRAJ VAGHELA').trim();
+  const words = rawName.split(/[\s._-]+/).filter(Boolean);
+
+  if (words.length >= 2) {
+    const firstInitial = words[0][0].toUpperCase();
+    const lastName = words[words.length - 1].toUpperCase();
+    return `${firstInitial}.${lastName}`;
+  } else if (words.length === 1) {
+    const word = words[0].toUpperCase();
+    return `${word[0]}.${word}`;
+  }
+  return 'H.VAGHELA';
+}

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
 import { getUserData } from '../database/models/User.js';
-import { renderBankCard, formatMoney, getBalance } from '../services/economyService.js';
+import { renderBankCard, formatMoney, getBalance, generateUserSignature } from '../services/economyService.js';
 import { getRelationshipTitle } from '../services/rpgService.js';
 import { logger } from '../utils/logger.js';
 
@@ -33,6 +33,7 @@ export const execute = async (interaction) => {
 
     const balance = getBalance(userDoc);
     const title = getRelationshipTitle(userDoc.level || 1);
+    const userSig = generateUserSignature(targetUser);
 
     const embed = new EmbedBuilder()
       .setColor('#FF1493')
@@ -42,10 +43,11 @@ export const execute = async (interaction) => {
         `💰 **Bank Balance:** **${formatMoney(balance)}**\n` +
         `📊 **Level:** **${userDoc.level || 1}** (${userDoc.xp || 0} XP)\n` +
         `💖 **Title:** \`${title}\`\n` +
-        `💍 **Partner:** \`${partnerName || 'Riya 💕'}\``
+        `💍 **Partner:** \`${partnerName || 'Riya 💕'}\` \n` +
+        `✒️ **Authorised Signature:** \`${userSig}\``
       )
       .setImage('attachment://bank-card.png')
-      .setFooter({ text: 'Riya Official Banking & Affection System ☕✨' });
+      .setFooter({ text: `Riya Official Banking System • Signature: ${userSig}` });
 
     await interaction.editReply({ embeds: [embed], files: [attachment] });
 

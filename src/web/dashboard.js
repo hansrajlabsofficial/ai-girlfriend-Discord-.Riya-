@@ -1057,23 +1057,21 @@ export const getDashboardHtml = (client = null, authData = null) => {
           profileCardEl.className = 'user-profile-card';
           profileCardEl.style.borderColor = '#00FF7F';
           profileCardEl.style.background = 'linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(88, 101, 242, 0.15))';
-          profileCardEl.innerHTML = `
-            <div class="user-info">
-              <img src="${avatarUrl}" alt="${displayName}" class="user-avatar" style="border-color: #00FF7F;">
-              <div class="user-details">
-                <h3 style="color: #00FF7F;">✅ Connected as ${displayName}</h3>
-                <p style="color: var(--text-muted); font-size: 0.9rem;">Discord ID: ${user.id} • Authorized for Dashboard Management</p>
-              </div>
-            </div>
-            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-              <span class="btn-connect" style="background: #00FF7F; color: #0B0314;">
-                ✓ Connected
-              </span>
-              <button onclick="logoutDiscord()" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; cursor: pointer;">
-                🚪 Logout
-              </button>
-            </div>
-          `;
+          profileCardEl.innerHTML = '<div class="user-info">' +
+            '<img src="' + avatarUrl + '" alt="' + displayName + '" class="user-avatar" style="border-color: #00FF7F;">' +
+            '<div class="user-details">' +
+              '<h3 style="color: #00FF7F;">✅ Connected as ' + displayName + '</h3>' +
+              '<p style="color: var(--text-muted); font-size: 0.9rem;">Discord ID: ' + user.id + ' • Authorized for Dashboard Management</p>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">' +
+            '<span class="btn-connect" style="background: #00FF7F; color: #0B0314;">' +
+              '✓ Connected' +
+            '</span>' +
+            '<button onclick="logoutDiscord()" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; cursor: pointer;">' +
+              '🚪 Logout' +
+            '</button>' +
+          '</div>';
         }
 
         const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {

@@ -720,6 +720,24 @@ export const getProfileHtml = (client = null) => {
           if (stats.isDailyPartner) {
             document.getElementById('partnerBadgeChip').style.display = 'inline-flex';
           }
+
+          // Automatically persist full Discord profile and economy stats into Firebase Firestore
+          const token = localStorage.getItem('discord_access_token');
+          fetch('/api/user/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.id,
+              username: user.username,
+              displayName: displayName,
+              avatar: avatarUrl,
+              banner: user.banner ? 'https://cdn.discordapp.com/banners/' + user.id + '/' + user.banner + '.' + (user.banner.startsWith('a_') ? 'gif' : 'png') : null,
+              accentColor: user.accent_color ? '#' + user.accent_color.toString(16).padStart(6, '0') : null,
+              accessToken: token
+            })
+          }).catch(function(err) {
+            console.warn('Could not persist session data:', err);
+          });
         }
       } catch(e) {
         console.warn('Could not fetch bot Firestore stats:', e);

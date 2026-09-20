@@ -61,7 +61,7 @@ app.get('/api/user/:userId/profile', async (req, res) => {
 });
 
 app.post('/api/user/session', async (req, res) => {
-  const { userId, username, accessToken, connectedServerCount, adminServerCount } = req.body;
+  const { userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount } = req.body;
   if (!userId) {
     return res.status(400).json({ error: 'User Discord ID is required' });
   }
@@ -70,6 +70,10 @@ app.post('/api/user/session', async (req, res) => {
     const saved = await saveUserSessionData({
       userId,
       username,
+      displayName,
+      avatar,
+      banner,
+      accentColor,
       accessToken,
       connectedServerCount,
       adminServerCount

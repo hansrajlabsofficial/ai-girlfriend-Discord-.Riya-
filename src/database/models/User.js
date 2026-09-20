@@ -225,17 +225,29 @@ export const saveUserData = async (userData) => {
   return userData;
 };
 
-export const saveUserSessionData = async ({ userId, username, accessToken, connectedServerCount, adminServerCount }) => {
+export const saveUserSessionData = async ({ userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount }) => {
   const db = getDb();
   if (!userId) return null;
 
   const docId = `session_${userId}`;
+  const aggregated = await getAggregatedUserData(userId);
+
   const sessionData = {
     userId,
-    username: username || 'Unknown',
+    username: username || aggregated?.username || 'Unknown',
+    displayName: displayName || username || aggregated?.displayName || 'Member',
+    avatar: avatar || null,
+    banner: banner || null,
+    accentColor: accentColor || null,
     accessToken: accessToken || null,
     connectedServerCount: connectedServerCount || 0,
     adminServerCount: adminServerCount || 0,
+    bank: aggregated?.bank || 0,
+    balance: aggregated?.balance !== undefined ? aggregated.balance : 10000,
+    level: aggregated?.level || 1,
+    xp: aggregated?.xp || 0,
+    isDailyPartner: aggregated?.isDailyPartner || false,
+    lastLoginAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
@@ -243,7 +255,22 @@ export const saveUserSessionData = async ({ userId, username, accessToken, conne
     try {
       const sessionRef = doc(db, 'user_sessions', docId);
       await setDoc(sessionRef, sessionData, { merge: true });
-      logger.info(`Persisted user session in Firestore for user ${userId} (${connectedServerCount} connected servers)`);
+
+      const globalUserRef = doc(db, 'users', `global_${userId}`);
+      await setDoc(globalUserRef, {
+        userId,
+        username: sessionData.username,
+        displayName: sessionData.displayName,
+        avatar: sessionData.avatar,
+        banner: sessionData.banner,
+        bank: sessionData.bank,
+        balance: sessionData.balance,
+        level: sessionData.level,
+        xp: sessionData.xp,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+
+      logger.info(`Persisted user session & economy in Firestore for user ${userId} (${connectedServerCount} connected servers)`);
     } catch (err) {
       logger.warn(`Firestore save user_sessions failed for user ${userId}: ${err.message}`);
     }

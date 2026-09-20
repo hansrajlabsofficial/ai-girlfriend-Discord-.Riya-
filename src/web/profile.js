@@ -459,93 +459,102 @@ export const getProfileHtml = (client = null) => {
   <!-- Profile Main Content -->
   <main class="profile-container">
 
-    <!-- Unauthenticated Banner (Hidden when logged in) -->
-    <div id="unauthBanner" class="login-prompt-banner" style="display: none;">
-      <h2>🔑 Connect Your Discord Account</h2>
-      <p>Log in with Discord OAuth2 to view your real animated avatar, custom profile banner, bank vault savings, and affection card!</p>
+    <!-- Access Denied Card (Displayed when NOT logged in with Discord) -->
+    <div id="accessDeniedArea" class="login-prompt-banner" style="display: block; max-width: 650px; margin: 3rem auto; padding: 3.5rem 2rem; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 24px; text-align: center; backdrop-filter: blur(20px); box-shadow: 0 20px 50px rgba(0,0,0,0.7);">
+      <div style="font-size: 3.5rem; margin-bottom: 1rem;">🔒</div>
+      <h2 style="font-size: 2.2rem; font-weight: 800; background: linear-gradient(135deg, #FFF, var(--pink-primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.75rem;">Discord Login Required</h2>
+      <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2rem; line-height: 1.6;">
+        Access to your Riya AI Profile, Bank Savings Vault, Wallet Cash, and Level & Relationship stats requires connecting your Discord account.
+      </p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="${oauthConnectUrl}" class="btn-connect" style="padding: 0.85rem 1.75rem; font-size: 1rem;">Login with Discord OAuth2</a>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-          <input type="text" id="manualUserId" placeholder="Or enter Discord User ID..." style="padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #FFF; outline: none; width: 220px;">
-          <button onclick="loadManualUserId()" class="btn-action">Inspect ID</button>
+        <a href="${oauthConnectUrl}" class="btn-connect" style="padding: 0.9rem 2rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);">
+          🔑 Connect Discord OAuth2
+        </a>
+        <a href="/login" class="btn-action" style="padding: 0.9rem 1.75rem;">
+          ⚡ Go to Login Page
+        </a>
+      </div>
+    </div>
+
+    <!-- Profile Content Area (ONLY visible after Discord OAuth2 authentication) -->
+    <div id="profileContentArea" style="display: none;">
+
+      <!-- Banner & Header Section -->
+      <div class="profile-banner-wrapper" id="bannerWrapper">
+        <img id="profileBannerImg" src="" alt="User Banner" class="profile-banner-img" style="display: none;">
+        <div class="banner-overlay"></div>
+        
+        <div class="avatar-wrapper">
+          <img id="profileAvatarImg" src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="User Avatar" class="profile-avatar-img">
+          <div class="status-badge" title="Discord Online Status"></div>
         </div>
       </div>
-    </div>
 
-    <!-- Banner & Header Section -->
-    <div class="profile-banner-wrapper" id="bannerWrapper">
-      <img id="profileBannerImg" src="" alt="User Banner" class="profile-banner-img" style="display: none;">
-      <div class="banner-overlay"></div>
-      
-      <div class="avatar-wrapper">
-        <img id="profileAvatarImg" src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="User Avatar" class="profile-avatar-img">
-        <div class="status-badge" title="Discord Online Status"></div>
+      <!-- Header Info Box -->
+      <div class="profile-header-card">
+        <div class="user-name-title">
+          <div class="name-block">
+            <h1 id="userDisplayName">
+              Loading Discord Profile...
+            </h1>
+            <p class="username-tag" id="userUsernameTag">@discord_user</p>
+
+            <div class="badges-row" id="badgesRow">
+              <span class="badge-chip verified">⚡ Discord Connected</span>
+              <span class="badge-chip nitro">💎 Premium Member</span>
+              <span class="badge-chip partner" id="partnerBadgeChip" style="display: none;">👑 Riya Partner</span>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button onclick="syncProfile()" class="btn-action primary">
+              🔄 Sync Profile
+            </button>
+            <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.4);">
+              🚪 Disconnect
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
 
-    <!-- Header Info Box -->
-    <div class="profile-header-card">
-      <div class="user-name-title">
-        <div class="name-block">
-          <h1 id="userDisplayName">
-            Loading Discord Profile...
-          </h1>
-          <p class="username-tag" id="userUsernameTag">@discord_user</p>
+      <!-- Live Economy & RPG Stats Grid -->
+      <div class="stats-grid">
 
-          <div class="badges-row" id="badgesRow">
-            <span class="badge-chip verified">⚡ Discord Connected</span>
-            <span class="badge-chip nitro">💎 Premium Member</span>
-            <span class="badge-chip partner" id="partnerBadgeChip" style="display: none;">👑 Riya Partner</span>
+        <!-- Bank Savings Vault -->
+        <div class="card-box">
+          <h3 class="card-title">🏦 Bank Savings Balance</h3>
+          <div class="card-value emerald" id="bankSavingsVal">$0</div>
+          <p class="card-subtext">Protected from robbery via <code style="color: var(--pink-primary);">/rob</code> command.</p>
+        </div>
+
+        <!-- Wallet Cash -->
+        <div class="card-box">
+          <h3 class="card-title">👛 Wallet Cash</h3>
+          <div class="card-value pink" id="walletCashVal">$10,000</div>
+          <p class="card-subtext">Liquid cash in pocket for shopping & gifts.</p>
+        </div>
+
+        <!-- Level & Relationship Title -->
+        <div class="card-box">
+          <h3 class="card-title">⭐ Level & Relationship Title</h3>
+          <div class="card-value gold" id="levelTitleVal">Level 1 • Acquaintance</div>
+          
+          <div class="xp-progress-bar">
+            <div class="xp-progress-fill" id="xpProgressFill" style="width: 15%;"></div>
+          </div>
+          <p class="card-subtext" id="xpTextSub">XP Progress: 0 / 100 XP</p>
+        </div>
+
+        <!-- Official Authorised Signature -->
+        <div class="card-box">
+          <h3 class="card-title">✒️ Official Banking Signature</h3>
+          <p class="card-subtext">Cursive calligraphic signature string for banking certificates:</p>
+          <div class="signature-display-box">
+            <span class="sig-text" id="sigTextDisplay">H.VAGHELA</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Verified Card Holder</span>
           </div>
         </div>
 
-        <div class="profile-actions">
-          <button onclick="syncProfile()" class="btn-action primary">
-            🔄 Sync Profile
-          </button>
-          <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.4);">
-            🚪 Disconnect
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Live Economy & RPG Stats Grid -->
-    <div class="stats-grid">
-
-      <!-- Bank Savings Vault -->
-      <div class="card-box">
-        <h3 class="card-title">🏦 Bank Savings Balance</h3>
-        <div class="card-value emerald" id="bankSavingsVal">$0</div>
-        <p class="card-subtext">Protected from robbery via <code style="color: var(--pink-primary);">/rob</code> command.</p>
-      </div>
-
-      <!-- Wallet Cash -->
-      <div class="card-box">
-        <h3 class="card-title">👛 Wallet Cash</h3>
-        <div class="card-value pink" id="walletCashVal">$10,000</div>
-        <p class="card-subtext">Liquid cash in pocket for shopping & gifts.</p>
-      </div>
-
-      <!-- Level & Relationship Title -->
-      <div class="card-box">
-        <h3 class="card-title">⭐ Level & Relationship Title</h3>
-        <div class="card-value gold" id="levelTitleVal">Level 1 • Acquaintance</div>
-        
-        <div class="xp-progress-bar">
-          <div class="xp-progress-fill" id="xpProgressFill" style="width: 15%;"></div>
-        </div>
-        <p class="card-subtext" id="xpTextSub">XP Progress: 0 / 100 XP</p>
-      </div>
-
-      <!-- Official Authorised Signature -->
-      <div class="card-box">
-        <h3 class="card-title">✒️ Official Banking Signature</h3>
-        <p class="card-subtext">Cursive calligraphic signature string for banking certificates:</p>
-        <div class="signature-display-box">
-          <span class="sig-text" id="sigTextDisplay">H.VAGHELA</span>
-          <span style="font-size: 0.8rem; color: var(--text-muted);">Verified Card Holder</span>
-        </div>
       </div>
 
     </div>
@@ -560,7 +569,7 @@ export const getProfileHtml = (client = null) => {
 
     function cleanCanvasText(str) {
       if (!str) return 'Valued Member';
-      let norm = str.replace(/[\\u{1F1E6}-\\u{1F1FF}]/gu, ch => {
+      let norm = str.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, ch => {
         const code = ch.codePointAt(0) - 0x1F1E6 + 65;
         return String.fromCharCode(code);
       }).normalize('NFKD');
@@ -573,13 +582,13 @@ export const getProfileHtml = (client = null) => {
       norm = norm.split('').map(ch => smallCapsMap[ch] || ch).join('');
 
       let cleaned = norm
-        .replace(/[\\u{1F300}-\\u{1F9FF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}\\u{1F600}-\\u{1F64F}\\u{1F680}-\\u{1F6FF}\\u{2600}-\\u{27BF}\\u{2B50}]/gu, '')
-        .replace(/[^\\x20-\\x7E\\u00C0-\\u024F]/g, '')
-        .replace(/\\s+/g, ' ')
+        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{27BF}\u{2B50}]/gu, '')
+        .replace(/[^\x20-\x7E\u00C0-\u024F]/g, '')
+        .replace(/\s+/g, ' ')
         .trim();
 
-      if (cleaned && /^(?:[A-Za-z0-9]\\s+)+[A-Za-z0-9]$/.test(cleaned)) {
-        cleaned = cleaned.replace(/\\s+/g, '');
+      if (cleaned && /^(?:[A-Za-z0-9]\s+)+[A-Za-z0-9]$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\s+/g, '');
       }
 
       return cleaned || 'Valued Member';
@@ -595,6 +604,20 @@ export const getProfileHtml = (client = null) => {
         return w.length > 1 ? w[0] + '.' + w : w + '.' + w;
       }
       return 'H.VAGHELA';
+    }
+
+    function showAccessDenied() {
+      const deniedEl = document.getElementById('accessDeniedArea');
+      const contentEl = document.getElementById('profileContentArea');
+      if (deniedEl) deniedEl.style.display = 'block';
+      if (contentEl) contentEl.style.display = 'none';
+    }
+
+    function showProfileArea() {
+      const deniedEl = document.getElementById('accessDeniedArea');
+      const contentEl = document.getElementById('profileContentArea');
+      if (deniedEl) deniedEl.style.display = 'none';
+      if (contentEl) contentEl.style.display = 'block';
     }
 
     async function loadUserProfile() {
@@ -613,8 +636,7 @@ export const getProfileHtml = (client = null) => {
       }
 
       if (!token) {
-        document.getElementById('unauthBanner').style.display = 'block';
-        loadFallbackProfile('118118716435');
+        showAccessDenied();
         return;
       }
 
@@ -623,20 +645,19 @@ export const getProfileHtml = (client = null) => {
           headers: { 'Authorization': 'Bearer ' + token }
         });
 
-        if (res.status === 401) {
+        if (res.status === 401 || !res.ok) {
           localStorage.removeItem('discord_access_token');
-          document.getElementById('unauthBanner').style.display = 'block';
-          loadFallbackProfile('118118716435');
+          showAccessDenied();
           return;
         }
 
-        if (!res.ok) return;
-
         const user = await res.json();
+        showProfileArea();
         renderUserData(user);
 
       } catch(err) {
         console.error('Error loading profile from Discord:', err);
+        showAccessDenied();
       }
     }
 
@@ -708,30 +729,13 @@ export const getProfileHtml = (client = null) => {
       }
     }
 
-    function loadFallbackProfile(userId) {
-      renderUserData({
-        id: userId || '118118716435',
-        username: 'hansraj1',
-        global_name: 'A S H A N S R A J',
-        avatar: null,
-        banner: null
-      });
-    }
-
-    function loadManualUserId() {
-      const input = document.getElementById('manualUserId');
-      if (input && input.value.trim()) {
-        loadFallbackProfile(input.value.trim());
-      }
-    }
-
     function syncProfile() {
       loadUserProfile();
     }
 
     function logoutDiscord() {
       localStorage.removeItem('discord_access_token');
-      window.location.href = '/login';
+      showAccessDenied();
     }
 
     window.addEventListener('DOMContentLoaded', loadUserProfile);

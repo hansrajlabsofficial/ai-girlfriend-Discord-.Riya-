@@ -10,7 +10,10 @@ import { getRealBotGuilds } from '../src/services/guildService.js';
 import { getRelationshipTitle } from '../src/services/rpgService.js';
 import { generateUserSignature } from '../src/services/economyService.js';
 
+import { connectDatabase } from '../src/database/connect.js';
+
 const app = express();
+connectDatabase().catch(err => console.error('Database connection error:', err));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

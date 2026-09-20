@@ -19,5 +19,17 @@ export const connectDatabase = async () => {
   return db;
 };
 
-export const getDb = () => db;
+export const getDb = () => {
+  if (!db) {
+    try {
+      const app = getApps().length === 0 ? initializeApp(config.firebaseConfig) : getApp();
+      db = getFirestore(app);
+      isConnected = true;
+    } catch (err) {
+      logger.error('Failed lazy initialization of Firebase Firestore DB:', err);
+    }
+  }
+  return db;
+};
+
 export const getDbStatus = () => isConnected;

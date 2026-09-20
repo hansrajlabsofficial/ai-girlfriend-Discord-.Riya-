@@ -2,10 +2,13 @@ import express from 'express';
 import { config } from '../src/config.js';
 import { getDashboardHtml } from '../src/web/dashboard.js';
 import { getLoginHtml } from '../src/web/login.js';
+import { getProfileHtml } from '../src/web/profile.js';
 
 import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
-import { saveUserSessionData } from '../src/database/models/User.js';
+import { saveUserSessionData, getUserData } from '../src/database/models/User.js';
 import { getRealBotGuilds } from '../src/services/guildService.js';
+import { getRelationshipTitle } from '../src/services/rpgService.js';
+import { generateUserSignature } from '../src/services/economyService.js';
 
 const app = express();
 
@@ -27,6 +30,29 @@ app.get('/api/guilds', async (req, res) => {
     res.status(200).json({ guilds: guildsList, count: guildsList.length });
   } catch (err) {
     res.status(500).json({ error: err.message, guilds: [] });
+  }
+});
+
+app.get('/api/user/:userId/profile', async (req, res) => {
+  const { userId } = req.params;
+  try {
+    const userDoc = await getUserData(userId, 'global');
+    const level = userDoc.level || 1;
+    const title = getRelationshipTitle(level);
+    const sig = generateUserSignature({ displayName: userDoc.username || 'Member', username: userDoc.username });
+    res.status(200).json({
+      userId: userId,
+      bank: userDoc.bank || 0,
+      balance: userDoc.balance !== undefined ? userDoc.balance : 10000,
+      level: level,
+      xp: userDoc.xp || 0,
+      title: title,
+      isDailyPartner: userDoc.isDailyPartner || false,
+      partnerId: userDoc.partnerId || null,
+      signature: sig
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -78,6 +104,10 @@ app.get('/', (req, res) => {
 
 app.get('/login', (req, res) => {
   res.status(200).send(getLoginHtml());
+});
+
+app.get('/profile', (req, res) => {
+  res.status(200).send(getProfileHtml());
 });
 
 app.get('/dashboard', (req, res) => {

@@ -477,6 +477,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </a>
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
+        <a href="/profile">👤 Profile</a>
         <a href="#servers">Manage Servers</a>
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>

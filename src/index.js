@@ -8,23 +8,43 @@ import * as readyEvent from './events/ready.js';
 import * as interactionCreateEvent from './events/interactionCreate.js';
 import * as messageCreateEvent from './events/messageCreate.js';
 
+import { getDashboardHtml } from './web/dashboard.js';
+
 // Validate environment variables on startup
 validateConfig();
 
-// 1. Initialize Express Health Checker Web Server for UptimeRobot & Render
+// 1. Initialize Express Web Server & Dashboard for UptimeRobot, Render, & Discord OAuth2 Connect
 const app = express();
 const PORT = config.port;
 
 app.get('/', (req, res) => {
-  res.status(200).send('Bot is alive');
+  res.status(200).send(getDashboardHtml(client));
+});
+
+app.get('/dashboard', (req, res) => {
+  res.status(200).send(getDashboardHtml(client));
+});
+
+app.get('/guide', (req, res) => {
+  res.status(200).send(getDashboardHtml(client));
+});
+
+app.get('/commands', (req, res) => {
+  res.status(200).send(getDashboardHtml(client));
+});
+
+app.get('/connect', (req, res) => {
+  const clientId = config.clientId || '';
+  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=code&scope=identify%20guilds`;
+  res.redirect(oauthConnectUrl);
 });
 
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date() });
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date(), guilds: client?.guilds?.cache?.size || 0 });
 });
 
 app.listen(PORT, () => {
-  logger.info(`Express Health Checker server running on port ${PORT}. Ready for UptimeRobot pings at /`);
+  logger.info(`Express Web Dashboard & Health Checker server running on port ${PORT}. Dashboard live at http://localhost:${PORT}`);
 });
 
 // 2. Initialize Discord Client with required Intents

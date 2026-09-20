@@ -305,8 +305,16 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
  */
 export function generateUserSignature(user) {
   if (!user) return 'H.VAGHELA';
+  if (user.signature && String(user.signature).trim()) {
+    return String(user.signature).trim().toUpperCase();
+  }
   const rawName = cleanCanvasText(user.displayName || user.globalName || user.username, user);
-  const words = rawName.split(/[\s._-]+/).filter(Boolean);
+  if (!rawName || /^user[_\s]*\d+$/i.test(rawName) || /^u\.\d+$/i.test(rawName) || rawName === 'Valued Member') {
+    return 'H.VAGHELA';
+  }
+
+  const cleanedName = rawName.replace(/(\D+)\d+$/, '$1').trim();
+  const words = cleanedName.split(/[\s._-]+/).filter(Boolean);
 
   if (words.length >= 2) {
     const firstInitial = words[0][0].toUpperCase();
@@ -314,7 +322,7 @@ export function generateUserSignature(user) {
     return `${firstInitial}.${lastName}`;
   } else if (words.length === 1) {
     const word = words[0].toUpperCase();
-    return word.length > 1 ? `${word[0]}.${word}` : `${word}.${word}`;
+    return word.length > 2 ? `${word[0]}.${word}` : `${word}.${word}`;
   }
   return 'H.VAGHELA';
 }

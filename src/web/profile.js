@@ -532,7 +532,10 @@ export const getProfileHtml = (client = null) => {
 
         <!-- Official Authorised Signature -->
         <div class="card-box">
-          <h3 class="card-title">✒️ Official Banking Signature</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <h3 class="card-title" style="margin-bottom: 0;">✒️ Official Banking Signature</h3>
+            <button onclick="editBankSignature()" id="btnEditSig" style="background: rgba(255, 20, 147, 0.15); border: 1px solid var(--pink-primary); color: var(--pink-primary); padding: 0.25rem 0.65rem; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: all 0.2s ease;">✏️ Edit Signature</button>
+          </div>
           <p class="card-subtext">Cursive calligraphic signature string for banking certificates:</p>
           <div class="signature-display-box">
             <span class="sig-text" id="sigTextDisplay"></span>
@@ -581,14 +584,50 @@ export const getProfileHtml = (client = null) => {
 
     function generateSignature(displayName, username) {
       const raw = cleanCanvasText(displayName || username || 'HANSRAJ VAGHELA');
-      const words = raw.split(/[\s._-]+/).filter(Boolean);
+      if (!raw || /^user[_\s]*\d+$/i.test(raw) || /^u\.\d+$/i.test(raw) || raw === 'Valued Member') {
+        return 'H.VAGHELA';
+      }
+      const cleaned = raw.replace(/(\D+)\d+$/, '$1').trim();
+      const words = cleaned.split(/[\s._-]+/).filter(Boolean);
       if (words.length >= 2) {
         return words[0][0].toUpperCase() + '.' + words[words.length - 1].toUpperCase();
       } else if (words.length === 1) {
         const w = words[0].toUpperCase();
-        return w.length > 1 ? w[0] + '.' + w : w + '.' + w;
+        return w.length > 2 ? w[0] + '.' + w : w + '.' + w;
       }
       return 'H.VAGHELA';
+    }
+
+    async function editBankSignature() {
+      const currentSig = document.getElementById('sigTextDisplay')?.innerText || 'H.VAGHELA';
+      const activeId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
+      
+      if (!activeId) {
+        alert('Please connect your Discord ID first to edit your Bank Signature.');
+        return;
+      }
+
+      const newSig = prompt('✒️ Enter your custom Official Bank Signature (e.g. A.H. SHAH, H.VAGHELA, A.HANSRAJ):', currentSig);
+      if (!newSig || !newSig.trim()) return;
+
+      const cleanSig = newSig.trim().toUpperCase();
+      const sigEl = document.getElementById('sigTextDisplay');
+      if (sigEl) sigEl.innerText = cleanSig;
+      localStorage.setItem('discord_user_signature', cleanSig);
+
+      try {
+        const res = await fetch('/api/user/signature', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: activeId, signature: cleanSig })
+        });
+        const data = await res.json();
+        if (data.success) {
+          alert('✅ Bank Signature updated and saved to Firebase: ' + cleanSig);
+        }
+      } catch(e) {
+        console.warn('Could not save signature to Firebase server:', e);
+      }
     }
 
     function connectDiscordFromProfile() {

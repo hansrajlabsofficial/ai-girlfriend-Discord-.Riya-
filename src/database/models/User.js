@@ -355,13 +355,17 @@ export const getUserFullDetails = async (userId, clientIp = null) => {
   const finalIp = clientIp || sessionData?.ipAddress || userData?.ipAddress || '127.0.0.1';
 
   let title = 'Acquaintance';
-  let signature = 'H.VAGHELA';
+  let signature = sessionData?.signature || userData?.signature || aggregated?.signature || null;
   try {
     const { getRelationshipTitle } = await import('../../services/rpgService.js');
     const { generateUserSignature } = await import('../../services/economyService.js');
     title = getRelationshipTitle(finalLevel);
-    signature = generateUserSignature({ displayName: finalDisplayName, username: finalUsername });
-  } catch(e) {}
+    if (!signature) {
+      signature = generateUserSignature({ displayName: finalDisplayName, username: finalUsername });
+    }
+  } catch(e) {
+    if (!signature) signature = 'H.VAGHELA';
+  }
 
   const fullDetails = {
     userId,

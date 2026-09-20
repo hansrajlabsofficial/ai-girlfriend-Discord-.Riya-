@@ -90,6 +90,25 @@ app.post('/api/login/discord-id', async (req, res) => {
   }
 });
 
+app.post('/api/user/signature', async (req, res) => {
+  const { userId, signature } = req.body;
+  if (!userId || !signature) {
+    return res.status(400).json({ error: 'userId and signature are required.' });
+  }
+  const cleanSig = String(signature).trim().toUpperCase();
+  try {
+    const { getAdminDb } = await import('../src/database/connect.js');
+    const admin = getAdminDb();
+    if (admin) {
+      await admin.collection('users').doc(`global_${userId}`).set({ signature: cleanSig, updatedAt: new Date().toISOString() }, { merge: true });
+      await admin.collection('user_sessions').doc(`session_${userId}`).set({ signature: cleanSig, updatedAt: new Date().toISOString() }, { merge: true });
+    }
+    res.status(200).json({ success: true, signature: cleanSig });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.post('/api/user/session', async (req, res) => {
   const { userId, username, displayName, avatar, banner, accentColor, accessToken, connectedServerCount, adminServerCount } = req.body;
   if (!userId) {

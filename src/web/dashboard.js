@@ -934,6 +934,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
   </footer>
 
   <script>
+    window.CLIENT_ID = '${clientId}';
+
     function filterCategory(cat, btn) {
       document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
@@ -1012,28 +1014,142 @@ export const getDashboardHtml = (client = null, authData = null) => {
       }
     }
 
-    async function refreshServers() {
-      try {
-        const res = await fetch('/api/guilds');
-        if (res.ok) {
-          const data = await res.json();
-          if (data.guilds && data.guilds.length > 0) {
-            const grid = document.getElementById('serverGrid');
-            grid.innerHTML = data.guilds.map(function(g) {
-              const safeName = g.name.replace(/'/g, "\\'");
-              return '<div class="server-picker-item" onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; transition: transform 0.2s ease;">' +
-                '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">' +
-                  '<img src="' + g.icon + '" alt="' + g.name + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">' +
-                '</div>' +
-                '<span style="font-size: 0.75rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="' + g.name + '">' +
-                  g.name +
-                '</span>' +
-              '</div>';
-            }).join('');
-          }
+    async function initDiscordOAuth() {
+      let token = null;
+      if (window.location.hash && window.location.hash.includes('access_token=')) {
+        const params = new URLSearchParams(window.location.hash.substring(1));
+        token = params.get('access_token');
+        if (token) {
+          localStorage.setItem('discord_access_token', token);
+          history.replaceState(null, '', window.location.pathname);
         }
-      } catch(e) { console.error('Error refreshing servers:', e); }
+      }
+
+      if (!token) {
+        token = localStorage.getItem('discord_access_token');
+      }
+
+      if (!token) return;
+
+      try {
+        const userRes = await fetch('https://discord.com/api/v10/users/@me', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (userRes.status === 401) {
+          localStorage.removeItem('discord_access_token');
+          return;
+        }
+
+        if (!userRes.ok) return;
+
+        const user = await userRes.json();
+        const displayName = user.global_name || user.username || 'Authorized User';
+        const avatarUrl = user.avatar 
+          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.png'
+          : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+
+        const greetingEl = document.getElementById('userGreetingName');
+        if (greetingEl) greetingEl.innerText = displayName;
+
+        const profileCardEl = document.getElementById('userProfileCard');
+        if (profileCardEl) {
+          profileCardEl.className = 'user-profile-card';
+          profileCardEl.style.borderColor = '#00FF7F';
+          profileCardEl.style.background = 'linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(88, 101, 242, 0.15))';
+          profileCardEl.innerHTML = `
+            <div class="user-info">
+              <img src="${avatarUrl}" alt="${displayName}" class="user-avatar" style="border-color: #00FF7F;">
+              <div class="user-details">
+                <h3 style="color: #00FF7F;">✅ Connected as ${displayName}</h3>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Discord ID: ${user.id} • Authorized for Dashboard Management</p>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+              <span class="btn-connect" style="background: #00FF7F; color: #0B0314;">
+                ✓ Connected
+              </span>
+              <button onclick="logoutDiscord()" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; cursor: pointer;">
+                🚪 Logout
+              </button>
+            </div>
+          `;
+        }
+
+        const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+
+        if (!guildsRes.ok) return;
+
+        const guilds = await guildsRes.json();
+        const adminGuilds = guilds.filter(function(g) {
+          const perms = BigInt(g.permissions || '0');
+          const isAdmin = (perms & 0x8n) === 0x8n;
+          const isManageGuild = (perms & 0x20n) === 0x20n;
+          return g.owner || isAdmin || isManageGuild;
+        });
+
+        renderServerPickerGrid(adminGuilds);
+
+      } catch(e) {
+        console.error('Error in initDiscordOAuth:', e);
+      }
     }
+
+    function renderServerPickerGrid(guilds) {
+      const grid = document.getElementById('serverGrid');
+      if (!grid) return;
+
+      const clientId = window.CLIENT_ID || '1479052475368607926';
+      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands';
+
+      let html = '';
+
+      if (guilds && guilds.length > 0) {
+        html = guilds.map(function(g) {
+          const iconUrl = g.icon 
+            ? 'https://cdn.discordapp.com/icons/' + g.id + '/' + g.icon + '.' + (g.icon.startsWith('a_') ? 'gif' : 'png')
+            : null;
+          
+          const safeName = g.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+          const initials = g.name.split(' ').map(function(w) { return w[0]; }).join('').slice(0, 3).toUpperCase();
+
+          const iconContent = iconUrl 
+            ? '<img src="' + iconUrl + '" alt="' + safeName + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">'
+            : '<div style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, #FF1493, #9B51E0); display: flex; justify-content: center; align-items: center; color: #fff; font-weight: 800; font-size: 1.2rem;">' + initials + '</div>';
+
+          return '<div class="server-picker-item" onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; transition: transform 0.2s ease;">' +
+            '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">' +
+              iconContent +
+            '</div>' +
+            '<span style="font-size: 0.78rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="' + safeName + '">' +
+              g.name +
+            '</span>' +
+          '</div>';
+        }).join('');
+      }
+
+      html += '<div class="server-picker-item" onclick="window.open(\'' + inviteUrl + '\', \'_blank\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; opacity: 0.85; transition: opacity 0.2s ease;">' +
+        '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 20, 147, 0.6); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 20, 147, 0.1); transition: all 0.2s ease;">' +
+          '<span style="font-size: 2rem; color: #FF1493; font-weight: 700;">+</span>' +
+        '</div>' +
+        '<span style="font-size: 0.78rem; font-weight: 600; color: var(--pink-primary); text-align: center;">Add Server</span>' +
+      '</div>';
+
+      grid.innerHTML = html;
+    }
+
+    function logoutDiscord() {
+      localStorage.removeItem('discord_access_token');
+      window.location.href = '/';
+    }
+
+    function refreshServers() {
+      initDiscordOAuth();
+    }
+
+    window.addEventListener('DOMContentLoaded', initDiscordOAuth);
   </script>
 </body>
 </html>`;

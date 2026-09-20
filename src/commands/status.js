@@ -72,11 +72,11 @@ export function buildStatusEmbed(client) {
     new ButtonBuilder()
       .setLabel('🌐 Website Dashboard')
       .setStyle(ButtonStyle.Link)
-      .setUrl(dashboardUrl),
+      .setURL(dashboardUrl),
     new ButtonBuilder()
       .setLabel('👤 User Profile')
       .setStyle(ButtonStyle.Link)
-      .setUrl('https://riya-ai-girlfriend-discord-bot.vercel.app/profile')
+      .setURL('https://riya-ai-girlfriend-discord-bot.vercel.app/profile')
   );
 
   return { embeds: [embed], components: [row] };

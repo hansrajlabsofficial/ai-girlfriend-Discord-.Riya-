@@ -207,6 +207,66 @@ export const getLoginHtml = () => {
       localStorage.setItem('skip_login', 'true');
       window.location.href = '/dashboard';
     }
+
+    (function() {
+      // 1. Disable Right Click Context Menu
+      document.addEventListener('contextmenu', function(e) {
+        e.preventDefault();
+        return false;
+      });
+
+      // 2. Disable DevTools & Inspect Keyboard Shortcuts
+      document.addEventListener('keydown', function(e) {
+        if (e.keyCode === 123) { e.preventDefault(); return false; }
+        if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
+          e.preventDefault(); return false;
+        }
+        if (e.ctrlKey && (e.keyCode === 85 || e.keyCode === 83)) {
+          e.preventDefault(); return false;
+        }
+      });
+
+      // 3. DevTools Open Detection & Auto-Hide
+      var hidden = false;
+      function hideDetails() {
+        if (hidden) return;
+        hidden = true;
+        document.body.innerHTML = '<div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #0B0314; color: #FF1493; font-family: sans-serif; text-align: center; padding: 2rem;">' +
+          '<h1 style="font-size: 2.2rem; margin-bottom: 1rem;">🔒 Security Protection Active</h1>' +
+          '<p style="font-size: 1.1rem; color: #E2D9F3; max-width: 500px; line-height: 1.6;">Developer Tools access is restricted on Riya AI Portal for privacy and security protection. Please close developer tools to return.</p>' +
+        '</div>';
+      }
+
+      function checkDevTools() {
+        var widthDiff = window.outerWidth - window.innerWidth;
+        var heightDiff = window.outerHeight - window.innerHeight;
+        if (widthDiff > 160 || heightDiff > 160) {
+          hideDetails();
+        }
+      }
+
+      window.addEventListener('resize', checkDevTools);
+      setInterval(checkDevTools, 800);
+
+      setInterval(function() {
+        var start = performance.now();
+        (function(){})['constructor']('debugger')();
+        var end = performance.now();
+        if (end - start > 100) {
+          hideDetails();
+        }
+      }, 800);
+
+      // 4. Suppress Console Inspections
+      try {
+        var noop = function() {};
+        console.log = noop;
+        console.warn = noop;
+        console.error = noop;
+        console.dir = noop;
+        console.table = noop;
+      } catch(err) {}
+    })();
   </script>
 
 </body>

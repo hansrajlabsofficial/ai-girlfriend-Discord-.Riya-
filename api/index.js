@@ -114,7 +114,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/login', (req, res) => {
-  res.status(200).send(getLoginHtml());
+  res.redirect('/connect');
 });
 
 app.get('/profile', (req, res) => {

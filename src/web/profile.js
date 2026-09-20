@@ -457,13 +457,10 @@ export const getProfileHtml = (client = null) => {
       <p style="color: var(--text-muted); font-size: 1.05rem; margin-bottom: 2rem; line-height: 1.6;">
         Access to your Riya AI Profile, Bank Savings Vault, Wallet Cash, and Level & Relationship stats requires connecting your Discord account.
       </p>
-      <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <button onclick="connectDiscordFromProfile()" class="btn-connect" style="padding: 0.9rem 2rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4); cursor: pointer; border: none;">
-          🔑 Connect Discord OAuth2
+      <div style="display: flex; justify-content: center;">
+        <button onclick="connectDiscordFromProfile()" class="btn-connect" style="padding: 0.9rem 2.5rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4); cursor: pointer; border: none;">
+          🔑 Connect with Discord
         </button>
-        <a href="/login" class="btn-action" style="padding: 0.9rem 1.75rem;">
-          ⚡ Go to Login Page
-        </a>
       </div>
     </div>
 
@@ -721,7 +718,7 @@ export const getProfileHtml = (client = null) => {
       }
 
       if (!token) {
-        showAccessDenied();
+        connectDiscordFromProfile();
         return;
       }
 

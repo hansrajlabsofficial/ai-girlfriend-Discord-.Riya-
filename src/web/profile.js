@@ -480,7 +480,7 @@ export const getProfileHtml = (client = null) => {
           </div>
 
           <div class="profile-actions">
-            <button onclick="syncProfile()" class="btn-action primary">
+            <button onclick="syncProfile()" id="btnSyncProfile" class="btn-action primary">
               🔄 Sync Profile
             </button>
             <button onclick="logoutDiscord()" class="btn-action" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.5); background: rgba(255, 75, 75, 0.1);">
@@ -826,15 +826,51 @@ export const getProfileHtml = (client = null) => {
       saveLocalUserDetails(user, user);
     }
 
-    function syncProfile() {
-      loadUserProfile();
+    async function syncProfile() {
+      const btn = document.getElementById('btnSyncProfile');
+      const activeId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
+
+      if (!activeId) {
+        showIdConnectPrompt();
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Syncing Firebase...';
+        btn.style.opacity = '0.7';
+      }
+
+      try {
+        await fetchAndRenderProfile(activeId);
+        if (btn) {
+          btn.style.opacity = '1';
+          btn.innerHTML = '✅ Synced with Firebase!';
+          btn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
+          btn.style.color = '#0B0314';
+          setTimeout(function() {
+            btn.disabled = false;
+            btn.style.background = '';
+            btn.style.color = '';
+            btn.innerHTML = '🔄 Sync Profile';
+          }, 1500);
+        }
+      } catch (err) {
+        console.error('Error syncing profile with Firebase:', err);
+        if (btn) {
+          btn.disabled = false;
+          btn.style.opacity = '1';
+          btn.innerHTML = '❌ Sync Failed';
+          setTimeout(function() {
+            btn.innerHTML = '🔄 Sync Profile';
+          }, 1500);
+        }
+      }
     }
 
     function logoutDiscord() {
       clearAuthSession();
       showIdConnectPrompt();
-    }
-      showAccessDenied();
     }
 
     window.addEventListener('DOMContentLoaded', loadUserProfile);

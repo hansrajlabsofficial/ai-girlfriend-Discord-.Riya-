@@ -6,6 +6,9 @@ import { logger } from '../utils/logger.js';
 const userCooldowns = new Map();
 const COOLDOWN_MS = 3000;
 
+// Deduplication tracker to prevent duplicate broadcasts of the exact same message
+const processedGlobalMessages = new Set();
+
 // Simple blacklisted users / server IDs for moderation
 const BLACKLISTED_USERS = new Set();
 const BLACKLISTED_GUILDS = new Set();
@@ -28,7 +31,17 @@ export const handleGlobalChatBroadcast = async (message) => {
       return false;
     }
 
-    // 4. Rate Limiting Check (3 seconds per user)
+    // 4. Deduplication Check: Ensure message ID is only broadcasted ONCE
+    if (processedGlobalMessages.has(message.id)) {
+      return true;
+    }
+    processedGlobalMessages.add(message.id);
+    if (processedGlobalMessages.size > 500) {
+      const firstItem = processedGlobalMessages.values().next().value;
+      processedGlobalMessages.delete(firstItem);
+    }
+
+    // 5. Rate Limiting Check (3 seconds per user)
     const now = Date.now();
     const lastTime = userCooldowns.get(message.author.id) || 0;
     if (now - lastTime < COOLDOWN_MS) {
@@ -41,7 +54,7 @@ export const handleGlobalChatBroadcast = async (message) => {
     }
     userCooldowns.set(message.author.id, now);
 
-    // 5. Construct Rich Broadcast Embed
+    // 6. Construct Rich Broadcast Embed
     const embed = new EmbedBuilder()
       .setColor('#FF1493')
       .setAuthor({
@@ -62,28 +75,32 @@ export const handleGlobalChatBroadcast = async (message) => {
       embed.setImage(imageAttachment.url);
     }
 
-    // 6. Fast Parallel Broadcast Across All Registered Global Channels
+    // 7. Fast Parallel Broadcast Across All Registered Global Channels
     const allChannels = await getAllGlobalChatChannels();
     if (allChannels.length === 0) return true;
+
+    // Deduplicate target channel IDs to prevent duplicate sends to the same channel
+    const uniqueTargetChannelIds = [...new Set(allChannels.map(c => c.channelId))]
+      .filter(chId => chId && chId !== message.channel.id);
+
+    if (uniqueTargetChannelIds.length === 0) return true;
 
     // React to origin message to confirm broadcast
     message.react('🌐').catch(() => {});
 
     // Broadcast asynchronously in parallel using Promise.allSettled to eliminate API lag
-    const sendPromises = allChannels
-      .filter(({ channelId }) => channelId !== message.channel.id)
-      .map(async ({ channelId }) => {
-        try {
-          const targetChannel = message.client.channels.cache.get(channelId) ||
-            await message.client.channels.fetch(channelId).catch(() => null);
+    const sendPromises = uniqueTargetChannelIds.map(async (channelId) => {
+      try {
+        const targetChannel = message.client.channels.cache.get(channelId) ||
+          await message.client.channels.fetch(channelId).catch(() => null);
 
-          if (targetChannel && typeof targetChannel.send === 'function') {
-            await targetChannel.send({ embeds: [embed] });
-          }
-        } catch (sendErr) {
-          logger.warn(`Failed to relay global message to channel ${channelId}: ${sendErr.message}`);
+        if (targetChannel && typeof targetChannel.send === 'function') {
+          await targetChannel.send({ embeds: [embed] });
         }
-      });
+      } catch (sendErr) {
+        logger.warn(`Failed to relay global message to channel ${channelId}: ${sendErr.message}`);
+      }
+    });
 
     await Promise.allSettled(sendPromises);
     return true;

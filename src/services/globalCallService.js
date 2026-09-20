@@ -328,6 +328,9 @@ export const getCallStatus = async (interaction) => {
   });
 };
 
+// Deduplication set for call messages
+const processedCallMessages = new Set();
+
 export const handleGlobalCallRelay = async (message) => {
   try {
     if (message.author.bot || !message.guild) return false;
@@ -338,7 +341,15 @@ export const handleGlobalCallRelay = async (message) => {
     const call = activeCalls.get(guildId);
 
     // Verify message is in the connected call channel
-    if (message.channel.id !== call.channelId && message.channel.id !== message.channel.id) return false;
+    if (call.channelId && message.channel.id !== call.channelId) return false;
+
+    // Deduplication check
+    if (processedCallMessages.has(message.id)) return true;
+    processedCallMessages.add(message.id);
+    if (processedCallMessages.size > 500) {
+      const firstItem = processedCallMessages.values().next().value;
+      processedCallMessages.delete(firstItem);
+    }
 
     // Build Call Relay Embed
     const relayEmbed = new EmbedBuilder()

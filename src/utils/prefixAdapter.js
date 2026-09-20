@@ -88,7 +88,12 @@ const COMMAND_ALIASES = {
   'xprivatecall': 'globalprivatecall',
   'privcall': 'globalprivatecall',
   'privhangup': 'globalprivatecall',
-  'xprivhangup': 'globalprivatecall'
+  'xprivhangup': 'globalprivatecall',
+  'status': 'status',
+  'xstatus': 'status',
+  'botstatus': 'status',
+  'uptime': 'status',
+  'live': 'status'
 };
 
 function parseAmountToken(token) {

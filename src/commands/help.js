@@ -161,6 +161,7 @@ const CATEGORIES = {
       { name: '/select_channel <channel>', desc: 'Bind Riya\'s primary chat channel.' },
       { name: '/settings', desc: 'Configure server settings & game toggles.' },
       { name: '/language', desc: 'Change bot output language.' },
+      { name: '/status', desc: '24/7 Live bot online status, uptime, connected servers & dashboard link.' },
       { name: '/about', desc: 'View information & version of Riya Bot.' },
       { name: '/help [category]', desc: 'Display this complete command directory.' }
     ]

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { getDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
@@ -6,6 +6,42 @@ import { logger } from '../../utils/logger.js';
 const memoryFallbackUsers = new Map();
 
 const getFallbackKey = (userId, guildId) => `${guildId}:${userId}`;
+
+export const getGlobalTopBankUsers = async (topLimit = 10) => {
+  const usersMap = new Map();
+
+  // 1. Gather from memory fallback
+  for (const user of memoryFallbackUsers.values()) {
+    const total = (user.balance !== undefined ? user.balance : 10000) + (user.bank || 0);
+    const existing = usersMap.get(user.userId);
+    if (!existing || total > existing.total) {
+      usersMap.set(user.userId, { ...user, total });
+    }
+  }
+
+  // 2. Gather from Firestore if connected
+  const db = getDb();
+  if (db) {
+    try {
+      const snap = await getDocs(collection(db, 'users'));
+      snap.forEach(docSnap => {
+        const u = docSnap.data();
+        if (u.userId) {
+          const total = (u.balance !== undefined ? u.balance : 10000) + (u.bank || 0);
+          const existing = usersMap.get(u.userId);
+          if (!existing || total > existing.total) {
+            usersMap.set(u.userId, { ...u, total });
+          }
+        }
+      });
+    } catch (err) {
+      logger.warn(`Firestore getDocs failed for top bank users: ${err.message}`);
+    }
+  }
+
+  const sorted = Array.from(usersMap.values()).sort((a, b) => b.total - a.total);
+  return sorted.slice(0, topLimit);
+};
 
 export const getUserData = async (userId, guildId) => {
   const db = getDb();

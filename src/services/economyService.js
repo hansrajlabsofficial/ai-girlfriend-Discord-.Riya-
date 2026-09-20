@@ -37,8 +37,23 @@ export const hasBalance = (userDoc, amount) => {
   return getBalance(userDoc) >= amount;
 };
 
+import { getGlobalTopBankUsers } from '../database/models/User.js';
+
 export const addBalance = async (userDoc, amount) => {
-  userDoc.balance = (userDoc.balance !== undefined ? userDoc.balance : 10000) + amount;
+  let finalAmount = amount;
+  if (amount > 0 && userDoc.userId) {
+    try {
+      const topUsers = await getGlobalTopBankUsers(10);
+      const isTop10 = topUsers.some(u => u.userId === userDoc.userId);
+      if (isTop10) {
+        const perkBonus = Math.max(1, Math.round(amount * 0.005)); // +0.5% Extra Money Perk
+        finalAmount += perkBonus;
+      }
+    } catch (err) {
+      // Ignore perk check error if fails
+    }
+  }
+  userDoc.balance = (userDoc.balance !== undefined ? userDoc.balance : 10000) + finalAmount;
   if (userDoc.save) await userDoc.save();
   return userDoc.balance;
 };

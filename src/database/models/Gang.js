@@ -1,12 +1,28 @@
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { getDb } from '../connect.js';
+import { getDb, getAdminDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
 const memoryFallbackGangs = new Map();
 
 export const getGangData = async (gangId) => {
-  const db = getDb();
+  const admin = getAdminDb();
+  if (admin) {
+    try {
+      const gangSnap = await admin.collection('gangs').doc(gangId).get();
+      if (gangSnap.exists) {
+        const data = gangSnap.data();
+        data._gangId = gangId;
+        data.save = async function () {
+          return await saveGangData(this);
+        };
+        return data;
+      }
+    } catch (err) {
+      logger.warn(`Admin SDK read failed for gang ${gangId}: ${err.message}`);
+    }
+  }
 
+  const db = getDb();
   if (db) {
     try {
       const gangRef = doc(db, 'gangs', gangId);
@@ -50,10 +66,25 @@ export const createGangData = async (gangId, name, ownerId) => {
 };
 
 export const saveGangData = async (gangData) => {
-  const db = getDb();
+  if (!gangData.gangId) return gangData;
   memoryFallbackGangs.set(gangData.gangId, gangData);
 
-  if (db && gangData.gangId) {
+  const admin = getAdminDb();
+  if (admin) {
+    try {
+      const dataToSave = { ...gangData };
+      delete dataToSave._gangId;
+      delete dataToSave.save;
+
+      await admin.collection('gangs').doc(gangData.gangId).set(dataToSave, { merge: true });
+      return gangData;
+    } catch (err) {
+      logger.warn(`Admin SDK save failed for gang ${gangData.gangId}: ${err.message}`);
+    }
+  }
+
+  const db = getDb();
+  if (db) {
     try {
       const gangRef = doc(db, 'gangs', gangData.gangId);
       const dataToSave = { ...gangData };

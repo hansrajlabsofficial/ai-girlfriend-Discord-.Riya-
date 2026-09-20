@@ -95,8 +95,71 @@ export const getAggregatedUserData = async (userId) => {
 };
 
 export const getUserData = async (userId, guildId) => {
-  const db = getDb();
+  const admin = getAdminDb();
   const docId = `${guildId}_${userId}`;
+
+  if (admin) {
+    try {
+      const userSnap = await admin.collection('users').doc(docId).get();
+
+      if (userSnap.exists) {
+        const data = userSnap.data();
+        data._docId = docId;
+        data.balance = data.balance !== undefined ? data.balance : 10000;
+        data.bank = data.bank !== undefined ? data.bank : 0;
+        data.hp = data.hp !== undefined ? data.hp : 100;
+        data.maxHp = data.maxHp !== undefined ? data.maxHp : 100;
+        data.attributes = data.attributes || { strength: 1, defense: 1, agility: 1, luck: 1 };
+        data.cooldowns = data.cooldowns || {};
+        data.inventory = data.inventory || [];
+        data.friends = data.friends || {};
+        data.friendRequests = data.friendRequests || [];
+        data.partnerId = data.partnerId || null;
+        data.gangId = data.gangId || null;
+        data.save = async function () {
+          return await saveUserData(this);
+        };
+        return data;
+      } else {
+        const newUser = {
+          _docId: docId,
+          userId,
+          guildId,
+          xp: 0,
+          level: 1,
+          balance: 10000,
+          bank: 0,
+          hp: 100,
+          maxHp: 100,
+          attributes: { strength: 1, defense: 1, agility: 1, luck: 1 },
+          cooldowns: {},
+          inventory: [],
+          friends: {},
+          friendRequests: [],
+          partnerId: null,
+          gangId: null,
+          moodScore: 50,
+          moodState: 'NEUTRAL',
+          memories: [],
+          conversationHistory: [],
+          lastDailyQuiz: null,
+          lastDailyTask: null,
+          currentDailyTask: null,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        newUser.save = async function () {
+          return await saveUserData(this);
+        };
+        await saveUserData(newUser);
+        return newUser;
+      }
+    } catch (err) {
+      logger.warn(`Admin SDK read failed for user ${docId}. Fallback to client SDK: ${err.message}`);
+    }
+  }
+
+  const db = getDb();
 
   if (db) {
     try {
@@ -206,8 +269,24 @@ export const getUserData = async (userId, guildId) => {
 };
 
 export const saveUserData = async (userData) => {
-  const db = getDb();
+  if (!userData._docId) return userData;
 
+  const admin = getAdminDb();
+  if (admin) {
+    try {
+      const dataToSave = { ...userData };
+      delete dataToSave._docId;
+      delete dataToSave.save;
+      dataToSave.updatedAt = new Date().toISOString();
+
+      await admin.collection('users').doc(userData._docId).set(dataToSave, { merge: true });
+      return userData;
+    } catch (err) {
+      logger.warn(`Admin SDK save failed for user ${userData._docId}: ${err.message}`);
+    }
+  }
+
+  const db = getDb();
   if (db && userData._docId) {
     try {
       const userRef = doc(db, 'users', userData._docId);

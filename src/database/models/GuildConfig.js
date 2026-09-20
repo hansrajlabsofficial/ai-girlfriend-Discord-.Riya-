@@ -1,5 +1,5 @@
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
-import { getDb } from '../connect.js';
+import { getDb, getAdminDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
 // In-memory fallback
@@ -102,9 +102,25 @@ export const getGuildConfig = async (guildId) => {
 };
 
 export const saveGuildConfig = async (guildConfig) => {
-  const db = getDb();
+  if (!guildConfig.guildId) return guildConfig;
 
-  if (db && guildConfig.guildId) {
+  const admin = getAdminDb();
+  if (admin) {
+    try {
+      const dataToSave = { ...guildConfig };
+      delete dataToSave._guildId;
+      delete dataToSave.save;
+      dataToSave.updatedAt = new Date().toISOString();
+
+      await admin.collection('guilds').doc(guildConfig.guildId).set(dataToSave, { merge: true });
+      return guildConfig;
+    } catch (err) {
+      logger.warn(`Admin SDK save failed for guild ${guildConfig.guildId}: ${err.message}`);
+    }
+  }
+
+  const db = getDb();
+  if (db) {
     try {
       const guildRef = doc(db, 'guilds', guildConfig.guildId);
       const dataToSave = { ...guildConfig };

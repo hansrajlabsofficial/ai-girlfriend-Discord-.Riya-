@@ -58,6 +58,9 @@ const COMMAND_ALIASES = {
   'cf': 'coinflip',
   'tictactoe': 'ttt',
   'connect4': 'c4',
+  'openbox': 'luckybox',
+  'luckybox': 'luckybox',
+  'box': 'luckybox',
 
   // Social & Dating
   'friends': 'friend',

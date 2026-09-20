@@ -343,6 +343,9 @@ export const handleGlobalCallRelay = async (message) => {
     // Verify message is in the connected call channel
     if (call.channelId && message.channel.id !== call.channelId) return false;
 
+    // Do NOT relay back to the same origin channel
+    if (call.peerChannelId === message.channel.id) return false;
+
     // Deduplication check
     if (processedCallMessages.has(message.id)) return true;
     processedCallMessages.add(message.id);

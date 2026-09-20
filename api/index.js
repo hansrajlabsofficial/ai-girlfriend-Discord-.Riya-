@@ -51,7 +51,7 @@ app.get('/connect', (req, res) => {
   const clientId = config.clientId || '';
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
-  const redirectUri = `${protocol}://${host}/auth/callback`;
+  const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;
 
   const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20guilds`;
   res.redirect(oauthConnectUrl);

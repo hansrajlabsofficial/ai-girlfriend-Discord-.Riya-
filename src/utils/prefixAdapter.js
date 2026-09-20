@@ -139,15 +139,21 @@ export function createInteractionMock(message, commandName, args, commandModule)
       return null;
     },
     getUser(name, required = false) {
-      const mentionedUser = message.mentions.users.first();
-      if (mentionedUser) return mentionedUser;
-      return null;
+      const users = Array.from(message.mentions.users.values());
+      if (name === 'user2' || name === 'target2' || name === 'user_two') {
+        return users[1] || users[0] || null;
+      }
+      return users[0] || null;
     },
     getMember(name, required = false) {
-      const mentionedMember = message.mentions.members?.first();
-      if (mentionedMember) return mentionedMember;
-      if (message.mentions.users.first() && message.guild) {
-        return message.guild.members.cache.get(message.mentions.users.first().id) || null;
+      const members = Array.from(message.mentions.members?.values() || []);
+      if (name === 'user2' || name === 'target2' || name === 'user_two') {
+        if (members[1]) return members[1];
+      }
+      if (members[0]) return members[0];
+      const targetUser = mockOptions.getUser(name, required);
+      if (targetUser && message.guild) {
+        return message.guild.members.cache.get(targetUser.id) || null;
       }
       return null;
     },

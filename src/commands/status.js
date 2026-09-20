@@ -16,12 +16,31 @@ function formatUptime(uptimeSec) {
 }
 
 export function buildStatusEmbed(client) {
-  const uptimeSec = Math.floor(process.uptime() || 0);
+  let uptimeSec = 0;
+  try { uptimeSec = Math.floor(process.uptime() || 0); } catch(e) {}
   const uptimeFormatted = formatUptime(uptimeSec);
-  const guildCount = client?.guilds?.cache?.size || 12;
-  const userCount = client?.guilds?.cache?.reduce((acc, g) => acc + (g.memberCount || 0), 0) || client?.users?.cache?.size || 1500;
-  const ping = client?.ws?.ping !== undefined && client?.ws?.ping >= 0 ? `${client.ws.ping} ms` : 'Online';
-  const memoryMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+
+  let guildCount = 12;
+  let userCount = 1500;
+  try {
+    if (client?.guilds?.cache) {
+      guildCount = client.guilds.cache.size || 12;
+      userCount = client.guilds.cache.reduce((acc, g) => acc + (g?.memberCount || 0), 0) || client?.users?.cache?.size || 1500;
+    }
+  } catch(e) {}
+
+  let ping = 'Online';
+  try {
+    if (client?.ws?.ping !== undefined && client?.ws?.ping >= 0) {
+      ping = `${client.ws.ping} ms`;
+    }
+  } catch(e) {}
+
+  let memoryMB = '45.00';
+  try {
+    memoryMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
+  } catch(e) {}
+
   const dashboardUrl = 'https://riya-ai-girlfriend-discord-bot.vercel.app/dashboard';
 
   const embed = new EmbedBuilder()
@@ -63,6 +82,24 @@ export function buildStatusEmbed(client) {
   return { embeds: [embed], components: [row] };
 }
 
+async function sendResponse(interaction, payload) {
+  try {
+    if (interaction.deferred || interaction.replied) {
+      return await interaction.editReply(payload).catch(async () => {
+        return await interaction.followUp(payload).catch(() => null);
+      });
+    } else if (typeof interaction.reply === 'function') {
+      return await interaction.reply({ ...payload, fetchReply: true }).catch(async () => {
+        return await interaction.followUp({ ...payload, fetchReply: true }).catch(() => null);
+      });
+    } else if (interaction.channel && typeof interaction.channel.send === 'function') {
+      return await interaction.channel.send(payload).catch(() => null);
+    }
+  } catch(e) {
+    return null;
+  }
+}
+
 export const data = new SlashCommandBuilder()
   .setName('status')
   .setDescription('24/7 Live bot status, uptime, connected servers, enable/disable & channel setup')
@@ -86,10 +123,14 @@ export const data = new SlashCommandBuilder()
 
 export const execute = async (interaction) => {
   try {
+    if (interaction.isRepliable && !interaction.replied && !interaction.deferred) {
+      await interaction.deferReply().catch(() => {});
+    }
+
     let action = 'view';
     let targetChannel = null;
 
-    if (interaction.options) {
+    if (interaction.options && typeof interaction.options.getString === 'function') {
       action = interaction.options.getString('action') || 'view';
       targetChannel = interaction.options.getChannel('channel');
     }
@@ -99,6 +140,10 @@ export const execute = async (interaction) => {
     if (action === 'setchannel' && guildId) {
       const guildConfig = await getGuildConfig(guildId);
       const chan = targetChannel || interaction.channel;
+
+      if (!chan || !chan.isTextBased()) {
+        return await sendResponse(interaction, { content: '❌ Invalid text channel selected.' });
+      }
 
       guildConfig.statusChannelId = chan.id;
       guildConfig.status247Enabled = true;
@@ -121,7 +166,7 @@ export const execute = async (interaction) => {
         )
         .setFooter({ text: 'Riya Official 24/7 Status Monitor System • AHP Group' });
 
-      return await interaction.reply({ embeds: [embed] }).catch(() => {});
+      return await sendResponse(interaction, { embeds: [embed] });
     }
 
     if (action === 'enable' && guildId) {
@@ -131,7 +176,7 @@ export const execute = async (interaction) => {
       guildConfig.status247Enabled = true;
       await saveGuildConfig(guildConfig);
 
-      const chan = interaction.client.channels.cache.get(chanId);
+      const chan = interaction.client?.channels?.cache?.get(chanId);
       if (chan && chan.isTextBased()) {
         const statusData = buildStatusEmbed(interaction.client);
         const sentMsg = await chan.send(statusData).catch(() => null);
@@ -141,9 +186,9 @@ export const execute = async (interaction) => {
         }
       }
 
-      return await interaction.reply({
+      return await sendResponse(interaction, {
         content: `✅ **24/7 Live Status Monitoring ENABLED!** Auto-updating live status embed is active in <#${chanId}>! ☕⚡`
-      }).catch(() => {});
+      });
     }
 
     if (action === 'disable' && guildId) {
@@ -151,18 +196,16 @@ export const execute = async (interaction) => {
       guildConfig.status247Enabled = false;
       await saveGuildConfig(guildConfig);
 
-      return await interaction.reply({
+      return await sendResponse(interaction, {
         content: '❌ **24/7 Live Status Monitoring DISABLED.** Auto-updating has been paused for this server.'
-      }).catch(() => {});
+      });
     }
 
     // Default: View Status
     const statusData = buildStatusEmbed(interaction.client);
-    const msg = await interaction.reply({ ...statusData, fetchReply: true }).catch(async () => {
-      return await interaction.followUp({ ...statusData, fetchReply: true }).catch(() => null);
-    });
+    const msg = await sendResponse(interaction, statusData);
 
-    if (msg) {
+    if (msg && typeof msg.createMessageComponentCollector === 'function') {
       let updateInterval = setInterval(async () => {
         try {
           const refreshed = buildStatusEmbed(interaction.client);
@@ -188,8 +231,6 @@ export const execute = async (interaction) => {
   } catch (err) {
     console.error('Error in status command execution:', err);
     const statusData = buildStatusEmbed(interaction.client);
-    if (!interaction.replied && !interaction.deferred) {
-      await interaction.reply(statusData).catch(() => {});
-    }
+    await sendResponse(interaction, statusData).catch(() => {});
   }
 };

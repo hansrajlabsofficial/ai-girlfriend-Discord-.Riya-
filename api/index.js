@@ -134,8 +134,7 @@ app.get('/connect', (req, res) => {
   const clientId = config.clientId || '1479052475368607926';
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'riya-ai-girlfriend-discord-bot-full.vercel.app';
-  const fromPage = req.query.from || '';
-  const redirectUri = process.env.REDIRECT_URI || (fromPage === 'profile' ? `${protocol}://${host}/profile` : `${protocol}://${host}/auth/callback`);
+  const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;
 
   const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20guilds`;
   res.redirect(oauthConnectUrl);
@@ -146,7 +145,14 @@ app.get('/auth/callback', (req, res) => {
 });
 
 app.get('/logout', (req, res) => {
-  res.redirect('/');
+  res.status(200).send(`<!DOCTYPE html><html><head><script>
+    localStorage.removeItem('discord_access_token');
+    localStorage.removeItem('discord_auth');
+    localStorage.removeItem('discord_user_cache');
+    localStorage.removeItem('pre_login_redirect');
+    localStorage.removeItem('skip_login');
+    window.location.href = '/';
+  </script></head><body>Logging out...</body></html>`);
 });
 
 app.get('/health', async (req, res) => {

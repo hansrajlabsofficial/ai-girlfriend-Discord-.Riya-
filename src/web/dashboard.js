@@ -481,11 +481,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>
         ${authData?.connected ? `
-        <a href="/logout" onclick="localStorage.removeItem('discord_auth');" class="btn-connect" style="background: rgba(255, 75, 75, 0.2); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
+        <a href="/logout" onclick="clearAuthSession();" class="btn-connect" style="background: rgba(255, 75, 75, 0.2); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
           🚪 Logout
         </a>
         ` : `
-        <a href="${oauthConnectUrl}" class="btn-connect">
+        <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">
           <svg width="18" height="18" viewBox="0 0 127.14 96.36" fill="currentColor">
             <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0,3.36,6.83A97.68,97.68,0,0,0,42.29,6.83,72.37,72.37,0,0,0,45.65,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a74.71,74.71,0,0,0,64.3,0c.87.68,1.76,1.36,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c3.09-27.87-5.19-51.52-18.88-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.92,53.86,53,48.78,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5.08-12.74,11.44-12.74S96.2,45.92,96.07,53,91,65.69,84.69,65.69Z"/>
           </svg>
@@ -538,7 +538,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
         <span class="btn-connect" style="background: #00FF7F; color: #0B0314;">
           ✓ Account Authorized
         </span>
-        <a href="/logout" onclick="localStorage.removeItem('discord_auth');" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
+        <a href="/logout" onclick="clearAuthSession();" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
           🚪 Logout
         </a>
       </div>
@@ -1016,6 +1016,44 @@ export const getDashboardHtml = (client = null, authData = null) => {
       }
     }
 
+    function clearAuthSession() {
+      localStorage.removeItem('discord_access_token');
+      localStorage.removeItem('discord_auth');
+      localStorage.removeItem('discord_user_cache');
+      localStorage.removeItem('pre_login_redirect');
+      localStorage.removeItem('skip_login');
+    }
+
+    function updateHeaderAuthButton(userCache = null) {
+      const btn = document.getElementById('headerAuthBtn');
+      if (!btn) return;
+      const token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
+      
+      if (token || userCache) {
+        let name = 'My Profile';
+        if (userCache && (userCache.displayName || userCache.username)) {
+          name = userCache.displayName || userCache.username;
+        } else {
+          const cachedRaw = localStorage.getItem('discord_user_cache');
+          if (cachedRaw) {
+            try {
+              const u = JSON.parse(cachedRaw);
+              name = u.displayName || u.username || name;
+            } catch(e) {}
+          }
+        }
+        btn.href = '/profile';
+        btn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
+        btn.style.color = '#0B0314';
+        btn.innerHTML = '👤 ' + name;
+      } else {
+        btn.href = '/connect';
+        btn.style.background = 'linear-gradient(135deg, #5865F2, #7289DA)';
+        btn.style.color = '#FFF';
+        btn.innerHTML = 'Connect Discord';
+      }
+    }
+
     async function initDiscordOAuth() {
       let token = null;
       if (window.location.hash && window.location.hash.includes('access_token=')) {
@@ -1023,16 +1061,25 @@ export const getDashboardHtml = (client = null, authData = null) => {
         token = params.get('access_token');
         if (token) {
           localStorage.setItem('discord_access_token', token);
-          history.replaceState(null, '', window.location.pathname);
+          localStorage.setItem('discord_auth', token);
+
+          const target = localStorage.getItem('pre_login_redirect');
+          if (target) {
+            localStorage.removeItem('pre_login_redirect');
+            window.location.href = target;
+            return;
+          }
+          history.replaceState(null, '', '/dashboard');
         }
       }
 
       if (!token) {
-        token = localStorage.getItem('discord_access_token');
+        token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
       }
 
       if (!token) {
         renderUnauthenticatedServerPicker();
+        updateHeaderAuthButton(null);
         return;
       }
 
@@ -1042,21 +1089,40 @@ export const getDashboardHtml = (client = null, authData = null) => {
         });
 
         if (userRes.status === 401) {
-          localStorage.removeItem('discord_access_token');
+          clearAuthSession();
           renderUnauthenticatedServerPicker();
+          updateHeaderAuthButton(null);
           return;
         }
 
         if (!userRes.ok) {
-          renderUnauthenticatedServerPicker();
+          const cachedRaw = localStorage.getItem('discord_user_cache');
+          if (cachedRaw) {
+            try {
+              const cachedUser = JSON.parse(cachedRaw);
+              updateHeaderAuthButton(cachedUser);
+            } catch(e) {}
+          } else {
+            renderUnauthenticatedServerPicker();
+          }
           return;
         }
 
         const user = await userRes.json();
         const displayName = user.global_name || user.username || 'Authorized User';
+        const avatarExt = user.avatar ? (user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
         const avatarUrl = user.avatar 
-          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.png'
+          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=256'
           : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+
+        const userCache = {
+          id: user.id,
+          username: user.username,
+          displayName: displayName,
+          avatar: avatarUrl
+        };
+        localStorage.setItem('discord_user_cache', JSON.stringify(userCache));
+        updateHeaderAuthButton(userCache);
 
         const greetingEl = document.getElementById('userGreetingName');
         if (greetingEl) greetingEl.innerText = displayName;
@@ -1196,7 +1262,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
     }
 
     function logoutDiscord() {
-      localStorage.removeItem('discord_access_token');
+      clearAuthSession();
       window.location.href = '/';
     }
 

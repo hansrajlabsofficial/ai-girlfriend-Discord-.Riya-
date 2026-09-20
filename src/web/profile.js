@@ -442,7 +442,7 @@ export const getProfileHtml = (client = null) => {
         <a href="/guide">Guide</a>
         <a href="/profile" class="active">👤 Profile</a>
         <a href="/dashboard">Dashboard</a>
-        <a href="/login" class="btn-connect">Connect Discord</a>
+        <a href="/login" class="btn-connect" id="headerAuthBtn">Connect Discord</a>
       </nav>
     </div>
   </header>
@@ -458,9 +458,9 @@ export const getProfileHtml = (client = null) => {
         Access to your Riya AI Profile, Bank Savings Vault, Wallet Cash, and Level & Relationship stats requires connecting your Discord account.
       </p>
       <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-        <a href="${oauthConnectUrl}" class="btn-connect" style="padding: 0.9rem 2rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4);">
+        <button onclick="connectDiscordFromProfile()" class="btn-connect" style="padding: 0.9rem 2rem; font-size: 1.05rem; background: var(--discord-blue); box-shadow: 0 8px 25px rgba(88, 101, 242, 0.4); cursor: pointer; border: none;">
           🔑 Connect Discord OAuth2
-        </a>
+        </button>
         <a href="/login" class="btn-action" style="padding: 0.9rem 1.75rem;">
           ⚡ Go to Login Page
         </a>
@@ -595,7 +595,51 @@ export const getProfileHtml = (client = null) => {
       return 'H.VAGHELA';
     }
 
+    function connectDiscordFromProfile() {
+      localStorage.setItem('pre_login_redirect', '/profile');
+      window.location.href = '/connect';
+    }
+
+    function clearAuthSession() {
+      localStorage.removeItem('discord_access_token');
+      localStorage.removeItem('discord_auth');
+      localStorage.removeItem('discord_user_cache');
+      localStorage.removeItem('pre_login_redirect');
+      localStorage.removeItem('skip_login');
+    }
+
+    function updateNavHeader(userCache = null) {
+      const btn = document.getElementById('headerAuthBtn');
+      if (!btn) return;
+      const token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
+      
+      if (token || userCache) {
+        let name = 'My Profile';
+        if (userCache && (userCache.displayName || userCache.username)) {
+          name = userCache.displayName || userCache.username;
+        } else {
+          const cachedRaw = localStorage.getItem('discord_user_cache');
+          if (cachedRaw) {
+            try {
+              const u = JSON.parse(cachedRaw);
+              name = u.displayName || u.username || name;
+            } catch(e) {}
+          }
+        }
+        btn.href = '/profile';
+        btn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
+        btn.style.color = '#0B0314';
+        btn.innerHTML = '👤 ' + name;
+      } else {
+        btn.href = '/connect';
+        btn.style.background = 'linear-gradient(135deg, #5865F2, #7289DA)';
+        btn.style.color = '#FFF';
+        btn.innerHTML = 'Connect Discord';
+      }
+    }
+
     function showAccessDenied() {
+      updateNavHeader(null);
       const deniedEl = document.getElementById('accessDeniedArea');
       const contentEl = document.getElementById('profileContentArea');
       if (deniedEl) deniedEl.style.display = 'block';
@@ -616,12 +660,13 @@ export const getProfileHtml = (client = null) => {
         token = params.get('access_token');
         if (token) {
           localStorage.setItem('discord_access_token', token);
+          localStorage.setItem('discord_auth', token);
           history.replaceState(null, '', window.location.pathname);
         }
       }
 
       if (!token) {
-        token = localStorage.getItem('discord_access_token');
+        token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
       }
 
       if (!token) {
@@ -638,18 +683,60 @@ export const getProfileHtml = (client = null) => {
           cache: 'no-store'
         });
 
-        if (res.status === 401 || !res.ok) {
-          localStorage.removeItem('discord_access_token');
+        if (res.status === 401) {
+          clearAuthSession();
+          showAccessDenied();
+          return;
+        }
+
+        if (!res.ok) {
+          const cachedRaw = localStorage.getItem('discord_user_cache');
+          if (cachedRaw) {
+            try {
+              const cachedUser = JSON.parse(cachedRaw);
+              await renderUserData(cachedUser);
+              showProfileArea();
+              updateNavHeader(cachedUser);
+              return;
+            } catch(e) {}
+          }
           showAccessDenied();
           return;
         }
 
         const user = await res.json();
+        const displayName = user.global_name || user.display_name || user.username || 'Discord Member';
+        const avatarExt = user.avatar ? (user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
+        const avatarUrl = user.avatar 
+          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=512'
+          : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+
+        const userCache = {
+          id: user.id,
+          username: user.username,
+          displayName: displayName,
+          avatar: avatarUrl,
+          banner: user.banner,
+          accent_color: user.accent_color
+        };
+        localStorage.setItem('discord_user_cache', JSON.stringify(userCache));
+
         await renderUserData(user);
         showProfileArea();
+        updateNavHeader(userCache);
 
       } catch(err) {
         console.error('Error loading profile from Discord:', err);
+        const cachedRaw = localStorage.getItem('discord_user_cache');
+        if (cachedRaw) {
+          try {
+            const cachedUser = JSON.parse(cachedRaw);
+            await renderUserData(cachedUser);
+            showProfileArea();
+            updateNavHeader(cachedUser);
+            return;
+          } catch(e) {}
+        }
         showAccessDenied();
       }
     }
@@ -749,7 +836,7 @@ export const getProfileHtml = (client = null) => {
     }
 
     function logoutDiscord() {
-      localStorage.removeItem('discord_access_token');
+      clearAuthSession();
       showAccessDenied();
     }
 

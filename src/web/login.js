@@ -208,6 +208,53 @@ export const getLoginHtml = () => {
       window.location.href = '/dashboard';
     }
 
+    function clearAuthSession() {
+      localStorage.removeItem('discord_access_token');
+      localStorage.removeItem('discord_auth');
+      localStorage.removeItem('discord_user_cache');
+      localStorage.removeItem('pre_login_redirect');
+      localStorage.removeItem('skip_login');
+    }
+
+    function checkExistingSession() {
+      const token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
+      if (!token) return;
+
+      const cachedRaw = localStorage.getItem('discord_user_cache');
+      let cachedUser = null;
+      if (cachedRaw) {
+        try { cachedUser = JSON.parse(cachedRaw); } catch(e) {}
+      }
+
+      const container = document.querySelector('.login-container');
+      if (!container) return;
+
+      const name = cachedUser ? (cachedUser.displayName || cachedUser.username) : 'Valued Member';
+      const avatar = cachedUser ? (cachedUser.avatar || 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png') : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
+
+      container.innerHTML = '<img src="' + avatar + '" alt="User Avatar" class="bot-logo" style="border-color: #00FF7F; box-shadow: 0 0 20px rgba(0, 255, 127, 0.6);">' +
+        '<h1 style="background: linear-gradient(135deg, #00FF7F, #00F0FF); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome back, ' + name + '! ☕💖</h1>' +
+        '<p class="subtitle" style="margin-bottom: 1.5rem;">You are already logged in with your Discord account.</p>' +
+        '<div class="action-buttons">' +
+          '<a href="/profile" class="btn-discord" style="background: linear-gradient(135deg, #00FF7F, #00F0FF); color: #0B0314;">' +
+            '👤 Go to My Profile' +
+          '</a>' +
+          '<a href="/dashboard" class="btn-skip" style="background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.3); color: #FFF;">' +
+            '📊 Go to Web Dashboard' +
+          '</a>' +
+          '<button onclick="clearAuthSession(); location.reload();" class="btn-skip" style="color: #FF4B4B; border-color: rgba(255, 75, 75, 0.4); background: rgba(255, 75, 75, 0.1);">' +
+            '🚪 Switch Account / Logout' +
+          '</button>' +
+        '</div>' +
+        '<div class="features-list">' +
+          '<div class="feature-item"><span class="feature-icon">🌐</span><span>Global Chat</span></div>' +
+          '<div class="feature-item"><span class="feature-icon">📞</span><span>Private Calls</span></div>' +
+          '<div class="feature-item"><span class="feature-icon">🎮</span><span>85+ Commands</span></div>' +
+        '</div>';
+    }
+
+    document.addEventListener('DOMContentLoaded', checkExistingSession);
+
     (function() {
       // 1. Disable Right Click Context Menu
       document.addEventListener('contextmenu', function(e) {

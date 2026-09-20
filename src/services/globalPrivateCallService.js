@@ -317,6 +317,21 @@ export const handleGlobalPrivateCallRelay = async (message) => {
   try {
     if (message.author.bot) return false;
 
+    // Do NOT relay command messages! Allow prefix/slash commands to process
+    const text = (message.content || '').trim().toLowerCase();
+    if (
+      text.startsWith('/') ||
+      text.startsWith('k!') ||
+      text.startsWith('xprivhangup') ||
+      text.startsWith('xprivatecall') ||
+      text.startsWith('xprivcall') ||
+      text.startsWith('xhangup') ||
+      text.startsWith('xcall') ||
+      text.startsWith('xhelp')
+    ) {
+      return false;
+    }
+
     const userId = message.author.id;
     if (!activePrivateCalls.has(userId)) return false;
 
@@ -355,7 +370,10 @@ export const handleGlobalPrivateCallRelay = async (message) => {
         await message.client.users.fetch(call.peerUserId).catch(() => null);
 
       if (peerUser) {
-        await peerUser.send({ embeds: [relayEmbed] });
+        await peerUser.send({
+          content: `💬 **[Private Call from ${message.author.username}]**:`,
+          embeds: [relayEmbed]
+        });
       }
     } catch (err) {
       logger.warn(`Failed to relay private call DM message: ${err.message}`);

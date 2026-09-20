@@ -35,6 +35,10 @@ app.get('/api/guilds', async (req, res) => {
 
 app.get('/api/user/:userId/profile', async (req, res) => {
   const { userId } = req.params;
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+
   try {
     const userDoc = await getAggregatedUserData(userId);
     const level = userDoc.level || 1;
@@ -126,7 +130,8 @@ app.get('/connect', (req, res) => {
   const clientId = config.clientId || '1479052475368607926';
   const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
   const host = req.headers['x-forwarded-host'] || req.get('host') || 'riya-ai-girlfriend-discord-bot-full.vercel.app';
-  const redirectUri = process.env.REDIRECT_URI || `${protocol}://${host}/auth/callback`;
+  const fromPage = req.query.from || '';
+  const redirectUri = process.env.REDIRECT_URI || (fromPage === 'profile' ? `${protocol}://${host}/profile` : `${protocol}://${host}/auth/callback`);
 
   const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=identify%20guilds`;
   res.redirect(oauthConnectUrl);

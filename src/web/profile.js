@@ -1,9 +1,7 @@
 import { config } from '../config.js';
 
 export const getProfileHtml = (client = null) => {
-  const clientId = config.clientId || '1479052475368607926';
-  const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join`;
-  const oauthConnectUrl = `/connect`;
+  const oauthConnectUrl = `/connect?from=profile`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -68,6 +66,11 @@ export const getProfileHtml = (client = null) => {
       color: var(--text-main);
       min-height: 100vh;
       line-height: 1.6;
+    }
+
+    /* Strict Instant Hide for Profile Content Area until verified authentication */
+    #profileContentArea {
+      display: none !important;
     }
 
     /* Header & Navigation */
@@ -413,7 +416,7 @@ export const getProfileHtml = (client = null) => {
       letter-spacing: 1px;
     }
 
-    /* Unauthenticated Login Prompt */
+    /* Access Denied Card */
     .login-prompt-banner {
       background: linear-gradient(135deg, rgba(88, 101, 242, 0.2), rgba(255, 20, 147, 0.2));
       border: 1px dashed rgba(88, 101, 242, 0.5);
@@ -421,18 +424,6 @@ export const getProfileHtml = (client = null) => {
       padding: 2rem;
       text-align: center;
       margin-bottom: 2.5rem;
-    }
-
-    .login-prompt-banner h2 {
-      font-size: 1.6rem;
-      color: #5865F2;
-      margin-bottom: 0.5rem;
-    }
-
-    .login-prompt-banner p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 1.5rem;
     }
   </style>
 </head>
@@ -476,8 +467,8 @@ export const getProfileHtml = (client = null) => {
       </div>
     </div>
 
-    <!-- Profile Content Area (ONLY visible after Discord OAuth2 authentication) -->
-    <div id="profileContentArea" style="display: none;">
+    <!-- Profile Content Area (ONLY visible AFTER verified Discord OAuth2 authentication) -->
+    <div id="profileContentArea" style="display: none !important;">
 
       <!-- Banner & Header Section -->
       <div class="profile-banner-wrapper" id="bannerWrapper">
@@ -494,10 +485,8 @@ export const getProfileHtml = (client = null) => {
       <div class="profile-header-card">
         <div class="user-name-title">
           <div class="name-block">
-            <h1 id="userDisplayName">
-              Loading Discord Profile...
-            </h1>
-            <p class="username-tag" id="userUsernameTag">@discord_user</p>
+            <h1 id="userDisplayName"></h1>
+            <p class="username-tag" id="userUsernameTag"></p>
 
             <div class="badges-row" id="badgesRow">
               <span class="badge-chip verified">⚡ Discord Connected</span>
@@ -523,26 +512,26 @@ export const getProfileHtml = (client = null) => {
         <!-- Bank Savings Vault -->
         <div class="card-box">
           <h3 class="card-title">🏦 Bank Savings Balance</h3>
-          <div class="card-value emerald" id="bankSavingsVal">$0</div>
+          <div class="card-value emerald" id="bankSavingsVal"></div>
           <p class="card-subtext">Protected from robbery via <code style="color: var(--pink-primary);">/rob</code> command.</p>
         </div>
 
         <!-- Wallet Cash -->
         <div class="card-box">
           <h3 class="card-title">👛 Wallet Cash</h3>
-          <div class="card-value pink" id="walletCashVal">$10,000</div>
+          <div class="card-value pink" id="walletCashVal"></div>
           <p class="card-subtext">Liquid cash in pocket for shopping & gifts.</p>
         </div>
 
         <!-- Level & Relationship Title -->
         <div class="card-box">
           <h3 class="card-title">⭐ Level & Relationship Title</h3>
-          <div class="card-value gold" id="levelTitleVal">Level 1 • Acquaintance</div>
+          <div class="card-value gold" id="levelTitleVal"></div>
           
           <div class="xp-progress-bar">
-            <div class="xp-progress-fill" id="xpProgressFill" style="width: 15%;"></div>
+            <div class="xp-progress-fill" id="xpProgressFill" style="width: 0%;"></div>
           </div>
-          <p class="card-subtext" id="xpTextSub">XP Progress: 0 / 100 XP</p>
+          <p class="card-subtext" id="xpTextSub"></p>
         </div>
 
         <!-- Official Authorised Signature -->
@@ -550,7 +539,7 @@ export const getProfileHtml = (client = null) => {
           <h3 class="card-title">✒️ Official Banking Signature</h3>
           <p class="card-subtext">Cursive calligraphic signature string for banking certificates:</p>
           <div class="signature-display-box">
-            <span class="sig-text" id="sigTextDisplay">H.VAGHELA</span>
+            <span class="sig-text" id="sigTextDisplay"></span>
             <span style="font-size: 0.8rem; color: var(--text-muted);">Verified Card Holder</span>
           </div>
         </div>
@@ -569,7 +558,7 @@ export const getProfileHtml = (client = null) => {
 
     function cleanCanvasText(str) {
       if (!str) return 'Valued Member';
-      let norm = str.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, ch => {
+      let norm = str.replace(/[\\u{1F1E6}-\\u{1F1FF}]/gu, ch => {
         const code = ch.codePointAt(0) - 0x1F1E6 + 65;
         return String.fromCharCode(code);
       }).normalize('NFKD');
@@ -582,13 +571,13 @@ export const getProfileHtml = (client = null) => {
       norm = norm.split('').map(ch => smallCapsMap[ch] || ch).join('');
 
       let cleaned = norm
-        .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{27BF}\u{2B50}]/gu, '')
-        .replace(/[^\x20-\x7E\u00C0-\u024F]/g, '')
-        .replace(/\s+/g, ' ')
+        .replace(/[\\u{1F300}-\\u{1F9FF}\\u{2600}-\\u{26FF}\\u{2700}-\\u{27BF}\\u{1F600}-\\u{1F64F}\\u{1F680}-\\u{1F6FF}\\u{2600}-\\u{27BF}\\u{2B50}]/gu, '')
+        .replace(/[^\\x20-\\x7E\\u00C0-\\u024F]/g, '')
+        .replace(/\\s+/g, ' ')
         .trim();
 
-      if (cleaned && /^(?:[A-Za-z0-9]\s+)+[A-Za-z0-9]$/.test(cleaned)) {
-        cleaned = cleaned.replace(/\s+/g, '');
+      if (cleaned && /^(?:[A-Za-z0-9]\\s+)+[A-Za-z0-9]$/.test(cleaned)) {
+        cleaned = cleaned.replace(/\\s+/g, '');
       }
 
       return cleaned || 'Valued Member';
@@ -610,14 +599,14 @@ export const getProfileHtml = (client = null) => {
       const deniedEl = document.getElementById('accessDeniedArea');
       const contentEl = document.getElementById('profileContentArea');
       if (deniedEl) deniedEl.style.display = 'block';
-      if (contentEl) contentEl.style.display = 'none';
+      if (contentEl) contentEl.setAttribute('style', 'display: none !important;');
     }
 
     function showProfileArea() {
       const deniedEl = document.getElementById('accessDeniedArea');
       const contentEl = document.getElementById('profileContentArea');
       if (deniedEl) deniedEl.style.display = 'none';
-      if (contentEl) contentEl.style.display = 'block';
+      if (contentEl) contentEl.setAttribute('style', 'display: block !important;');
     }
 
     async function loadUserProfile() {
@@ -642,7 +631,11 @@ export const getProfileHtml = (client = null) => {
 
       try {
         const res = await fetch('https://discord.com/api/v10/users/@me', {
-          headers: { 'Authorization': 'Bearer ' + token }
+          headers: { 
+            'Authorization': 'Bearer ' + token,
+            'Cache-Control': 'no-cache, no-store'
+          },
+          cache: 'no-store'
         });
 
         if (res.status === 401 || !res.ok) {
@@ -652,8 +645,8 @@ export const getProfileHtml = (client = null) => {
         }
 
         const user = await res.json();
+        await renderUserData(user);
         showProfileArea();
-        renderUserData(user);
 
       } catch(err) {
         console.error('Error loading profile from Discord:', err);
@@ -698,9 +691,13 @@ export const getProfileHtml = (client = null) => {
       const sig = generateSignature(displayName, user.username);
       document.getElementById('sigTextDisplay').innerText = sig;
 
-      // Fetch Bot Firestore Stats for User
+      // Fetch Bot Firestore Stats for User with cache-busting
       try {
-        const statsRes = await fetch('/api/user/' + user.id + '/profile');
+        const statsRes = await fetch('/api/user/' + user.id + '/profile?t=' + Date.now(), {
+          headers: { 'Cache-Control': 'no-cache, no-store' },
+          cache: 'no-store'
+        });
+
         if (statsRes.ok) {
           const stats = await statsRes.json();
           document.getElementById('bankSavingsVal').innerText = formatMoney(stats.bank || 0);

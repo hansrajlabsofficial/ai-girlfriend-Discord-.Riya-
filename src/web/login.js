@@ -260,9 +260,10 @@ export const getLoginHtml = () => {
       const input = document.getElementById('discordIdInput');
       const status = document.getElementById('statusMsg');
       const btn = document.getElementById('btnLogin');
-      const rawId = input.value.trim();
+      const rawId = input ? input.value.trim() : '';
+      const cleanId = rawId.replace(/[^0-9]/g, '');
 
-      if (!rawId || !/^\\d{5,25}$/.test(rawId)) {
+      if (!cleanId || cleanId.length < 3) {
         status.className = 'status-msg error';
         status.innerText = '❌ Please enter a valid numeric Discord User ID.';
         return;
@@ -277,7 +278,7 @@ export const getLoginHtml = () => {
         const res = await fetch('/api/login/discord-id', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: rawId })
+          body: JSON.stringify({ userId: cleanId })
         });
 
         const data = await res.json();

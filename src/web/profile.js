@@ -453,6 +453,18 @@ export const getProfileHtml = (client = null) => {
     <!-- Profile Content Area -->
     <div id="profileContentArea">
 
+      <!-- Quick ID Search Bar for Firebase Progress -->
+      <div style="background: rgba(25, 10, 45, 0.85); border: 1px solid var(--border-card); border-radius: 20px; padding: 1.25rem 1.75rem; margin-bottom: 2rem; backdrop-filter: blur(16px); display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <div style="display: flex; align-items: center; gap: 0.75rem; font-weight: 700; color: #FFF; font-size: 1.05rem;">
+          <span style="font-size: 1.4rem;">🔍</span>
+          <span>Search Discord ID & Check Progress:</span>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex: 1; min-width: 280px; max-width: 600px;">
+          <input type="text" id="quickSearchIdInput" placeholder="Enter Discord ID (e.g. 1016322069093)" style="flex: 1; padding: 0.8rem 1.1rem; background: rgba(0,0,0,0.6); border: 2px solid rgba(255,20,147,0.4); border-radius: 12px; color: #FFF; font-family: monospace; font-size: 1rem; outline: none;" onkeypress="if(event.key==='Enter') performQuickIdSearch();">
+          <button onclick="performQuickIdSearch()" id="btnQuickSearch" style="padding: 0.8rem 1.4rem; background: linear-gradient(135deg, var(--pink-primary), var(--purple-accent)); color: #FFF; border: none; border-radius: 12px; font-weight: 700; font-size: 0.95rem; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 15px rgba(255,20,147,0.4);">🔍 Inspect Progress</button>
+        </div>
+      </div>
+
       <!-- Banner & Header Section -->
       <div class="profile-banner-wrapper" id="bannerWrapper">
         <img id="profileBannerImg" src="" alt="User Banner" class="profile-banner-img" style="display: none;">
@@ -693,13 +705,41 @@ export const getProfileHtml = (client = null) => {
       '</div>';
     }
 
+    async function performQuickIdSearch() {
+      const input = document.getElementById('quickSearchIdInput');
+      const btn = document.getElementById('btnQuickSearch');
+      if (!input) return;
+      const rawId = input.value.trim();
+      const cleanId = rawId.replace(/[^0-9]/g, '');
+
+      if (!cleanId || cleanId.length < 3) {
+        alert('Please enter a valid numeric Discord User ID to inspect.');
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '⏳ Fetching...';
+      }
+
+      localStorage.setItem('discord_user_id', cleanId);
+      localStorage.setItem('discord_auth', cleanId);
+      await fetchAndRenderProfile(cleanId);
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '🔍 Inspect Progress';
+      }
+    }
+
     async function submitPromptDiscordId() {
       const input = document.getElementById('promptDiscordIdInput');
       const status = document.getElementById('promptStatusMsg');
       const btn = document.getElementById('btnPromptSubmit');
       const rawId = input ? input.value.trim() : '';
+      const cleanId = rawId.replace(/[^0-9]/g, '');
 
-      if (!rawId || !/^\d{5,25}$/.test(rawId)) {
+      if (!cleanId || cleanId.length < 3) {
         if (status) {
           status.style.color = '#FF4B4B';
           status.innerText = '❌ Please enter a valid numeric Discord User ID.';
@@ -713,8 +753,8 @@ export const getProfileHtml = (client = null) => {
       }
       if (btn) btn.disabled = true;
 
-      localStorage.setItem('discord_user_id', rawId);
-      localStorage.setItem('discord_auth', rawId);
+      localStorage.setItem('discord_user_id', cleanId);
+      localStorage.setItem('discord_auth', cleanId);
       location.reload();
     }
 

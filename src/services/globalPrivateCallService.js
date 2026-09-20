@@ -146,7 +146,7 @@ export const startGlobalPrivateCall = async (interaction) => {
       .setColor('#FF1493')
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/3059/3059502.png')
       .setDescription(
-        `🎉 **Private Line Connected!** You are now connected live in a **1-on-1 Private DM Call** with <@${peer.userId}>!\n\n` +
+        `🎉 **Private Line Connected!** You are now connected live in a **1-on-1 Private DM Call** with <@${userId}>!\n\n` +
         `💵 **Fee Deducted:** $100 Connection Fee\n` +
         `⏱️ **Rate:** $10 per minute active billing\n` +
         `💬 **How to talk:** Send text messages or media directly in **Riya Bot's DMs** to talk live privately!\n` +
@@ -159,7 +159,7 @@ export const startGlobalPrivateCall = async (interaction) => {
       .setColor('#FF1493')
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/3059/3059502.png')
       .setDescription(
-        `🎉 **Private Line Connected!** You are now connected live in a **1-on-1 Private DM Call** with <@${userId}>!\n\n` +
+        `🎉 **Private Line Connected!** You are now connected live in a **1-on-1 Private DM Call** with <@${peer.userId}>!\n\n` +
         `💵 **Fee Deducted:** $100 Connection Fee\n` +
         `⏱️ **Rate:** $10 per minute active billing\n` +
         `💬 **How to talk:** Send text messages or media directly in **Riya Bot's DMs** to talk live privately!\n` +

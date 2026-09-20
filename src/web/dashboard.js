@@ -477,21 +477,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </a>
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
-        <a href="/profile">👤 Profile</a>
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>
-        ${authData?.connected ? `
-        <a href="/logout" onclick="clearAuthSession();" class="btn-connect" style="background: rgba(255, 75, 75, 0.2); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
-          🚪 Logout
-        </a>
-        ` : `
-        <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">
-          <svg width="18" height="18" viewBox="0 0 127.14 96.36" fill="currentColor">
-            <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0,3.36,6.83A97.68,97.68,0,0,0,42.29,6.83,72.37,72.37,0,0,0,45.65,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a74.71,74.71,0,0,0,64.3,0c.87.68,1.76,1.36,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c3.09-27.87-5.19-51.52-18.88-72.15ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.92,53.86,53,48.78,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5.08-12.74,11.44-12.74S96.2,45.92,96.07,53,91,65.69,84.69,65.69Z"/>
-          </svg>
-          Connect Discord
-        </a>
-        `}
         <a href="${inviteUrl}" target="_blank" class="btn-invite">Add Bot to Server</a>
       </div>
     </div>
@@ -524,39 +511,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </div>
     </section>
 
-    <!-- Discord Account Connect Banner -->
-    ${authData?.connected ? `
-    <div class="user-profile-card" style="border-color: #00FF7F; background: linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(88, 101, 242, 0.15));">
-      <div class="user-info">
-        <img src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="Discord Avatar" class="user-avatar" style="border-color: #00FF7F;">
-        <div class="user-details">
-          <h3 style="color: #00FF7F;">✅ Discord Account Connected & Authorized!</h3>
-          <p>Your Discord account has been authorized successfully. You are logged into Riya Bot Web Services.</p>
-        </div>
-      </div>
-      <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <span class="btn-connect" style="background: #00FF7F; color: #0B0314;">
-          ✓ Account Authorized
-        </span>
-        <a href="/logout" onclick="clearAuthSession();" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; text-decoration: none;">
-          🚪 Logout
-        </a>
-      </div>
-    </div>
-    ` : `
-    <div class="user-profile-card">
-      <div class="user-info">
-        <img src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="Discord Avatar" class="user-avatar">
-        <div class="user-details">
-          <h3>Discord Account Connect</h3>
-          <p>Connect your Discord account to manage server bindings, check global bank rank perks, and inspect stats online!</p>
-        </div>
-      </div>
-      <a href="${oauthConnectUrl}" class="btn-connect">
-        Login with Discord OAuth2
-      </a>
-    </div>
-    `}
+
 
     <!-- Manage Servers & Configuration Section (Carl-bot / Dyno Style Circular Server Picker) -->
     <section id="servers" style="margin-bottom: 3.5rem; background: rgba(30, 27, 46, 0.85); border: 1px solid rgba(255, 20, 147, 0.3); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(16px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);">

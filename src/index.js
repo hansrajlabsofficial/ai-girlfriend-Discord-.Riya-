@@ -9,6 +9,7 @@ import * as interactionCreateEvent from './events/interactionCreate.js';
 import * as messageCreateEvent from './events/messageCreate.js';
 
 import { getDashboardHtml } from './web/dashboard.js';
+import { getGuildConfig, saveGuildConfig } from './database/models/GuildConfig.js';
 
 // Validate environment variables on startup
 validateConfig();
@@ -16,6 +17,53 @@ validateConfig();
 // 1. Initialize Express Web Server & Dashboard for UptimeRobot, Render, & Discord OAuth2 Connect
 const app = express();
 const PORT = config.port;
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get('/api/guilds', async (req, res) => {
+  if (!client || !client.guilds) {
+    return res.status(200).json({ guilds: [] });
+  }
+
+  try {
+    const guilds = await Promise.all(client.guilds.cache.map(async (guild) => {
+      const guildConfig = await getGuildConfig(guild.id);
+      return {
+        id: guild.id,
+        name: guild.name,
+        icon: guild.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+        memberCount: guild.memberCount,
+        config: guildConfig
+      };
+    }));
+    res.status(200).json({ guilds });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/guilds/:guildId/config', async (req, res) => {
+  const { guildId } = req.params;
+  const guildConfig = await getGuildConfig(guildId);
+  res.status(200).json(guildConfig);
+});
+
+app.post('/api/guilds/:guildId/config', async (req, res) => {
+  const { guildId } = req.params;
+  const { prefix, aiPersona, globalChatChannelId, countingChannelId, language, boundChannelId } = req.body;
+
+  const guildConfig = await getGuildConfig(guildId);
+  if (prefix !== undefined) guildConfig.prefix = prefix;
+  if (aiPersona !== undefined) guildConfig.aiPersona = aiPersona;
+  if (globalChatChannelId !== undefined) guildConfig.globalChatChannelId = globalChatChannelId;
+  if (countingChannelId !== undefined) guildConfig.countingChannelId = countingChannelId;
+  if (language !== undefined) guildConfig.language = language;
+  if (boundChannelId !== undefined) guildConfig.boundChannelId = boundChannelId;
+
+  await saveGuildConfig(guildConfig);
+  res.status(200).json({ success: true, config: guildConfig });
+});
 
 app.get('/', (req, res) => {
   res.status(200).send(getDashboardHtml(client));

@@ -2,7 +2,34 @@ import express from 'express';
 import { config } from '../src/config.js';
 import { getDashboardHtml } from '../src/web/dashboard.js';
 
+import { getGuildConfig, saveGuildConfig } from '../src/database/models/GuildConfig.js';
+
 const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.get('/api/guilds/:guildId/config', async (req, res) => {
+  const { guildId } = req.params;
+  const guildConfig = await getGuildConfig(guildId);
+  res.status(200).json(guildConfig);
+});
+
+app.post('/api/guilds/:guildId/config', async (req, res) => {
+  const { guildId } = req.params;
+  const { prefix, aiPersona, globalChatChannelId, countingChannelId, language, boundChannelId } = req.body;
+
+  const guildConfig = await getGuildConfig(guildId);
+  if (prefix !== undefined) guildConfig.prefix = prefix;
+  if (aiPersona !== undefined) guildConfig.aiPersona = aiPersona;
+  if (globalChatChannelId !== undefined) guildConfig.globalChatChannelId = globalChatChannelId;
+  if (countingChannelId !== undefined) guildConfig.countingChannelId = countingChannelId;
+  if (language !== undefined) guildConfig.language = language;
+  if (boundChannelId !== undefined) guildConfig.boundChannelId = boundChannelId;
+
+  await saveGuildConfig(guildConfig);
+  res.status(200).json({ success: true, config: guildConfig });
+});
 
 app.get('/', (req, res) => {
   res.status(200).send(getDashboardHtml(null));

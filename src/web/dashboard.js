@@ -9,6 +9,17 @@ export const getDashboardHtml = (client = null, authData = null) => {
   const userCount = client?.users?.cache?.size || 1500;
   const uptimeHours = Math.floor((process.uptime() || 3600) / 3600);
 
+  const guildsList = client?.guilds?.cache?.map(g => ({
+    id: g.id,
+    name: g.name,
+    icon: g.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+    memberCount: g.memberCount
+  })) || [
+    { id: '123456789012345678', name: 'Riya AI Official Community', icon: 'https://cdn-icons-png.flaticon.com/512/3081/3081840.png', memberCount: 1540 },
+    { id: '987654321098765432', name: 'Amdavadi Gaming Lounge', icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png', memberCount: 420 },
+    { id: '555444333222111000', name: 'Anime Karuta & Casino Haven', icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png', memberCount: 890 }
+  ];
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -464,6 +475,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </a>
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
+        <a href="#servers">Manage Servers</a>
         <a href="#guides">Setup Guide</a>
         <a href="#commands">Commands (85+)</a>
         <a href="${oauthConnectUrl}" class="btn-connect">
@@ -532,6 +544,40 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </a>
     </div>
     `}
+
+    <!-- Manage Servers & Configuration Section -->
+    <section id="servers" style="margin-bottom: 3.5rem;">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h2>⚙️ Manage Authorized Servers & Configuration</h2>
+          <p>Select any server where you have administrative permissions to customize prefix, AI persona, and channel bindings.</p>
+        </div>
+        <button onclick="refreshServers()" class="btn-connect" style="background: rgba(155, 81, 224, 0.3); border: 1px solid var(--purple-accent); color: #fff; cursor: pointer;">
+          🔄 Refresh Servers
+        </button>
+      </div>
+
+      <div class="guide-grid" id="serverGrid">
+        ${guildsList.map(g => `
+        <div class="guide-card" style="border-color: var(--pink-primary); position: relative;">
+          <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+            <img src="${g.icon}" alt="Server Icon" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--pink-primary); object-fit: cover;">
+            <div>
+              <h3 style="font-size: 1.2rem; margin: 0; color: #fff;">${g.name}</h3>
+              <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">ID: ${g.id} • ${g.memberCount} Members</p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">
+            <span class="cmd-badge" style="background: rgba(0, 255, 127, 0.2); color: #00FF7F;">🟢 Bot Active</span>
+            <span class="cmd-badge">Manager Authorized</span>
+          </div>
+          <button onclick="openConfigModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')" class="btn-invite" style="width: 100%; justify-content: center; cursor: pointer; border: none;">
+            ⚙️ Configure Server Settings
+          </button>
+        </div>
+        `).join('')}
+      </div>
+    </section>
 
     <!-- Setup Guide Section -->
     <section id="guides">
@@ -807,6 +853,60 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
   </div>
 
+  <!-- Server Configuration Modal -->
+  <div id="configModal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(11, 3, 20, 0.85); backdrop-filter: blur(12px); justify-content: center; align-items: center; padding: 1.5rem;">
+    <div style="background: var(--bg-dark); border: 1px solid var(--border-card); border-radius: 24px; padding: 2rem; max-width: 600px; width: 100%; box-shadow: 0 10px 40px rgba(255, 20, 147, 0.3); max-height: 90vh; overflow-y: auto;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-card); padding-bottom: 1rem;">
+        <h2 id="modalServerTitle" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main);">⚙️ Configure Server</h2>
+        <button onclick="closeConfigModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer;">&times;</button>
+      </div>
+
+      <form id="configForm" onsubmit="saveServerConfig(event)">
+        <input type="hidden" id="modalGuildId" name="guildId">
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Command Prefix</label>
+          <input type="text" id="cfgPrefix" placeholder="e.g. x, !, ?, ." style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">AI Girlfriend Persona & Tone</label>
+          <select id="cfgPersona" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff;">
+            <option value="amdavadi">☕ Amdavadi Sweet Girlfriend (Default)</option>
+            <option value="flirty">💖 Flirty & Romantic Girlfriend</option>
+            <option value="tsundere">💢 Tsundere Anime Companion</option>
+            <option value="wholesome">🌟 Wholesome Support Bestie</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Global Cross-Server Chat Channel ID</label>
+          <input type="text" id="cfgGlobalChat" placeholder="e.g. 123456789012345678" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
+          <small style="color: var(--text-muted); font-size: 0.8rem;">Text channel ID where global messages will be relayed live across servers.</small>
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Counting Minigame Channel ID</label>
+          <input type="text" id="cfgCounting" placeholder="e.g. 987654321098765432" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
+        </div>
+
+        <div style="margin-bottom: 1.5rem;">
+          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Bot System Language</label>
+          <select id="cfgLanguage" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff;">
+            <option value="en">English (en)</option>
+            <option value="gu">Gujarati (gu)</option>
+            <option value="hi">Hindi (hi)</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+          <button type="button" onclick="closeConfigModal()" style="padding: 0.75rem 1.5rem; border-radius: 12px; background: rgba(255, 255, 255, 0.1); color: #fff; border: none; cursor: pointer;">Cancel</button>
+          <button type="submit" class="btn-invite" style="padding: 0.75rem 1.5rem; border: none; cursor: pointer;">💾 Save Configuration</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer>
     <p>© 2026 Riya AI Bot • Built with Node.js & Discord.js • All Rights Reserved</p>
@@ -839,6 +939,88 @@ export const getDashboardHtml = (client = null, authData = null) => {
           card.style.display = 'none';
         }
       });
+    }
+
+    async function openConfigModal(guildId, serverName) {
+      document.getElementById('modalGuildId').value = guildId;
+      document.getElementById('modalServerTitle').innerText = '⚙️ Configure ' + serverName;
+      document.getElementById('configModal').style.display = 'flex';
+
+      try {
+        const res = await fetch('/api/guilds/' + guildId + '/config');
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('cfgPrefix').value = data.prefix || 'x';
+          document.getElementById('cfgPersona').value = data.aiPersona || 'amdavadi';
+          document.getElementById('cfgGlobalChat').value = data.globalChatChannelId || '';
+          document.getElementById('cfgCounting').value = data.countingChannelId || '';
+          document.getElementById('cfgLanguage').value = data.language || 'en';
+        }
+      } catch(e) { console.error('Error loading config:', e); }
+    }
+
+    function closeConfigModal() {
+      document.getElementById('configModal').style.display = 'none';
+    }
+
+    async function saveServerConfig(event) {
+      event.preventDefault();
+      const guildId = document.getElementById('modalGuildId').value;
+      const payload = {
+        prefix: document.getElementById('cfgPrefix').value.trim(),
+        aiPersona: document.getElementById('cfgPersona').value,
+        globalChatChannelId: document.getElementById('cfgGlobalChat').value.trim() || null,
+        countingChannelId: document.getElementById('cfgCounting').value.trim() || null,
+        language: document.getElementById('cfgLanguage').value
+      };
+
+      try {
+        const res = await fetch('/api/guilds/' + guildId + '/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (res.ok) {
+          alert('✅ Server configuration saved successfully!');
+          closeConfigModal();
+        } else {
+          alert('❌ Failed to save configuration.');
+        }
+      } catch(e) {
+        alert('❌ Error saving configuration: ' + e.message);
+      }
+    }
+
+    async function refreshServers() {
+      try {
+        const res = await fetch('/api/guilds');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.guilds && data.guilds.length > 0) {
+            const grid = document.getElementById('serverGrid');
+            grid.innerHTML = data.guilds.map(function(g) {
+              const prefix = (g.config && g.config.prefix) ? g.config.prefix : 'x';
+              const safeName = g.name.replace(/'/g, "\\'");
+              return '<div class="guide-card" style="border-color: var(--pink-primary); position: relative;">' +
+                '<div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">' +
+                  '<img src="' + g.icon + '" alt="Server Icon" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid var(--pink-primary); object-fit: cover;">' +
+                  '<div>' +
+                    '<h3 style="font-size: 1.2rem; margin: 0; color: #fff;">' + g.name + '</h3>' +
+                    '<p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">ID: ' + g.id + ' • ' + g.memberCount + ' Members</p>' +
+                  '</div>' +
+                '</div>' +
+                '<div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;">' +
+                  '<span class="cmd-badge" style="background: rgba(0, 255, 127, 0.2); color: #00FF7F;">🟢 Bot Active</span>' +
+                  '<span class="cmd-badge">Prefix: ' + prefix + '</span>' +
+                '</div>' +
+                '<button onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" class="btn-invite" style="width: 100%; justify-content: center; cursor: pointer; border: none;">' +
+                  '⚙️ Configure Server Settings' +
+                '</button>' +
+              '</div>';
+            }).join('');
+          }
+        }
+      } catch(e) { console.error('Error refreshing servers:', e); }
     }
   </script>
 </body>

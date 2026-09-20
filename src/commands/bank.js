@@ -16,7 +16,7 @@ export const execute = async (interaction) => {
   const userDoc = await getUserData(targetUser.id, interaction.guildId);
 
   const bankBuffer = await renderBankCard(targetUser, userDoc);
-  const attachment = new AttachmentBuilder(bankBuffer, { name: 'bank_card.png' });
+  const attachment = new AttachmentBuilder(bankBuffer, { name: 'bank-card.png' });
   const userSig = generateUserSignature(targetUser);
 
   const embed = new EmbedBuilder()

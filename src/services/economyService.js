@@ -92,16 +92,50 @@ export const formatMoney = (amount) => {
 
 /**
  * Clean text for Canvas rendering to remove emojis, non-printable characters, 
- * and special Unicode symbols that turn into hollow boxes (🗌) on Node Canvas.
+ * and convert stylized Unicode fonts (small caps, fullwidth, regional indicators) to standard ASCII
+ * so Node Canvas renders their REAL name without turning into hollow boxes (🗌) or falling back to 'Valued Member'.
  */
-export function cleanCanvasText(str) {
-  if (!str) return 'Valued Member';
-  let cleaned = str
-    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F1E6}-\u{1F1FF}\u{2600}-\u{27BF}\u{2B50}]/gu, '')
+export function cleanCanvasText(str, fallbackUser = null) {
+  if (!str && !fallbackUser) return 'Valued Member';
+  let target = str || (fallbackUser ? (fallbackUser.displayName || fallbackUser.globalName || fallbackUser.username) : '');
+
+  if (!target) return 'Valued Member';
+
+  // 1. Convert regional indicator letters (🇦 - 🇿) to standard ASCII A-Z
+  let processed = target.replace(/[\u{1F1E6}-\u{1F1FF}]/gu, ch => {
+    const code = ch.codePointAt(0) - 0x1F1E6 + 65;
+    return String.fromCharCode(code);
+  });
+
+  // 2. Unicode NFKD normalization (converts fullwidth ＡＳＨ, circled ⒶⓈⒽ, etc to standard letters)
+  let norm = processed.normalize('NFKD');
+
+  // 3. Map small caps, gothic, mathematical, and stylized unicode alphabets
+  const smallCapsMap = {
+    'ᴀ': 'A', 'ʙ': 'B', 'ᴄ': 'C', 'ᴅ': 'D', 'ᴇ': 'E', 'ꜰ': 'F', 'ɢ': 'G', 'ʜ': 'H', 'ɪ': 'I',
+    'ᴊ': 'J', 'ᴋ': 'K', 'ʟ': 'L', 'ᴍ': 'M', 'ɴ': 'N', 'ᴏ': 'O', 'ᴘ': 'P', 'ǫ': 'Q', 'ʀ': 'R',
+    'ꜱ': 'S', 'ᴛ': 'T', 'ᴜ': 'U', 'ᴠ': 'V', 'ᴡ': 'W', 'x': 'X', 'ʏ': 'Y', 'ᴢ': 'Z'
+  };
+  norm = norm.split('').map(ch => smallCapsMap[ch] || ch).join('');
+
+  // 4. Remove emojis & non-printable/non-latin symbols
+  let cleaned = norm
+    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{27BF}\u{2B50}]/gu, '')
     .replace(/[^\x20-\x7E\u00C0-\u024F]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
-  return cleaned || 'Valued Member';
+
+  // 5. If cleaned name was empty (e.g. name was pure CJK/emojis), try cleaning username if available!
+  if (!cleaned && fallbackUser && fallbackUser.username && fallbackUser.username !== target) {
+    return cleanCanvasText(fallbackUser.username);
+  }
+
+  // 6. Collapse spaced-out letters if whole string is isolated single letters (e.g. "A S H A N S R A J" -> "ASHANSRAJ")
+  if (cleaned && /^(?:[A-Za-z0-9]\s+)+[A-Za-z0-9]$/.test(cleaned)) {
+    cleaned = cleaned.replace(/\s+/g, '');
+  }
+
+  return cleaned || (fallbackUser?.username ? fallbackUser.username : 'Valued Member');
 }
 
 /**
@@ -194,7 +228,7 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
   // Username (Sanitized to prevent hollow square boxes)
   ctx.fillStyle = '#FFFFFF';
   ctx.font = 'bold 30px sans-serif';
-  const usernameText = cleanCanvasText(user.displayName || user.username || 'Valued User');
+  const usernameText = cleanCanvasText(user.displayName || user.globalName || user.username, user);
   ctx.fillText(usernameText, infoX, 155);
 
   // Level & Relationship Title
@@ -260,7 +294,7 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
   // Cursive Signature Text
   ctx.fillStyle = '#FFD700'; // Gold Calligraphy
   ctx.font = 'italic bold 22px Georgia, serif';
-  ctx.fillText(cleanCanvasText(signatureText), 495, 392);
+  ctx.fillText(cleanCanvasText(signatureText, user), 495, 392);
 
   // Return PNG Buffer
   return canvas.toBuffer('image/png');
@@ -270,7 +304,8 @@ export const renderBankCard = async (user, userDoc, partnerName = null) => {
  * Generates official signature string: First Initial + Dot + Last Name (e.g. HANSRAJ VAGHELA -> H.VAGHELA)
  */
 export function generateUserSignature(user) {
-  const rawName = cleanCanvasText(user?.displayName || user?.username || 'HANSRAJ VAGHELA');
+  if (!user) return 'H.VAGHELA';
+  const rawName = cleanCanvasText(user.displayName || user.globalName || user.username, user);
   const words = rawName.split(/[\s._-]+/).filter(Boolean);
 
   if (words.length >= 2) {
@@ -279,7 +314,7 @@ export function generateUserSignature(user) {
     return `${firstInitial}.${lastName}`;
   } else if (words.length === 1) {
     const word = words[0].toUpperCase();
-    return `${word[0]}.${word}`;
+    return word.length > 1 ? `${word[0]}.${word}` : `${word}.${word}`;
   }
   return 'H.VAGHELA';
 }

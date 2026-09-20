@@ -22,8 +22,20 @@ app.get('/commands', (req, res) => {
 
 app.get('/connect', (req, res) => {
   const clientId = config.clientId || '';
-  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=code&scope=identify%20guilds`;
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol || 'https';
+  const host = req.headers['x-forwarded-host'] || req.get('host') || 'localhost:3000';
+  const redirectUri = `${protocol}://${host}/auth/callback`;
+
+  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=identify%20guilds`;
   res.redirect(oauthConnectUrl);
+});
+
+app.get('/auth/callback', (req, res) => {
+  const code = req.query.code;
+  if (!code) {
+    return res.redirect('/');
+  }
+  res.status(200).send(getDashboardHtml(null, { connected: true, code }));
 });
 
 app.get('/health', (req, res) => {

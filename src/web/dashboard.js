@@ -1,9 +1,9 @@
 import { config } from '../config.js';
 
-export const getDashboardHtml = (client = null) => {
+export const getDashboardHtml = (client = null, authData = null) => {
   const clientId = config.clientId || 'YOUR_CLIENT_ID';
   const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=8&scope=bot%20applications.commands`;
-  const oauthConnectUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&response_type=code&scope=identify%20guilds`;
+  const oauthConnectUrl = `/connect`;
 
   const serverCount = client?.guilds?.cache?.size || 12;
   const userCount = client?.users?.cache?.size || 1500;
@@ -483,18 +483,33 @@ export const getDashboardHtml = (client = null) => {
     </section>
 
     <!-- Discord Account Connect Banner -->
+    ${authData?.connected ? `
+    <div class="user-profile-card" style="border-color: #00FF7F; background: linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(88, 101, 242, 0.15));">
+      <div class="user-info">
+        <img src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="Discord Avatar" class="user-avatar" style="border-color: #00FF7F;">
+        <div class="user-details">
+          <h3 style="color: #00FF7F;">✅ Discord Account Connected & Authorized!</h3>
+          <p>Your Discord account has been authorized successfully. You are logged into Riya Bot Web Services.</p>
+        </div>
+      </div>
+      <span class="btn-connect" style="background: #00FF7F; color: #0B0314;">
+        ✓ Account Authorized
+      </span>
+    </div>
+    ` : `
     <div class="user-profile-card">
       <div class="user-info">
         <img src="https://cdn-icons-png.flaticon.com/512/3059/3059502.png" alt="Discord Avatar" class="user-avatar">
         <div class="user-details">
-          <h3>Discord Account Connected</h3>
-          <p>Connect your Discord account to manage server bindings, check global bank rank perks, and inspect your anime card collection online!</p>
+          <h3>Discord Account Connect</h3>
+          <p>Connect your Discord account to manage server bindings, check global bank rank perks, and inspect stats online!</p>
         </div>
       </div>
       <a href="${oauthConnectUrl}" class="btn-connect">
         Login with Discord OAuth2
       </a>
     </div>
+    `}
 
     <!-- Setup Guide Section -->
     <section id="guides">

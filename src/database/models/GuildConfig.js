@@ -10,7 +10,7 @@ export const getAllGlobalChatChannels = async () => {
 
   // 1. Check memory fallback
   for (const [gId, conf] of memoryFallbackGuilds.entries()) {
-    if (conf.globalChatChannelId) {
+    if (conf.globalChatChannelId && conf.globalChatEnabled !== false) {
       channelsMap.set(gId, conf.globalChatChannelId);
     }
   }
@@ -22,7 +22,7 @@ export const getAllGlobalChatChannels = async () => {
       const snap = await getDocs(collection(db, 'guilds'));
       snap.forEach(docSnap => {
         const data = docSnap.data();
-        if (data.guildId && data.globalChatChannelId) {
+        if (data.guildId && data.globalChatChannelId && data.globalChatEnabled !== false) {
           channelsMap.set(data.guildId, data.globalChatChannelId);
         }
       });

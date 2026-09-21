@@ -25,9 +25,9 @@ export const handleGlobalChatBroadcast = async (message) => {
       return false;
     }
 
-    // 3. Verify if message was sent in the guild's designated Global Chat channel
+    // 3. Verify if message was sent in the guild's designated Global Chat channel and if enabled
     const guildConfig = await getGuildConfig(message.guild.id);
-    if (!guildConfig.globalChatChannelId || guildConfig.globalChatChannelId !== message.channel.id) {
+    if (!guildConfig.globalChatChannelId || guildConfig.globalChatChannelId !== message.channel.id || guildConfig.globalChatEnabled === false) {
       return false;
     }
 

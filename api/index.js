@@ -37,11 +37,12 @@ app.get('/api/guilds', async (req, res) => {
 });
 
 const getClientIp = (req) => {
-  const forwarded = req.headers['x-forwarded-for'];
-  if (forwarded) {
-    return String(forwarded).split(',')[0].trim();
-  }
-  return req.headers['x-real-ip'] || req.socket?.remoteAddress || req.ip || '127.0.0.1';
+  return req.headers['cf-connecting-ip'] || 
+         (req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : null) || 
+         req.headers['x-real-ip'] || 
+         req.socket?.remoteAddress || 
+         req.ip || 
+         '127.0.0.1';
 };
 
 app.get('/api/user/:userId/profile', async (req, res) => {

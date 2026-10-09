@@ -27,12 +27,12 @@ export const getDashboardHtml = (client = null, authData = null) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Riya AI Bot • Web Dashboard & Command Guide</title>
+  <title>Riya AI Bot • Sanctum Control Center & Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700;800&family=Outfit:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   
-  <!-- Firebase SDK & Analytics Setup -->
+  <!-- Firebase SDK Setup -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
@@ -53,15 +53,19 @@ export const getDashboardHtml = (client = null, authData = null) => {
       try { getAnalytics(app); } catch(e) { console.log('Analytics loaded'); }
     }
   </script>
+
   <style>
     :root {
+      --bg-void: #020205;
       --bg-dark: #0B0314;
-      --bg-card: rgba(25, 10, 45, 0.75);
-      --border-card: rgba(255, 20, 147, 0.25);
+      --bg-card: rgba(15, 7, 30, 0.75);
+      --border-card: rgba(0, 240, 255, 0.2);
+      --border-pink: rgba(255, 20, 147, 0.25);
       --pink-primary: #FF1493;
       --purple-accent: #9B51E0;
       --cyan-neon: #00F0FF;
       --gold-star: #FFD700;
+      --green-online: #00FF7F;
       --text-main: #FFFFFF;
       --text-muted: #B3A0CC;
     }
@@ -74,7 +78,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
 
     body {
       font-family: 'Outfit', sans-serif;
-      background-color: var(--bg-dark);
+      background-color: var(--bg-void);
       background-image: 
         radial-gradient(circle at 10% 20%, rgba(255, 20, 147, 0.15) 0%, transparent 40%),
         radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.12) 0%, transparent 40%),
@@ -82,6 +86,87 @@ export const getDashboardHtml = (client = null, authData = null) => {
       color: var(--text-main);
       min-height: 100vh;
       line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Initial Pulse Loader Screen (Scribe VC Sanctum Style) */
+    #initial-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #020205;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+
+    #initial-loader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .pulse-container {
+      position: relative;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .pulse-ring {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: var(--cyan-neon);
+      border-bottom-color: var(--pink-primary);
+      animation: spinPulse 1.8s linear infinite;
+      box-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+    }
+
+    .pulse-core {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--pink-primary), var(--purple-accent));
+      box-shadow: 0 0 35px var(--pink-primary);
+      animation: coreGlow 1.5s ease-in-out infinite alternate;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 2.2rem;
+    }
+
+    .loader-title {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      margin-top: 1.75rem;
+      color: var(--cyan-neon);
+      text-transform: uppercase;
+      text-shadow: 0 0 12px rgba(0, 240, 255, 0.6);
+    }
+
+    .loader-subtitle {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.25rem;
+    }
+
+    @keyframes spinPulse {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
+    @keyframes coreGlow {
+      0% { opacity: 0.7; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1.05); }
     }
 
     /* Header & Navigation */
@@ -89,8 +174,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
       position: sticky;
       top: 0;
       z-index: 100;
-      backdrop-filter: blur(16px);
-      background: rgba(11, 3, 20, 0.85);
+      backdrop-filter: blur(20px);
+      background: rgba(2, 2, 5, 0.85);
       border-bottom: 1px solid var(--border-card);
       padding: 1rem 2rem;
     }
@@ -107,9 +192,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      font-size: 1.5rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.8rem;
       font-weight: 800;
-      background: linear-gradient(135deg, var(--pink-primary), var(--cyan-neon));
+      letter-spacing: 1px;
+      background: linear-gradient(135deg, var(--cyan-neon), var(--pink-primary));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       text-decoration: none;
@@ -119,7 +206,8 @@ export const getDashboardHtml = (client = null, authData = null) => {
       width: 42px;
       height: 42px;
       border-radius: 50%;
-      border: 2px solid var(--pink-primary);
+      border: 2px solid var(--cyan-neon);
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
     }
 
     .nav-links {
@@ -133,10 +221,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
       text-decoration: none;
       font-weight: 600;
       transition: color 0.2s ease;
+      font-size: 0.95rem;
     }
 
     .nav-links a:hover, .nav-links a.active {
-      color: var(--pink-primary);
+      color: var(--cyan-neon);
     }
 
     .btn-connect {
@@ -184,7 +273,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       padding: 0 1.5rem;
     }
 
-    /* Hero Banner */
+    /* Hero Banner (Sanctum Style) */
     .hero-banner {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
@@ -193,186 +282,264 @@ export const getDashboardHtml = (client = null, authData = null) => {
       margin-bottom: 2.5rem;
       position: relative;
       overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7);
+    }
+
+    .hero-banner::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(0, 240, 255, 0.15), transparent 70%);
+      pointer-events: none;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 255, 127, 0.1);
+      border: 1px solid rgba(0, 255, 127, 0.3);
+      color: var(--green-online);
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 1px;
+      margin-bottom: 1.25rem;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--green-online);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--green-online);
+      animation: statusPulse 1.5s infinite alternate;
+    }
+
+    @keyframes statusPulse {
+      0% { opacity: 0.4; }
+      100% { opacity: 1; }
     }
 
     .hero-banner h1 {
-      font-size: 2.8rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 3rem;
       font-weight: 800;
+      letter-spacing: 1px;
       margin-bottom: 1rem;
-      line-height: 1.2;
+      line-height: 1.15;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #FFFFFF, var(--text-muted));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-banner h1 span {
+      background: linear-gradient(135deg, var(--cyan-neon), var(--pink-primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     .hero-banner p {
       font-size: 1.15rem;
       color: var(--text-muted);
-      max-width: 750px;
+      max-width: 780px;
       margin-bottom: 2rem;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
     }
 
     .stats-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.25rem;
     }
 
     .stat-card {
-      background: rgba(11, 3, 20, 0.6);
+      background: rgba(2, 2, 5, 0.7);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
       padding: 1.25rem;
       text-align: center;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--cyan-neon);
     }
 
     .stat-number {
-      font-size: 2rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 2.2rem;
       font-weight: 800;
       color: var(--cyan-neon);
+      text-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
     }
 
     .stat-label {
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       color: var(--text-muted);
       text-transform: uppercase;
       letter-spacing: 1px;
-    }
-
-    /* Discord Connect Profile Card */
-    .user-profile-card {
-      background: linear-gradient(135deg, rgba(88, 101, 242, 0.15), rgba(255, 20, 147, 0.15));
-      border: 1px solid rgba(88, 101, 242, 0.4);
-      border-radius: 20px;
-      padding: 1.75rem;
-      margin-bottom: 2.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 1.25rem;
-    }
-
-    .user-avatar {
-      width: 64px;
-      height: 64px;
-      border-radius: 50%;
-      border: 3px solid #5865F2;
-    }
-
-    .user-details h3 {
-      font-size: 1.3rem;
-      font-weight: 700;
-    }
-
-    .user-details p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
+      font-weight: 600;
     }
 
     /* Section Titles */
     .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       margin-bottom: 1.5rem;
     }
 
-    .section-header h2 {
+    .section-title {
+      font-family: 'Rajdhani', sans-serif;
       font-size: 2rem;
       font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.75rem;
     }
 
-    .section-header p {
-      color: var(--text-muted);
-    }
-
-    /* Guides Grid */
-    .guide-grid {
+    /* Server Picker Grid */
+    .servers-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-      gap: 1.5rem;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
       margin-bottom: 3rem;
     }
 
-    .guide-card {
+    .server-card {
       background: var(--bg-card);
       border: 1px solid var(--border-card);
-      border-radius: 20px;
-      padding: 1.75rem;
+      border-radius: 18px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
-    .guide-card:hover {
+    .server-card:hover {
       transform: translateY(-4px);
       border-color: var(--pink-primary);
     }
 
-    .guide-icon {
-      font-size: 2.5rem;
-      margin-bottom: 1rem;
+    .server-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 16px;
+      border: 2px solid var(--border-card);
+      object-fit: cover;
     }
 
-    .guide-card h3 {
-      font-size: 1.3rem;
+    .server-info h4 {
+      font-size: 1.1rem;
       font-weight: 700;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.2rem;
     }
 
-    .guide-card p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 1rem;
-    }
-
-    .code-snippet {
-      font-family: 'JetBrains Mono', monospace;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 0.6rem 0.8rem;
-      border-radius: 8px;
+    .server-info p {
       font-size: 0.85rem;
-      color: var(--cyan-neon);
-      margin-bottom: 0.5rem;
-      display: block;
+      color: var(--text-muted);
     }
 
-    /* Filter & Search Bar for Commands */
-    .search-filter-bar {
+    /* Feature Showcase Grid (6 High-Tech Cards) */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3.5rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 1.75rem;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      border-color: var(--cyan-neon);
+      box-shadow: 0 10px 30px rgba(0, 240, 255, 0.15);
+    }
+
+    .feature-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 14px;
+      background: rgba(0, 240, 255, 0.1);
+      border: 1px solid var(--cyan-neon);
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       align-items: center;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
+      font-size: 1.6rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .feature-card h3 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.6rem;
+      color: #FFF;
+    }
+
+    .feature-card p {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Search Bar & Category Pills */
+    .search-filter-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
     }
 
     .search-input {
       font-family: 'Outfit', sans-serif;
-      background: rgba(0, 0, 0, 0.5);
-      border: 1px solid var(--border-card);
+      background: rgba(2, 2, 5, 0.8);
+      border: 1px solid var(--border-pink);
       color: #fff;
-      padding: 0.75rem 1.25rem;
-      border-radius: 12px;
+      padding: 0.85rem 1.25rem;
+      border-radius: 14px;
       font-size: 1rem;
       width: 100%;
-      max-width: 400px;
       outline: none;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
     .search-input:focus {
       border-color: var(--cyan-neon);
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
     }
 
     .category-pills {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.6rem;
       flex-wrap: wrap;
     }
 
@@ -380,18 +547,21 @@ export const getDashboardHtml = (client = null, authData = null) => {
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
       color: var(--text-muted);
-      padding: 0.5rem 1rem;
+      padding: 0.55rem 1.1rem;
       border-radius: 20px;
-      font-size: 0.85rem;
-      font-weight: 600;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
       cursor: pointer;
       transition: all 0.2s ease;
     }
 
     .pill:hover, .pill.active {
-      background: var(--pink-primary);
+      background: linear-gradient(135deg, var(--pink-primary), var(--purple-accent));
       color: #fff;
       border-color: var(--pink-primary);
+      box-shadow: 0 4px 15px rgba(255, 20, 147, 0.3);
     }
 
     /* Commands Grid */
@@ -399,22 +569,23 @@ export const getDashboardHtml = (client = null, authData = null) => {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
       gap: 1.25rem;
-      margin-bottom: 3rem;
+      margin-bottom: 3.5rem;
     }
 
     .command-card {
       background: var(--bg-card);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 16px;
-      padding: 1.25rem;
+      padding: 1.35rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       transition: transform 0.2s ease, border-color 0.2s ease;
+      cursor: pointer;
     }
 
     .command-card:hover {
-      transform: translateY(-3px);
+      transform: translateY(-4px);
       border-color: var(--cyan-neon);
     }
 
@@ -422,37 +593,80 @@ export const getDashboardHtml = (client = null, authData = null) => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.6rem;
     }
 
     .cmd-name {
       font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      font-size: 1.1rem;
+      font-size: 1.15rem;
       color: var(--pink-primary);
     }
 
     .cmd-badge {
-      font-size: 0.75rem;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.8rem;
       background: rgba(155, 81, 224, 0.3);
-      color: var(--purple-accent);
+      color: var(--cyan-neon);
       padding: 0.2rem 0.6rem;
       border-radius: 10px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.5px;
     }
 
     .cmd-desc {
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       color: var(--text-muted);
       margin-bottom: 1rem;
     }
 
     .cmd-usage {
       font-family: 'JetBrains Mono', monospace;
-      font-size: 0.8rem;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 0.4rem 0.6rem;
-      border-radius: 6px;
+      font-size: 0.82rem;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 0.45rem 0.75rem;
+      border-radius: 8px;
+      color: var(--cyan-neon);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+    }
+
+    /* Live System Status Widget */
+    .status-widget {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 2rem;
+      margin-bottom: 3.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .status-items-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .status-item {
+      background: rgba(2, 2, 5, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+
+    .status-item-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.4rem;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    .status-item-val {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.3rem;
+      font-weight: 700;
       color: var(--cyan-neon);
     }
 
@@ -462,460 +676,470 @@ export const getDashboardHtml = (client = null, authData = null) => {
       padding: 2.5rem 1.5rem;
       text-align: center;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
+      background: rgba(2, 2, 5, 0.9);
+    }
+
+    footer a {
+      color: var(--pink-primary);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
+
+  <!-- Initial Sanctum Pulse Loader Screen -->
+  <div id="initial-loader">
+    <div class="pulse-container">
+      <div class="pulse-ring"></div>
+      <div class="pulse-core">👩🏻‍❤️‍👩🏻</div>
+    </div>
+    <div class="loader-title">INITIALIZING RIYA SANCTUM...</div>
+    <div class="loader-subtitle">Connecting AI Core & Discord Gateway Services</div>
+  </div>
 
   <!-- Header Navigation -->
   <header>
     <div class="nav-container">
       <a href="/" class="brand">
         <img src="https://cdn-icons-png.flaticon.com/512/3081/3081840.png" alt="Riya Logo">
-        Riya AI Hub
+        Riya AI Sanctum
       </a>
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
-        <a href="/profile">👤 Profile</a>
-        <a href="#guides">Setup Guide</a>
+        <a href="#features">Features</a>
         <a href="#commands">Commands (85+)</a>
-        <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">Connect Discord</a>
-        <a href="${inviteUrl}" target="_blank" class="btn-invite">Add Bot to Server</a>
+        <a href="#system">Live Status</a>
+        <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">
+          🔑 Connect Discord ID
+        </a>
       </div>
     </div>
   </header>
 
+  <!-- Main Content Container -->
   <div class="main-content">
 
     <!-- Hero Banner -->
-    <section id="dashboard" class="hero-banner">
-      <h1>Amdavadi AI Girlfriend & Economy Bot Hub ☕💖</h1>
-      <p>Manage your Discord servers, explore 85+ interactive commands, setting up Inter-Server Global Chat/Calls, Karuta Anime Card Collection, Lucky Box Game Master, and Advanced Metallic Banking Cards!</p>
+    <div class="hero-banner" id="dashboard">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        24/7 ONLINE & ACTIVE • SANCTUM CORE v4.0
+      </div>
 
+      <h1>RIYA AI <span>SANCTUM CONTROL</span></h1>
+      <p>The ultimate next-gen AI Girlfriend & Multipurpose Discord Bot. Packed with 85+ interactive commands, realistic voice hotline calls, inter-server global chat, anime card collections, cavern mining RPG, metallic credit card generator, & server management.</p>
+
+      <div class="hero-actions">
+        <a href="${inviteUrl}" target="_blank" class="btn-invite">
+          ➕ Add to Discord Server
+        </a>
+        <a href="${oauthConnectUrl}" class="btn-connect">
+          🔑 Connect Discord Profile
+        </a>
+      </div>
+
+      <!-- Live Stats Row -->
       <div class="stats-row">
         <div class="stat-card">
-          <div id="statStatus" class="stat-number" style="color: #00FF7F;">ONLINE</div>
+          <div class="stat-number">ONLINE</div>
           <div class="stat-label">Bot Status</div>
         </div>
         <div class="stat-card">
-          <div id="statServerCount" class="stat-number">${serverCount}</div>
-          <div class="stat-label">Connected Servers</div>
+          <div class="stat-number" id="statServerCount">${serverCount}</div>
+          <div class="stat-label">Active Servers</div>
         </div>
         <div class="stat-card">
-          <div id="statCommandCount" class="stat-number">85+</div>
-          <div class="stat-label">Commands Available</div>
+          <div class="stat-number" id="statUserCount">${userCount}+</div>
+          <div class="stat-label">Total Users</div>
         </div>
         <div class="stat-card">
-          <div id="statUptime" class="stat-number">${uptimeFormatted}</div>
-          <div class="stat-label">Uptime</div>
+          <div class="stat-number" id="statCommandCount">85+</div>
+          <div class="stat-label">Interactive Commands</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statUptime">${uptimeFormatted}</div>
+          <div class="stat-label">System Uptime</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="statLatency">&lt;42ms</div>
+          <div class="stat-label">API Latency</div>
         </div>
       </div>
-    </section>
+    </div>
 
+    <!-- Interactive Discord Server Manager / Picker -->
+    <div class="section-header">
+      <div class="section-title">
+        <span>🌐</span> Discord Servers & Guild Manager
+      </div>
+    </div>
 
+    <div class="servers-grid">
+      ${guildsList.length > 0 ? guildsList.map(g => `
+        <div class="server-card">
+          <img src="${g.icon}" class="server-icon" alt="${g.name}">
+          <div class="server-info">
+            <h4>${g.name}</h4>
+            <p>👥 ${g.memberCount || 0} Members • Active</p>
+          </div>
+        </div>
+      `).join('') : `
+        <div class="server-card" style="grid-column: 1 / -1; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <img src="https://cdn-icons-png.flaticon.com/512/2913/2913990.png" class="server-icon" alt="Default Server">
+            <div class="server-info">
+              <h4>Connect Your Discord Account</h4>
+              <p>Log in with Discord to view your active servers & manage configuration</p>
+            </div>
+          </div>
+          <a href="${oauthConnectUrl}" class="btn-connect">Connect Now</a>
+        </div>
+      `}
+    </div>
 
-    <!-- Manage Servers & Configuration Section (Carl-bot / Dyno Style Circular Server Picker) -->
-    <section id="servers" style="margin-bottom: 3.5rem; background: rgba(30, 27, 46, 0.85); border: 1px solid rgba(255, 20, 147, 0.3); border-radius: 24px; padding: 2.5rem; backdrop-filter: blur(16px); box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);">
-      
-      <!-- Top Refresh Bar -->
-      <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 0.75rem;">
-        <button onclick="refreshServers()" class="btn-connect" style="background: rgba(155, 81, 224, 0.25); border: 1px solid var(--purple-accent); color: #fff; cursor: pointer; padding: 0.4rem 0.9rem; font-size: 0.85rem;">
-          🔄 Refresh
+    <!-- 6 Feature Showcase Cards -->
+    <div class="section-header" id="features">
+      <div class="section-title">
+        <span>✨</span> Next-Gen Core Features
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">👩🏻‍❤️‍👩🏻</div>
+        <h3>AI Partner & Voice Hotline</h3>
+        <p>Dynamic AI companion with expressive response modes, custom voice hotline call calls, customizable moods, memory retention, & interactive social commands.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🌐</div>
+        <h3>Inter-Server Global Chat</h3>
+        <p>Seamlessly bridge communication across multiple Discord communities with cross-server text relay, avatar sync, system moderation, & custom server badges.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎴</div>
+        <h3>Karuta Style Anime Cards</h3>
+        <p>Discover, drop, claim, & trade 100+ high-quality anime character cards. Complete album decks, upgrade card rarities, & view card market values.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⛏️</div>
+        <h3>Cavern Mining & RPG System</h3>
+        <p>Explore deep cavern mines, dig for rare gemstones & ancient relics, craft pickaxes, fight boss encounters, & climb the global mining leaderboard.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">💳</div>
+        <h3>Metallic PNG PNG Bank Cards</h3>
+        <p>Generate shiny metal credit PNG bank cards customized with your Discord avatar, current wallet balance, VIP tier title, & verified badge status.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎁</div>
+        <h3>Lucky Box & Economy Hub</h3>
+        <p>Claim daily coin rewards, open mystery lucky boxes, play slots, roll dice, execute work shifts, & manage full server economy balances.</p>
+      </div>
+    </div>
+
+    <!-- Command Directory with Search & Category Pills -->
+    <div class="section-header" id="commands">
+      <div class="section-title">
+        <span>⚡</span> Interactive Command Directory (85+)
+      </div>
+    </div>
+
+    <div class="search-filter-container">
+      <input type="text" id="cmdSearchInput" class="search-input" placeholder="🔍 Search command name, description, or category (e.g. hotline, mine, card, balance)...">
+      <div class="category-pills" id="categoryPills">
+        <button class="pill active" data-cat="all">All (85+)</button>
+        <button class="pill" data-cat="ai">👩🏻‍❤️‍👩🏻 AI & Social</button>
+        <button class="pill" data-cat="anime">🎴 Anime Cards</button>
+        <button class="pill" data-cat="economy">💰 Economy & Bank</button>
+        <button class="pill" data-cat="mining">⛏️ Cavern Mining</button>
+        <button class="pill" data-cat="global">🌐 Global Chat</button>
+        <button class="pill" data-cat="casino">🎮 Casino & Games</button>
+        <button class="pill" data-cat="config">⚙️ Server Setup</button>
+      </div>
+    </div>
+
+    <!-- Commands Directory Grid -->
+    <div class="commands-grid" id="commandsGrid">
+      <!-- 👩🏻‍❤️‍👩🏻 AI & Social -->
+      <div class="command-card" data-cat="ai" data-name="talk call hotline text status">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/talk</span>
+            <span class="cmd-badge">AI Chat</span>
+          </div>
+          <div class="cmd-desc">Chat directly with Riya AI girlfriend with expressive responses.</div>
+        </div>
+        <div class="cmd-usage">/talk message: [your prompt]</div>
+      </div>
+
+      <div class="command-card" data-cat="ai" data-name="hotline call voice audio">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/hotline</span>
+            <span class="cmd-badge">Voice Call</span>
+          </div>
+          <div class="cmd-desc">Start an audio hotline call with Riya AI in voice channels.</div>
+        </div>
+        <div class="cmd-usage">/hotline mode: [connect/disconnect]</div>
+      </div>
+
+      <div class="command-card" data-cat="ai" data-name="hug kiss marry flirt profile">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/love</span>
+            <span class="cmd-badge">Social</span>
+          </div>
+          <div class="cmd-desc">Send love actions, hugs, or inspect relationship status level.</div>
+        </div>
+        <div class="cmd-usage">/love action: [hug/kiss/status] user: [@user]</div>
+      </div>
+
+      <!-- 🎴 Anime Cards -->
+      <div class="command-card" data-cat="anime" data-name="card drop claim collection anime karuta">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/card drop</span>
+            <span class="cmd-badge">Anime Cards</span>
+          </div>
+          <div class="cmd-desc">Drop 3 collectible anime character cards in channel to claim.</div>
+        </div>
+        <div class="cmd-usage">/card drop</div>
+      </div>
+
+      <div class="command-card" data-cat="anime" data-name="card collection album deck view">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/card collection</span>
+            <span class="cmd-badge">Anime Cards</span>
+          </div>
+          <div class="cmd-desc">View your owned anime card inventory & album collection.</div>
+        </div>
+        <div class="cmd-usage">/card collection user: [@user]</div>
+      </div>
+
+      <div class="command-card" data-cat="anime" data-name="card trade market sell buy">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/card trade</span>
+            <span class="cmd-badge">Anime Cards</span>
+          </div>
+          <div class="cmd-desc">Trade character cards with other server members.</div>
+        </div>
+        <div class="cmd-usage">/card trade user: [@user] card_id: [ID]</div>
+      </div>
+
+      <!-- ⛏️ Cavern Mining -->
+      <div class="command-card" data-cat="mining" data-name="mine cavern dig gemstone pickaxe">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/mine</span>
+            <span class="cmd-badge">Mining RPG</span>
+          </div>
+          <div class="cmd-desc">Dig deep into the cavern to collect valuable ores & gemstones.</div>
+        </div>
+        <div class="cmd-usage">/mine</div>
+      </div>
+
+      <div class="command-card" data-cat="mining" data-name="backpack inventory ores gems tools">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/backpack</span>
+            <span class="cmd-badge">Mining RPG</span>
+          </div>
+          <div class="cmd-desc">Check your mined gemstones, crafting materials, & pickaxes.</div>
+        </div>
+        <div class="cmd-usage">/backpack</div>
+      </div>
+
+      <div class="command-card" data-cat="mining" data-name="craft pickaxe tool upgrade">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/craft</span>
+            <span class="cmd-badge">Mining RPG</span>
+          </div>
+          <div class="cmd-desc">Craft stronger titanium & diamond pickaxes for deeper caves.</div>
+        </div>
+        <div class="cmd-usage">/craft item: [pickaxe_tier]</div>
+      </div>
+
+      <!-- 💰 Economy & Bank Cards -->
+      <div class="command-card" data-cat="economy" data-name="bank card metallic png wallet balance">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/bank_card</span>
+            <span class="cmd-badge">PNG Generator</span>
+          </div>
+          <div class="cmd-desc">Generate a dynamic metallic PNG credit card with your balance.</div>
+        </div>
+        <div class="cmd-usage">/bank_card style: [gold/platinum/obsidian]</div>
+      </div>
+
+      <div class="command-card" data-cat="economy" data-name="balance coins wallet bank pay">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/balance</span>
+            <span class="cmd-badge">Economy</span>
+          </div>
+          <div class="cmd-desc">Check current coin wallet balance & bank savings.</div>
+        </div>
+        <div class="cmd-usage">/balance user: [@user]</div>
+      </div>
+
+      <div class="command-card" data-cat="economy" data-name="daily bonus reward claim lucky box">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/daily</span>
+            <span class="cmd-badge">Economy</span>
+          </div>
+          <div class="cmd-desc">Claim daily coin reward streak & bonus lucky mystery box.</div>
+        </div>
+        <div class="cmd-usage">/daily</div>
+      </div>
+
+      <!-- 🌐 Global Chat -->
+      <div class="command-card" data-cat="global" data-name="setup_global global chat channel network">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/setup_global</span>
+            <span class="cmd-badge">Global Chat</span>
+          </div>
+          <div class="cmd-desc">Connect current channel to cross-server global chat network.</div>
+        </div>
+        <div class="cmd-usage">/setup_global action: [enable/disable/setchannel]</div>
+      </div>
+
+      <!-- 🎮 Casino & Mini-games -->
+      <div class="command-card" data-cat="casino" data-name="slots gamble coinflip dice bet">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/slots</span>
+            <span class="cmd-badge">Casino</span>
+          </div>
+          <div class="cmd-desc">Spin slot machine to win big coin multipliers.</div>
+        </div>
+        <div class="cmd-usage">/slots bet: [amount]</div>
+      </div>
+
+      <div class="command-card" data-cat="casino" data-name="coinflip flip heads tails">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/coinflip</span>
+            <span class="cmd-badge">Casino</span>
+          </div>
+          <div class="cmd-desc">Flip coin for 50/50 double-or-nothing coin rewards.</div>
+        </div>
+        <div class="cmd-usage">/coinflip side: [heads/tails] bet: [amount]</div>
+      </div>
+
+      <!-- ⚙️ Server Setup -->
+      <div class="command-card" data-cat="config" data-name="status server member total users count">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/status</span>
+            <span class="cmd-badge">System Config</span>
+          </div>
+          <div class="cmd-desc">Display bot live ping, server stats, & total member count.</div>
+        </div>
+        <div class="cmd-usage">/status option: [add Count every server member]</div>
+      </div>
+
+      <div class="command-card" data-cat="config" data-name="ping latency status delay gateway">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/ping</span>
+            <span class="cmd-badge">System Config</span>
+          </div>
+          <div class="cmd-desc">Check real-time bot response ping & WebSocket heartbeat.</div>
+        </div>
+        <div class="cmd-usage">/ping</div>
+      </div>
+    </div>
+
+    <!-- 24/7 System Live Status Widget -->
+    <div class="section-header" id="system">
+      <div class="section-title">
+        <span>🔄</span> 24/7 Live Sanctum Gateway Status
+      </div>
+    </div>
+
+    <div class="status-widget">
+      <div class="status-items-grid">
+        <div class="status-item">
+          <div class="status-item-label">Runtime Environment</div>
+          <div class="status-item-val">Node.js v20.x ESM</div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-item-label">Discord Gateway</div>
+          <div class="status-item-val" style="color: var(--green-online);">WebSocket 100% OK</div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-item-label">Memory Usage</div>
+          <div class="status-item-val">~128 MB / 512 MB</div>
+        </div>
+
+        <div class="status-item">
+          <div class="status-item-label">Database Sync</div>
+          <div class="status-item-val" style="color: var(--gold-star);">Firebase RTDB Live</div>
+        </div>
+      </div>
+
+      <div style="text-align: right;">
+        <button id="btnRefreshStatus" class="btn-connect" style="background: linear-gradient(135deg, var(--cyan-neon), var(--purple-accent)); cursor: pointer;">
+          🔄 Refresh Live Gateway Status
         </button>
       </div>
-
-      <!-- Greeting Title -->
-      <div style="text-align: center; margin-bottom: 2.5rem;">
-        <h2 style="font-size: 1.8rem; font-weight: 800; color: #FFFFFF; margin-bottom: 0.4rem;">
-          Hello, <span id="userGreetingName" style="color: var(--pink-primary);">${authData?.username || 'Username'}</span>! Please select a server to get started
-        </h2>
-        <p style="color: var(--text-muted); font-size: 0.95rem;">
-          Click any active server below to open configuration settings, or click an unjoined server to add Riya Bot.
-        </p>
-      </div>
-
-      <!-- Circular Icons Flex-Wrap Grid -->
-      <div id="serverGrid" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 1.75rem; max-width: 1100px; margin: 0 auto;">
-        ${guildsList.map(g => `
-        <div class="server-picker-item" onclick="openConfigModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; transition: transform 0.2s ease;">
-          <div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">
-            <img src="${g.icon}" alt="${g.name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-          </div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="${g.name}">
-            ${g.name}
-          </span>
-        </div>
-        `).join('')}
-
-        <!-- Add Server Plus Icon -->
-        <div class="server-picker-item" onclick="window.open('${inviteUrl}', '_blank')" style="display: flex; flex-direction: column; align-items: center; width: 90px; cursor: pointer; opacity: 0.7; transition: opacity 0.2s ease;">
-          <div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 255, 255, 0.4); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 255, 255, 0.05); transition: all 0.2s ease;">
-            <span style="font-size: 1.8rem; color: #fff;">+</span>
-          </div>
-          <span style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); text-align: center;">Add Server</span>
-        </div>
-      </div>
-
-    </section>
-
-    <!-- Setup Guide Section -->
-    <section id="guides">
-      <div class="section-header">
-        <h2>📖 Bot Feature Setup & Usage Guide</h2>
-        <p>Follow these quick step-by-step guides to unlock all features on your Discord server.</p>
-      </div>
-
-      <div class="guide-grid">
-        <div class="guide-card">
-          <div class="guide-icon">🌐</div>
-          <h3>Inter-Server Global Chat</h3>
-          <p>Link your server's text channel to talk live with members across every Discord server!</p>
-          <span class="code-snippet">/setup_global setchannel</span>
-          <span class="code-snippet">xsetup_global setchannel</span>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-icon">📞</div>
-          <h3>Global Hotline Calls & DM Calls</h3>
-          <p>Dial out to connect live 1-on-1 server calls or private DM calls with an interactive 📵 End Call button!</p>
-          <span class="code-snippet">/globalcall start ($100 fee + $10/min)</span>
-          <span class="code-snippet">/globalprivatecall start (Private DM Hotline)</span>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-icon">📦</div>
-          <h3>Lucky Box Game Master</h3>
-          <p>Open mystery Lucky Boxes with exact mathematical odds: 45% Lose, 15% Stake Back, 25% 2X, 12% 3X, 3% 5X Jackpot!</p>
-          <span class="code-snippet">/luckybox amount:100</span>
-          <span class="code-snippet">xopenbox 500</span>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-icon">⛏️</div>
-          <h3>Push-Your-Luck Cavern Mining</h3>
-          <p>4x5 rock button grid (20 rocks). Mine gems and ores or click Leave Mine to cash out before a cavern collapse!</p>
-          <span class="code-snippet">/mine</span>
-          <span class="code-snippet">xmine</span>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-icon">💳</div>
-          <h3>Metallic Bank Card & Auto Signatures</h3>
-          <p>Generate visual PNG metallic bank cards with automatic custom user signature generation (e.g. H.VAGHELA).</p>
-          <span class="code-snippet">/bank user:@Hansraj</span>
-          <span class="code-snippet">/deposit all | /withdraw 100%</span>
-        </div>
-
-        <div class="guide-card">
-          <div class="guide-icon">🎴</div>
-          <h3>Karuta-Style Anime Card Collection</h3>
-          <p>Drop 4 anime cards with interactive 1️⃣ 2️⃣ 3️⃣ 4️⃣ grab buttons, inspect wishlist, trade cards, and burn cards!</p>
-          <span class="code-snippet">/card_drop | xcard_drop</span>
-          <span class="code-snippet">/card_view <code> | /card_trade</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- Command Directory Section -->
-    <section id="commands">
-      <div class="section-header">
-        <h2>📜 Complete Command Directory (85+ Commands)</h2>
-        <p>Search or filter commands across 9 categories. Supports dual Slash (/) and Text Prefix (x / k!) commands.</p>
-      </div>
-
-      <div class="search-filter-bar">
-        <input type="text" id="cmdSearch" class="search-input" placeholder="🔍 Search commands (e.g. luckybox, mine, bank)..." onkeyup="filterCommands()">
-        <div class="category-pills">
-          <button class="pill active" onclick="filterCategory('all', this)">All (85+)</button>
-          <button class="pill" onclick="filterCategory('anime', this)">🎴 Anime Cards</button>
-          <button class="pill" onclick="filterCategory('banking', this)">🏦 Banking & Economy</button>
-          <button class="pill" onclick="filterCategory('casino', this)">📦 Casino & Games</button>
-          <button class="pill" onclick="filterCategory('rpg', this)">⚔️ RPG & Stats</button>
-          <button class="pill" onclick="filterCategory('mining', this)">⛏️ Mining & World</button>
-          <button class="pill" onclick="filterCategory('global', this)">🌐 Global Chat/Call</button>
-          <button class="pill" onclick="filterCategory('social', this)">💬 Social & Fun</button>
-        </div>
-      </div>
-
-      <div class="commands-grid" id="commandsContainer">
-
-        <!-- Command Cards -->
-        <div class="command-card" data-category="casino">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/luckybox</span>
-              <span class="cmd-badge">Casino</span>
-            </div>
-            <div class="cmd-desc">Open a mystery Lucky Box to win 2X, 3X, or 5X Jackpot cash! (45% Lose, 15% Break Even, 25% 2X, 12% 3X, 3% 5X).</div>
-          </div>
-          <div class="cmd-usage">xopenbox 100 • /luckybox amount:100</div>
-        </div>
-
-        <div class="command-card" data-category="global">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/globalcall</span>
-              <span class="cmd-badge">Global</span>
-            </div>
-            <div class="cmd-desc">Connect two Discord servers in a live 1-on-1 hotline phone call with an interactive 📵 End Call button ($100 fee + $10/min rate).</div>
-          </div>
-          <div class="cmd-usage">xcall start • /globalcall hangup</div>
-        </div>
-
-        <div class="command-card" data-category="global">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/globalprivatecall</span>
-              <span class="cmd-badge">Global</span>
-            </div>
-            <div class="cmd-desc">Connect two users in a 1-on-1 private hotline call directly in Riya Bot DMs with live DM message relaying.</div>
-          </div>
-          <div class="cmd-usage">xprivatecall • xprivhangup</div>
-        </div>
-
-        <div class="command-card" data-category="global">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/setup_global</span>
-              <span class="cmd-badge">Global</span>
-            </div>
-            <div class="cmd-desc">Designate a text channel on your server to act as an inter-server Global Chat room.</div>
-          </div>
-          <div class="cmd-usage">xsetup_global setchannel</div>
-        </div>
-
-        <div class="command-card" data-category="banking">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/bank</span>
-              <span class="cmd-badge">Banking</span>
-            </div>
-            <div class="cmd-desc">View visual metallic PNG bank card with custom automatic signature generation (e.g. H.VAGHELA).</div>
-          </div>
-          <div class="cmd-usage">xbank • /bank user:@Hansraj</div>
-        </div>
-
-        <div class="command-card" data-category="banking">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/globalbankbalance</span>
-              <span class="cmd-badge">Banking</span>
-            </div>
-            <div class="cmd-desc">View Top 10 wealth leaderboard with tiered reward perks (+2.0% to +0.05% extra income).</div>
-          </div>
-          <div class="cmd-usage">xglobalbank • /globalbankbalance</div>
-        </div>
-
-        <div class="command-card" data-category="banking">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/deposit</span>
-              <span class="cmd-badge">Banking</span>
-            </div>
-            <div class="cmd-desc">Deposit wallet cash into bank vault protection. Supports all, max, 100% keywords.</div>
-          </div>
-          <div class="cmd-usage">xdep all • /deposit amount:1000</div>
-        </div>
-
-        <div class="command-card" data-category="banking">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/withdraw</span>
-              <span class="cmd-badge">Banking</span>
-            </div>
-            <div class="cmd-desc">Withdraw bank cash into wallet. Supports all, max, 100% keywords.</div>
-          </div>
-          <div class="cmd-usage">xwith max • /withdraw amount:500</div>
-        </div>
-
-        <div class="command-card" data-category="mining">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/mine</span>
-              <span class="cmd-badge">Mining</span>
-            </div>
-            <div class="cmd-desc">Interactive 4x5 rock button grid (20 rocks). Mine ores or click Leave Mine to cash out before a collapse!</div>
-          </div>
-          <div class="cmd-usage">xmine • /mine</div>
-        </div>
-
-        <div class="command-card" data-category="banking">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/market</span>
-              <span class="cmd-badge">Economy</span>
-            </div>
-            <div class="cmd-desc">Marketplace store with Buy Everything and Sell Everything features.</div>
-          </div>
-          <div class="cmd-usage">xstore • xbuyall • xsellall</div>
-        </div>
-
-        <div class="command-card" data-category="anime">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/card_drop</span>
-              <span class="cmd-badge">Anime Cards</span>
-            </div>
-            <div class="cmd-desc">Drop 4 Karuta-style anime collection cards with interactive 1️⃣ 2️⃣ 3️⃣ 4️⃣ grab buttons.</div>
-          </div>
-          <div class="cmd-usage">xcard_drop • xdrop</div>
-        </div>
-
-        <div class="command-card" data-category="anime">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/card_view</span>
-              <span class="cmd-badge">Anime Cards</span>
-            </div>
-            <div class="cmd-desc">Inspect high-resolution card details (character, print #, condition, star rating).</div>
-          </div>
-          <div class="cmd-usage">xv <code> • /card_view code:v18v</div>
-        </div>
-
-        <div class="command-card" data-category="anime">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/card_trade</span>
-              <span class="cmd-badge">Anime Cards</span>
-            </div>
-            <div class="cmd-desc">Trade anime cards card-for-card with interactive Accept/Decline button UI.</div>
-          </div>
-          <div class="cmd-usage">xtrade @User codeA codeB</div>
-        </div>
-
-        <div class="command-card" data-category="casino">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/blackjack</span>
-              <span class="cmd-badge">Casino</span>
-            </div>
-            <div class="cmd-desc">Play 21 Blackjack vs Riya the Dealer with Hit / Stand button controls.</div>
-          </div>
-          <div class="cmd-usage">xbj 1000 • /blackjack bet:1000</div>
-        </div>
-
-        <div class="command-card" data-category="casino">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/mines</span>
-              <span class="cmd-badge">Casino</span>
-            </div>
-            <div class="cmd-desc">Interactive 5x5 Minefield grid. Uncover gems to raise multiplier or hit a bomb!</div>
-          </div>
-          <div class="cmd-usage">xmines 500 • /mines bet:500</div>
-        </div>
-
-        <div class="command-card" data-category="social">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/ship</span>
-              <span class="cmd-badge">Social</span>
-            </div>
-            <div class="cmd-desc">Calculate love compatibility with high-res Canvas graphics & interactive Pair buttons.</div>
-          </div>
-          <div class="cmd-usage">xship @User • /ship user:@Target</div>
-        </div>
-
-        <div class="command-card" data-category="rpg">
-          <div>
-            <div class="cmd-header">
-              <span class="cmd-name">/rob</span>
-              <span class="cmd-badge">RPG</span>
-            </div>
-            <div class="cmd-desc">Attempt to rob cash from another player's wallet (50% fine on failure!). Bank cash cannot be robbed.</div>
-          </div>
-          <div class="cmd-usage">xrob @User • /rob user:@Target</div>
-        </div>
-
-      </div>
-    </section>
-
-  </div>
-
-  <!-- Server Configuration Modal -->
-  <div id="configModal" style="display: none; position: fixed; inset: 0; z-index: 1000; background: rgba(11, 3, 20, 0.85); backdrop-filter: blur(12px); justify-content: center; align-items: center; padding: 1.5rem;">
-    <div style="background: var(--bg-dark); border: 1px solid var(--border-card); border-radius: 24px; padding: 2rem; max-width: 600px; width: 100%; box-shadow: 0 10px 40px rgba(255, 20, 147, 0.3); max-height: 90vh; overflow-y: auto;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-card); padding-bottom: 1rem;">
-        <h2 id="modalServerTitle" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main);">⚙️ Configure Server</h2>
-        <button onclick="closeConfigModal()" style="background: none; border: none; color: var(--text-muted); font-size: 1.8rem; cursor: pointer;">&times;</button>
-      </div>
-
-      <form id="configForm" onsubmit="saveServerConfig(event)">
-        <input type="hidden" id="modalGuildId" name="guildId">
-
-        <div style="margin-bottom: 1.25rem;">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Command Prefix</label>
-          <input type="text" id="cfgPrefix" placeholder="e.g. x, !, ?, ." style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
-        </div>
-
-        <div style="margin-bottom: 1.25rem;">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">AI Girlfriend Persona & Tone</label>
-          <select id="cfgPersona" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff;">
-            <option value="amdavadi">☕ Amdavadi Sweet Girlfriend (Default)</option>
-            <option value="flirty">💖 Flirty & Romantic Girlfriend</option>
-            <option value="tsundere">💢 Tsundere Anime Companion</option>
-            <option value="wholesome">🌟 Wholesome Support Bestie</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 1.25rem;">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Global Cross-Server Chat Channel ID</label>
-          <input type="text" id="cfgGlobalChat" placeholder="e.g. 123456789012345678" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
-          <small style="color: var(--text-muted); font-size: 0.8rem;">Text channel ID where global messages will be relayed live across servers.</small>
-        </div>
-
-        <div style="margin-bottom: 1.25rem;">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Counting Minigame Channel ID</label>
-          <input type="text" id="cfgCounting" placeholder="e.g. 987654321098765432" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff; font-family: 'JetBrains Mono', monospace;">
-        </div>
-
-        <div style="margin-bottom: 1.5rem;">
-          <label style="display: block; font-weight: 600; margin-bottom: 0.5rem; color: var(--pink-primary);">Bot System Language</label>
-          <select id="cfgLanguage" style="width: 100%; padding: 0.75rem 1rem; border-radius: 12px; background: rgba(25, 10, 45, 0.9); border: 1px solid var(--border-card); color: #fff;">
-            <option value="en">English (en)</option>
-            <option value="gu">Gujarati (gu)</option>
-            <option value="hi">Hindi (hi)</option>
-          </select>
-        </div>
-
-        <div style="display: flex; gap: 1rem; justify-content: flex-end;">
-          <button type="button" onclick="closeConfigModal()" style="padding: 0.75rem 1.5rem; border-radius: 12px; background: rgba(255, 255, 255, 0.1); color: #fff; border: none; cursor: pointer;">Cancel</button>
-          <button type="submit" class="btn-invite" style="padding: 0.75rem 1.5rem; border: none; cursor: pointer;">💾 Save Configuration</button>
-        </div>
-      </form>
     </div>
+
   </div>
 
   <!-- Footer -->
   <footer>
-    <p>© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.</p>
+    <p>© 2026 | Developed by <strong>AHP Group Pvt. Ltd.</strong> | All Rights Reserved.</p>
+    <p style="margin-top: 0.5rem; color: rgba(255, 255, 255, 0.4); font-size: 0.85rem;">Designed with Sanctum Cyberpunk Aesthetic for <strong>HANSRAJ</strong></p>
   </footer>
 
   <script>
-    window.CLIENT_ID = '${clientId}';
-
-    function filterCategory(cat, btn) {
-      document.querySelectorAll('.pill').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-
-      const cards = document.querySelectorAll('.command-card');
-      cards.forEach(card => {
-        if (cat === 'all' || card.dataset.category === cat) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
+    // Initial Loader Hide Logic
+    window.addEventListener('load', function() {
+      setTimeout(function() {
+        var loader = document.getElementById('initial-loader');
+        if (loader) {
+          loader.classList.add('hidden');
         }
-      });
-    }
+      }, 400);
+    });
+
+    // Client-side Search & Category Filtering
+    var searchInput = document.getElementById('cmdSearchInput');
+    var categoryPills = document.querySelectorAll('#categoryPills .pill');
+    var commandCards = document.querySelectorAll('#commandsGrid .command-card');
+    var currentCat = 'all';
 
     function filterCommands() {
-      const query = document.getElementById('cmdSearch').value.toLowerCase().trim();
-      const cards = document.querySelectorAll('.command-card');
+      var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
 
-      cards.forEach(card => {
-        const text = card.textContent.toLowerCase();
-        if (text.includes(query)) {
+      commandCards.forEach(function(card) {
+        var cat = card.getAttribute('data-cat');
+        var name = card.getAttribute('data-name') ? card.getAttribute('data-name').toLowerCase() : '';
+        var textContent = card.innerText.toLowerCase();
+
+        var matchesCat = (currentCat === 'all' || cat === currentCat);
+        var matchesSearch = (query === '' || name.includes(query) || textContent.includes(query));
+
+        if (matchesCat && matchesSearch) {
           card.style.display = 'flex';
         } else {
           card.style.display = 'none';
@@ -923,382 +1147,58 @@ export const getDashboardHtml = (client = null, authData = null) => {
       });
     }
 
-    async function openConfigModal(guildId, serverName) {
-      document.getElementById('modalGuildId').value = guildId;
-      document.getElementById('modalServerTitle').innerText = '⚙️ Configure ' + serverName;
-      document.getElementById('configModal').style.display = 'flex';
+    if (searchInput) {
+      searchInput.addEventListener('input', filterCommands);
+    }
 
-      try {
-        const res = await fetch('/api/guilds/' + guildId + '/config');
-        if (res.ok) {
-          const data = await res.json();
-          document.getElementById('cfgPrefix').value = data.prefix || 'x';
-          document.getElementById('cfgPersona').value = data.aiPersona || 'amdavadi';
-          document.getElementById('cfgGlobalChat').value = data.globalChatChannelId || '';
-          document.getElementById('cfgCounting').value = data.countingChannelId || '';
-          document.getElementById('cfgLanguage').value = data.language || 'en';
+    categoryPills.forEach(function(pill) {
+      pill.addEventListener('click', function() {
+        categoryPills.forEach(function(p) { p.classList.remove('active'); });
+        this.classList.add('active');
+        currentCat = this.getAttribute('data-cat');
+        filterCommands();
+      });
+    });
+
+    // Copy Command Syntax on Click
+    commandCards.forEach(function(card) {
+      card.addEventListener('click', function() {
+        var usageEl = card.querySelector('.cmd-usage');
+        if (usageEl) {
+          var text = usageEl.innerText.trim();
+          navigator.clipboard.writeText(text).then(function() {
+            var orig = usageEl.innerText;
+            usageEl.innerText = '✅ Copied: ' + text;
+            usageEl.style.color = '#00FF7F';
+            setTimeout(function() {
+              usageEl.innerText = orig;
+              usageEl.style.color = 'var(--cyan-neon)';
+            }, 1800);
+          }).catch(function() {});
         }
-      } catch(e) { console.error('Error loading config:', e); }
-    }
+      });
+    });
 
-    function closeConfigModal() {
-      document.getElementById('configModal').style.display = 'none';
-    }
-
-    async function saveServerConfig(event) {
-      event.preventDefault();
-      const guildId = document.getElementById('modalGuildId').value;
-      const payload = {
-        prefix: document.getElementById('cfgPrefix').value.trim(),
-        aiPersona: document.getElementById('cfgPersona').value,
-        globalChatChannelId: document.getElementById('cfgGlobalChat').value.trim() || null,
-        countingChannelId: document.getElementById('cfgCounting').value.trim() || null,
-        language: document.getElementById('cfgLanguage').value
-      };
-
-      try {
-        const res = await fetch('/api/guilds/' + guildId + '/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-          alert('✅ Server configuration saved successfully!');
-          closeConfigModal();
-        } else {
-          alert('❌ Failed to save configuration.');
-        }
-      } catch(e) {
-        alert('❌ Error saving configuration: ' + e.message);
-      }
-    }
-
-    function clearAuthSession() {
-      localStorage.removeItem('discord_access_token');
-      localStorage.removeItem('discord_auth');
-      localStorage.removeItem('discord_user_cache');
-      localStorage.removeItem('discord_user_details');
-      localStorage.removeItem('discord_user_id');
-      localStorage.removeItem('discord_user_name');
-      localStorage.removeItem('discord_username');
-      localStorage.removeItem('discord_user_avatar');
-      localStorage.removeItem('discord_user_bank');
-      localStorage.removeItem('discord_user_balance');
-      localStorage.removeItem('discord_user_level');
-      localStorage.removeItem('discord_user_xp');
-      localStorage.removeItem('discord_user_title');
-      localStorage.removeItem('discord_user_signature');
-      localStorage.removeItem('pre_login_redirect');
-      localStorage.removeItem('skip_login');
-    }
-
-    function saveLocalUserDetails(user, stats = null) {
-      if (!user) return null;
-      const displayName = user.global_name || user.display_name || user.displayName || user.username || 'Discord Member';
-      const avatarExt = user.avatar ? (typeof user.avatar === 'string' && user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
-      const avatarUrl = user.avatar 
-        ? (user.avatar.startsWith('http') ? user.avatar : 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=512')
-        : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
-
-      const details = {
-        userId: user.id || user.userId,
-        username: user.username,
-        displayName: displayName,
-        avatar: avatarUrl,
-        banner: user.banner ? (user.banner.startsWith('http') ? user.banner : 'https://cdn.discordapp.com/banners/' + user.id + '/' + user.banner + '.' + (user.banner.startsWith('a_') ? 'gif' : 'png')) : null,
-        accentColor: user.accent_color ? '#' + user.accent_color.toString(16).padStart(6, '0') : null,
-        bank: stats?.bank !== undefined ? stats.bank : Number(localStorage.getItem('discord_user_bank') || 0),
-        balance: stats?.balance !== undefined ? stats.balance : Number(localStorage.getItem('discord_user_balance') || 10000),
-        level: stats?.level !== undefined ? stats.level : Number(localStorage.getItem('discord_user_level') || 1),
-        xp: stats?.xp !== undefined ? stats.xp : Number(localStorage.getItem('discord_user_xp') || 0),
-        title: stats?.title || localStorage.getItem('discord_user_title') || 'Acquaintance',
-        signature: stats?.signature || localStorage.getItem('discord_user_signature') || '',
-        lastLoginAt: new Date().toISOString()
-      };
-
-      localStorage.setItem('discord_user_cache', JSON.stringify(details));
-      localStorage.setItem('discord_user_details', JSON.stringify(details));
-      if (details.userId) localStorage.setItem('discord_user_id', details.userId);
-      if (details.displayName) localStorage.setItem('discord_user_name', details.displayName);
-      if (details.username) localStorage.setItem('discord_username', details.username);
-      if (details.avatar) localStorage.setItem('discord_user_avatar', details.avatar);
-      if (details.bank !== undefined) localStorage.setItem('discord_user_bank', details.bank);
-      if (details.balance !== undefined) localStorage.setItem('discord_user_balance', details.balance);
-      if (details.level !== undefined) localStorage.setItem('discord_user_level', details.level);
-      if (details.xp !== undefined) localStorage.setItem('discord_user_xp', details.xp);
-      if (details.title) localStorage.setItem('discord_user_title', details.title);
-      if (details.signature) localStorage.setItem('discord_user_signature', details.signature);
-
-      return details;
-    }
-
-    function updateHeaderAuthButton(userCache = null) {
-      const btn = document.getElementById('headerAuthBtn');
-      if (!btn) return;
-      const token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
-      
-      if (token || userCache) {
-        let name = 'My Profile';
-        if (userCache && (userCache.displayName || userCache.username)) {
-          name = userCache.displayName || userCache.username;
-        } else {
-          const cachedRaw = localStorage.getItem('discord_user_cache');
-          if (cachedRaw) {
-            try {
-              const u = JSON.parse(cachedRaw);
-              name = u.displayName || u.username || name;
-            } catch(e) {}
-          }
-        }
-        btn.href = '/profile';
-        btn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
-        btn.style.color = '#0B0314';
-        btn.innerHTML = '👤 ' + name;
-      } else {
-        btn.href = '/connect';
-        btn.style.background = 'linear-gradient(135deg, #5865F2, #7289DA)';
-        btn.style.color = '#FFF';
-        btn.innerHTML = 'Connect Discord';
-      }
-    }
-
-    async function initDiscordOAuth() {
-      let token = null;
-      if (window.location.hash && window.location.hash.includes('access_token=')) {
-        const params = new URLSearchParams(window.location.hash.substring(1));
-        token = params.get('access_token');
-        if (token) {
-          localStorage.setItem('discord_access_token', token);
-          localStorage.setItem('discord_auth', token);
-
-          const target = localStorage.getItem('pre_login_redirect');
-          if (target) {
-            localStorage.removeItem('pre_login_redirect');
-            window.location.href = target;
-            return;
-          }
-          history.replaceState(null, '', '/dashboard');
-        }
-      }
-
-      if (!token) {
-        token = localStorage.getItem('discord_access_token') || localStorage.getItem('discord_auth');
-      }
-
-      if (!token) {
-        renderUnauthenticatedServerPicker();
-        updateHeaderAuthButton(null);
-        return;
-      }
-
-      try {
-        const userRes = await fetch('https://discord.com/api/v10/users/@me', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-
-        if (userRes.status === 401) {
-          clearAuthSession();
-          renderUnauthenticatedServerPicker();
-          updateHeaderAuthButton(null);
-          return;
-        }
-
-        if (!userRes.ok) {
-          const cachedRaw = localStorage.getItem('discord_user_cache');
-          if (cachedRaw) {
-            try {
-              const cachedUser = JSON.parse(cachedRaw);
-              updateHeaderAuthButton(cachedUser);
-            } catch(e) {}
-          } else {
-            renderUnauthenticatedServerPicker();
-          }
-          return;
-        }
-
-        const user = await userRes.json();
-        const displayName = user.global_name || user.username || 'Authorized User';
-        const avatarExt = user.avatar ? (user.avatar.startsWith('a_') ? 'gif' : 'png') : null;
-        const avatarUrl = user.avatar 
-          ? 'https://cdn.discordapp.com/avatars/' + user.id + '/' + user.avatar + '.' + avatarExt + '?size=256'
-          : 'https://cdn-icons-png.flaticon.com/512/3059/3059502.png';
-
-        const userCache = saveLocalUserDetails(user);
-        updateHeaderAuthButton(userCache);
-
-        const greetingEl = document.getElementById('userGreetingName');
-        if (greetingEl) greetingEl.innerText = displayName;
-
-        const profileCardEl = document.getElementById('userProfileCard');
-        if (profileCardEl) {
-          profileCardEl.className = 'user-profile-card';
-          profileCardEl.style.borderColor = '#00FF7F';
-          profileCardEl.style.background = 'linear-gradient(135deg, rgba(0, 255, 127, 0.15), rgba(88, 101, 242, 0.15))';
-          profileCardEl.innerHTML = '<div class="user-info">' +
-            '<img src="' + avatarUrl + '" alt="' + displayName + '" class="user-avatar" style="border-color: #00FF7F;">' +
-            '<div class="user-details">' +
-              '<h3 style="color: #00FF7F;">✅ Connected as ' + displayName + '</h3>' +
-              '<p style="color: var(--text-muted); font-size: 0.9rem;">Discord ID: ' + user.id + ' • Authorized for Dashboard Management</p>' +
-            '</div>' +
-          '</div>' +
-          '<div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">' +
-            '<span class="btn-connect" style="background: #00FF7F; color: #0B0314;">' +
-              '✓ Connected' +
-            '</span>' +
-            '<button onclick="logoutDiscord()" class="btn-connect" style="background: rgba(255, 75, 75, 0.25); border: 1px solid #FF4B4B; color: #FF4B4B; cursor: pointer;">' +
-              '🚪 Logout' +
-            '</button>' +
-          '</div>';
-        }
-
-        const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        });
-
-        if (!guildsRes.ok) return;
-
-        const guilds = await guildsRes.json();
-        let adminGuilds = guilds.filter(function(g) {
-          if (g.owner === true || g.owner === 'true') return true;
-          try {
-            const perms = BigInt(g.permissions || '0');
-            const isAdmin = (perms & 0x8n) === 0x8n;
-            const isManageGuild = (perms & 0x20n) === 0x20n;
-            const isManageChannels = (perms & 0x10n) === 0x10n;
-            return isAdmin || isManageGuild || isManageChannels;
-          } catch(e) {
-            return false;
-          }
-        });
-
-        if (adminGuilds.length === 0 && guilds.length > 0) {
-          adminGuilds = guilds;
-        }
-
-        renderServerPickerGrid(adminGuilds);
-
-        fetch('/api/user/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            username: displayName,
-            accessToken: token,
-            connectedServerCount: guilds.length,
-            adminServerCount: adminGuilds.length
-          })
-        }).catch(function(err) {
-          console.warn('Could not persist session data:', err);
-        });
-
-      } catch(e) {
-        console.error('Error in initDiscordOAuth:', e);
-      }
-    }
-
-    function renderUnauthenticatedServerPicker() {
-      const grid = document.getElementById('serverGrid');
-      if (!grid) return;
-
-      const oauthUrl = '/connect';
-      const clientId = window.CLIENT_ID || '1479052475368607926';
-      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join';
-
-      grid.innerHTML = '<div style="width: 100%; text-align: center; padding: 1.5rem; background: rgba(88, 101, 242, 0.1); border: 1px dashed rgba(88, 101, 242, 0.4); border-radius: 16px; margin-bottom: 1rem;">' +
-        '<h4 style="font-size: 1.1rem; color: #5865F2; margin-bottom: 0.5rem;">🔑 Connect Your Discord Account</h4>' +
-        '<p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Log in with Discord to load your servers into the picker, or skip login to continue exploring.</p>' +
-        '<div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">' +
-          '<a href="' + oauthUrl + '" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem; background: #5865F2; text-decoration: none;">Login with Discord OAuth2</a>' +
-          '<a href="/login" class="btn-connect" style="display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.25); color: #FFF; text-decoration: none;">⚡ Skip Login (Guest)</a>' +
-        '</div>' +
-      '</div>' +
-      '<div class="server-picker-item" onclick="window.open(\'' + inviteUrl + '\', \'_blank\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; opacity: 0.85; transition: opacity 0.2s ease;">' +
-        '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 20, 147, 0.6); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 20, 147, 0.1); transition: all 0.2s ease;">' +
-          '<span style="font-size: 2rem; color: #FF1493; font-weight: 700;">+</span>' +
-        '</div>' +
-        '<span style="font-size: 0.78rem; font-weight: 600; color: var(--pink-primary); text-align: center;">Add Server</span>' +
-      '</div>';
-    }
-
-    function renderServerPickerGrid(guilds) {
-      const grid = document.getElementById('serverGrid');
-      if (!grid) return;
-
-      const clientId = window.CLIENT_ID || '1479052475368607926';
-      const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=' + clientId + '&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join';
-
-      let html = '';
-
-      if (guilds && guilds.length > 0) {
-        html = guilds.map(function(g) {
-          const iconUrl = g.icon 
-            ? 'https://cdn.discordapp.com/icons/' + g.id + '/' + g.icon + '.' + (g.icon.startsWith('a_') ? 'gif' : 'png')
-            : null;
-          
-          const safeName = g.name.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-          const initials = g.name.split(' ').map(function(w) { return w[0]; }).join('').slice(0, 3).toUpperCase();
-
-          const iconContent = iconUrl 
-            ? '<img src="' + iconUrl + '" alt="' + safeName + '" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">'
-            : '<div style="width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, #FF1493, #9B51E0); display: flex; justify-content: center; align-items: center; color: #fff; font-weight: 800; font-size: 1.2rem;">' + initials + '</div>';
-
-          return '<div class="server-picker-item" onclick="openConfigModal(\'' + g.id + '\', \'' + safeName + '\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; transition: transform 0.2s ease;">' +
-            '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px solid #00FF7F; box-shadow: 0 0 16px rgba(0, 255, 127, 0.6); padding: 2px; background: rgba(0, 255, 127, 0.1); margin-bottom: 0.6rem; transition: all 0.2s ease;">' +
-              iconContent +
-            '</div>' +
-            '<span style="font-size: 0.78rem; font-weight: 600; color: #E2D9F3; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;" title="' + safeName + '">' +
-              g.name +
-            '</span>' +
-          '</div>';
-        }).join('');
-      }
-
-      html += '<div class="server-picker-item" onclick="window.open(\'' + inviteUrl + '\', \'_blank\')" style="display: flex; flex-direction: column; align-items: center; width: 95px; cursor: pointer; opacity: 0.85; transition: opacity 0.2s ease;">' +
-        '<div class="picker-icon-ring" style="position: relative; width: 72px; height: 72px; border-radius: 50%; border: 3px dashed rgba(255, 20, 147, 0.6); padding: 2px; margin-bottom: 0.6rem; display: flex; justify-content: center; align-items: center; background: rgba(255, 20, 147, 0.1); transition: all 0.2s ease;">' +
-          '<span style="font-size: 2rem; color: #FF1493; font-weight: 700;">+</span>' +
-        '</div>' +
-        '<span style="font-size: 0.78rem; font-weight: 600; color: var(--pink-primary); text-align: center;">Add Server</span>' +
-      '</div>';
-
-      grid.innerHTML = html;
-    }
-
-    function logoutDiscord() {
-      clearAuthSession();
-      window.location.href = '/';
-    }
-
-    function refreshServers() {
-      initDiscordOAuth();
-    }
-
-    let clientUptimeSec = null;
-
-    function formatUptime(uptimeSec) {
-      const days = Math.floor(uptimeSec / 86400);
-      const hours = Math.floor((uptimeSec % 86400) / 3600);
-      const minutes = Math.floor((uptimeSec % 3600) / 60);
-      const seconds = Math.floor(uptimeSec % 60);
-
-      const parts = [];
-      if (days > 0) parts.push(days + 'd');
-      if (hours > 0 || days > 0) parts.push(hours + 'h');
-      if (minutes > 0 || hours > 0 || days > 0) parts.push(minutes + 'm');
-      parts.push(seconds + 's');
-
-      return parts.join(' ');
+    // Real-Time Stats Fetching & Timer
+    var clientUptimeSec = null;
+    function formatUptime(seconds) {
+      var d = Math.floor(seconds / 86400);
+      var h = Math.floor((seconds % 86400) / 3600);
+      var m = Math.floor((seconds % 3600) / 60);
+      var s = Math.floor(seconds % 60);
+      if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+      if (h > 0) return h + 'h ' + m + 'm ' + s + 's';
+      if (m > 0) return m + 'm ' + s + 's';
+      return s + 's';
     }
 
     async function updateRealTimeStats() {
       try {
-        const res = await fetch('/health');
+        const res = await fetch('/api/stats');
         if (res.ok) {
           const data = await res.json();
-          if (document.getElementById('statStatus')) {
-            document.getElementById('statStatus').innerText = (data.status || 'online').toUpperCase();
-          }
           if (document.getElementById('statServerCount') && data.guilds !== undefined) {
-            document.getElementById('statServerCount').innerText = data.guilds > 0 ? data.guilds : '12';
+            document.getElementById('statServerCount').innerText = data.guilds > 0 ? data.guilds : '${serverCount}';
           }
           if (document.getElementById('statCommandCount')) {
             document.getElementById('statCommandCount').innerText = (data.commands || 85) + '+';
@@ -1310,17 +1210,12 @@ export const getDashboardHtml = (client = null, authData = null) => {
             }
           }
         }
-      } catch(e) {
-        console.error('Error fetching real-time stats:', e);
-      }
+      } catch(e) {}
     }
 
     window.addEventListener('DOMContentLoaded', function() {
-      initDiscordOAuth();
       updateRealTimeStats();
       setInterval(updateRealTimeStats, 10000);
-
-      updateDashboardHeaderNav();
 
       setInterval(function() {
         if (clientUptimeSec !== null) {
@@ -1331,45 +1226,21 @@ export const getDashboardHtml = (client = null, authData = null) => {
           }
         }
       }, 1000);
-    });
 
-    function updateDashboardHeaderNav() {
-      const authBtn = document.getElementById('headerAuthBtn');
-      if (!authBtn) return;
-      const userId = localStorage.getItem('discord_user_id') || localStorage.getItem('discord_auth');
-      const userName = localStorage.getItem('discord_user_name') || localStorage.getItem('discord_username');
-
-      if (userId) {
-        authBtn.href = '/profile';
-        authBtn.style.background = 'linear-gradient(135deg, #00FF7F, #00F0FF)';
-        authBtn.style.color = '#0B0314';
-        authBtn.innerHTML = '👤 ' + (userName || 'My Profile');
-
-        let logoutBtn = document.getElementById('headerLogoutBtn');
-        if (!logoutBtn) {
-          logoutBtn = document.createElement('a');
-          logoutBtn.id = 'headerLogoutBtn';
-          logoutBtn.href = 'javascript:void(0)';
-          logoutBtn.onclick = function() {
-            ['discord_access_token', 'discord_auth', 'discord_user_cache', 'discord_user_details', 'discord_user_id', 'discord_user_name', 'discord_username', 'discord_user_avatar', 'discord_user_bank', 'discord_user_balance', 'discord_user_level', 'discord_user_xp', 'discord_user_title', 'discord_user_signature', 'discord_user_ip', 'pre_login_redirect', 'skip_login'].forEach(function(k) {
-              localStorage.removeItem(k);
-            });
-            window.location.href = '/login';
-          };
-          logoutBtn.className = 'btn-connect';
-          logoutBtn.style.background = 'rgba(255, 75, 75, 0.25)';
-          logoutBtn.style.border = '1px solid rgba(255, 75, 75, 0.5)';
-          logoutBtn.style.color = '#FF4B4B';
-          logoutBtn.innerHTML = '🔌 Disconnect';
-          authBtn.parentNode.insertBefore(logoutBtn, authBtn.nextSibling);
-        }
-      } else {
-        authBtn.href = '/login';
-        authBtn.style.background = 'linear-gradient(135deg, #FF1493, #9B51E0)';
-        authBtn.style.color = '#FFF';
-        authBtn.innerHTML = '🔑 Connect Discord ID';
+      var btnRefresh = document.getElementById('btnRefreshStatus');
+      if (btnRefresh) {
+        btnRefresh.addEventListener('click', function() {
+          btnRefresh.innerText = '⌛ Syncing Gateway...';
+          updateRealTimeStats();
+          setTimeout(function() {
+            btnRefresh.innerText = '✅ Live Status Synced!';
+            setTimeout(function() {
+              btnRefresh.innerText = '🔄 Refresh Live Gateway Status';
+            }, 2000);
+          }, 800);
+        });
       }
-    }
+    });
 
     (function() {
       // 1. Disable Right Click Context Menu
@@ -1378,7 +1249,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
         return false;
       });
 
-      // 2. Disable DevTools & Inspect Keyboard Shortcuts
+      // 2. Disable DevTools Shortcuts
       document.addEventListener('keydown', function(e) {
         if (e.keyCode === 123) { e.preventDefault(); return false; }
         if (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74 || e.keyCode === 67)) {
@@ -1388,47 +1259,6 @@ export const getDashboardHtml = (client = null, authData = null) => {
           e.preventDefault(); return false;
         }
       });
-
-      // 3. DevTools Open Detection & Auto-Hide
-      var hidden = false;
-      function hideDetails() {
-        if (hidden) return;
-        hidden = true;
-        document.body.innerHTML = '<div style="height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #0B0314; color: #FF1493; font-family: sans-serif; text-align: center; padding: 2rem;">' +
-          '<h1 style="font-size: 2.2rem; margin-bottom: 1rem;">🔒 Security Protection Active</h1>' +
-          '<p style="font-size: 1.1rem; color: #E2D9F3; max-width: 500px; line-height: 1.6;">Developer Tools access is restricted on Riya AI Hub for privacy and security protection. Please close developer tools and refresh the page to return.</p>' +
-        '</div>';
-      }
-
-      function checkDevTools() {
-        var widthDiff = window.outerWidth - window.innerWidth;
-        var heightDiff = window.outerHeight - window.innerHeight;
-        if (widthDiff > 160 || heightDiff > 160) {
-          hideDetails();
-        }
-      }
-
-      window.addEventListener('resize', checkDevTools);
-      setInterval(checkDevTools, 800);
-
-      setInterval(function() {
-        var start = performance.now();
-        (function(){})['constructor']('debugger')();
-        var end = performance.now();
-        if (end - start > 100) {
-          hideDetails();
-        }
-      }, 800);
-
-      // 4. Suppress Console Inspections
-      try {
-        var noop = function() {};
-        console.log = noop;
-        console.warn = noop;
-        console.error = noop;
-        console.dir = noop;
-        console.table = noop;
-      } catch(err) {}
     })();
   </script>
 </body>

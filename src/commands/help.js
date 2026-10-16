@@ -65,8 +65,9 @@ const CATEGORIES = {
   wager: {
     label: '🧠 Multiplayer Wager Games',
     value: 'wager',
-    description: 'Tic-Tac-Toe, Duel & Connect Four Wagers',
+    description: 'Tic-Tac-Toe, Duel, Connect Four & Tactical Grid Chase',
     commands: [
+      { name: '/catchme <user> [bet]', desc: 'Tactical 1v1 Grid Chase: Runner (🏃) vs Hunter (🚔) on 5x5 board.' },
       { name: '/ttt <user> <bet>', desc: 'Wager Tic-Tac-Toe match on 3x3 button grid.' },
       { name: '/duel <user> <bet>', desc: 'Wager RPG combat duel between two players.' },
       { name: '/c4 <user> <bet>', desc: 'Wager Connect Four match on 7-column grid.' }

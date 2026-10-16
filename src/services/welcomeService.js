@@ -226,44 +226,14 @@ export const sendWelcomeMessage = async (member) => {
   }
 
   try {
-    const template = guildConfig.welcomeTemplate || 'haoc';
-
-    if (template === 'socials') {
-      const { embeds, attachment, row } = buildSocialsInvitePanels(member.guild, guildConfig.welcomeInviteUrl);
-      const sendOpts = {
-        content: `⚜️ Welcome to the server, <@${member.id}>! Check out our community links below:`,
-        embeds: embeds,
-        components: [row]
-      };
-      if (attachment) sendOpts.files = [attachment];
-      await channel.send(sendOpts);
-      return true;
-    }
-
-    if (template === 'all_in_one') {
-      // 1. Send HAOC Welcome card
-      const haoc = buildHAOCWelcomeEmbed(member, guildConfig);
-      const sendOpts1 = { content: haoc.contentText, embeds: [haoc.embed] };
-      if (haoc.row) sendOpts1.components = [haoc.row];
-      if (haoc.attachment) sendOpts1.files = [haoc.attachment];
-      await channel.send(sendOpts1);
-
-      // 2. Send Socials & Invite board
-      const socials = buildSocialsInvitePanels(member.guild, guildConfig.welcomeInviteUrl);
-      const sendOpts2 = { embeds: socials.embeds, components: [socials.row] };
-      if (socials.attachment) sendOpts2.files = [socials.attachment];
-      await channel.send(sendOpts2);
-      return true;
-    }
-
-    // Default: HAOC Welcome card
+    // ALWAYS send only the HAOC Community Welcome greeting (Socials are strictly on-demand via the button)
     const haoc = buildHAOCWelcomeEmbed(member, guildConfig);
     const sendOpts = { content: haoc.content, embeds: [haoc.embed] };
     if (haoc.row) sendOpts.components = [haoc.row];
     if (haoc.attachment) sendOpts.files = [haoc.attachment];
 
     await channel.send(sendOpts);
-    logger.info(`Sent welcome message for member ${member.user?.tag || member.id} in guild ${member.guild.name}`);
+    logger.info(`Sent HAOC welcome greeting for member ${member.user?.tag || member.id} in guild ${member.guild.name}`);
     return true;
   } catch (err) {
     logger.error(`Error sending welcome message in guild ${member.guild.id}: ${err.message}`);

@@ -23,9 +23,8 @@ export const data = new SlashCommandBuilder()
       .setDescription('Choose a welcome template design')
       .setRequired(false)
       .addChoices(
-        { name: '👑 HAOC Community Welcome (Guidelines, Hub, Support & Language Banner)', value: 'haoc' },
-        { name: '🌐 Socials & Invite Friends Hub (Web, Steam, Spotify, Invite Code)', value: 'socials' },
-        { name: '🚀 All-in-One (HAOC Community Welcome + Socials & Invite Hub)', value: 'all_in_one' }
+        { name: '👑 HAOC Community Welcome (Guidelines, Hub, Support & Animated Banner)', value: 'haoc' },
+        { name: '🌐 Socials & Invite Friends Hub (Stationary Board Only)', value: 'socials' }
       )
   )
   .addChannelOption(opt =>
@@ -136,26 +135,14 @@ export const execute = async (interaction) => {
           if (socials.attachment) sendOpts.files = [socials.attachment];
           await channel.send(sendOpts);
           postedNotice = '\n✅ *Posted Socials & Invite Your Friends board to <#' + channel.id + '>!*';
-        } else if (template === 'all_in_one') {
-          const haoc = buildHAOCWelcomeEmbed(interaction.member, guildConfig);
-          const sendOpts1 = { content: haoc.content, embeds: [haoc.embed] };
-          if (haoc.row) sendOpts1.components = [haoc.row];
-          if (haoc.attachment) sendOpts1.files = [haoc.attachment];
-          await channel.send(sendOpts1);
-
-          const socials = buildSocialsInvitePanels(interaction.guild, guildConfig.welcomeInviteUrl);
-          const sendOpts2 = { embeds: socials.embeds, components: [socials.row] };
-          if (socials.attachment) sendOpts2.files = [socials.attachment];
-          await channel.send(sendOpts2);
-          postedNotice = '\n✅ *Posted Complete All-in-One Welcome + Socials boards to <#' + channel.id + '>!*';
         } else {
-          // Default: HAOC Welcome board
+          // Default: HAOC Community Welcome card with animated GIF banner
           const haoc = buildHAOCWelcomeEmbed(interaction.member, guildConfig);
           const sendOpts = { content: haoc.content, embeds: [haoc.embed] };
           if (haoc.row) sendOpts.components = [haoc.row];
           if (haoc.attachment) sendOpts.files = [haoc.attachment];
           await channel.send(sendOpts);
-          postedNotice = '\n✅ *Posted HAOC Community Welcome board to <#' + channel.id + '>!*';
+          postedNotice = '\n✅ *Posted HAOC Community Welcome card to <#' + channel.id + '>!*';
         }
       }
     }

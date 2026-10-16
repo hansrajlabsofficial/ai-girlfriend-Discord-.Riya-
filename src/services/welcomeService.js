@@ -74,21 +74,15 @@ export const buildHAOCWelcomeEmbed = (member, guildConfig) => {
     .setFooter({ text: BRAND_FOOTER, iconURL: EMBLEM_ICON })
     .setTimestamp();
 
-  // Handle bottom banner: Custom URL (if configured) or animated HAOC GIF banner or fallback PNG
+  // Handle bottom banner: Custom URL (if configured) or animated HAOC GIF banner
   let attachment = null;
   if (guildConfig?.welcomeBannerUrl) {
     embed.setImage(guildConfig.welcomeBannerUrl);
   } else {
     const gifFile = path.join(assetsDir, 'welcome_haoc_banner.gif');
     if (fs.existsSync(gifFile)) {
-      attachment = new AttachmentBuilder(gifFile, { name: 'hansraj_ayan_official_community.gif' });
-      embed.setImage('attachment://hansraj_ayan_official_community.gif');
-    } else {
-      const bannerFile = path.join(assetsDir, 'welcome_haoc_card.png');
-      if (fs.existsSync(bannerFile)) {
-        attachment = new AttachmentBuilder(bannerFile, { name: 'hindi_english_bengali.png' });
-        embed.setImage('attachment://hindi_english_bengali.png');
-      }
+      attachment = new AttachmentBuilder(gifFile, { name: 'haoc_banner.gif' });
+      embed.setImage('attachment://haoc_banner.gif');
     }
   }
 

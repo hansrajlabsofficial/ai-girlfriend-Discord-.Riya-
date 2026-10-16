@@ -22,6 +22,7 @@
   "author": "Antigravity AI",
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/firestore": "^9.1.0",
     "@napi-rs/canvas": "^1.0.9",
     "axios": "^1.7.9",
     "discord.js": "^14.16.3",

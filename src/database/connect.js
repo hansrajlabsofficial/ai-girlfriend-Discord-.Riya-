@@ -1,16 +1,31 @@
-import { initializeApp as initAdminApp, cert, getApps as getAdminApps } from 'firebase-admin/app';
-import { getFirestore as getAdminFirestore } from 'firebase-admin/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { config } from '../config.js';
 import { logger } from '../utils/logger.js';
+
+let initAdminApp = null;
+let cert = null;
+let getAdminApps = null;
+let getAdminFirestore = null;
+
+try {
+  const adminApp = await import('firebase-admin/app');
+  initAdminApp = adminApp.initializeApp;
+  cert = adminApp.cert;
+  getAdminApps = adminApp.getApps;
+
+  const adminFs = await import('firebase-admin/firestore');
+  getAdminFirestore = adminFs.getFirestore;
+} catch (err) {
+  logger.warn(`Firebase Admin SDK optional modules not loaded (${err.message}). Using client Firebase SDK mode.`);
+}
 
 let db = null;
 let adminDb = null;
 let isConnected = false;
 
 export const getAdminDb = () => {
-  if (!adminDb) {
+  if (!adminDb && getAdminFirestore && initAdminApp) {
     try {
       const app = getAdminApps().length === 0 
         ? initAdminApp({ credential: cert(config.serviceAccount) }) 

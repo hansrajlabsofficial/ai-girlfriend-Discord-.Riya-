@@ -1043,6 +1043,17 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </div>
 
       <!-- ⚙️ Server Setup -->
+      <div class="command-card" data-cat="config" data-name="setup_region_roles auto roles continent buttons map regions">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/setup_region_roles</span>
+            <span class="cmd-badge">Auto Roles</span>
+          </div>
+          <div class="cmd-desc">Deploy interactive Region Selection auto-roles panel with styled buttons & continent map.</div>
+        </div>
+        <div class="cmd-usage">/setup_region_roles channel: [#channel] auto_create_roles: [True]</div>
+      </div>
+
       <div class="command-card" data-cat="config" data-name="status server member total users count">
         <div>
           <div class="cmd-header">

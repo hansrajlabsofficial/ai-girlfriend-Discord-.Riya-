@@ -159,6 +159,8 @@ const CATEGORIES = {
     description: 'Channel Binding, Settings, Language & About',
     commands: [
       { name: '/select_channel <channel>', desc: 'Bind Riya\'s primary chat channel.' },
+      { name: '/setup_region_roles', desc: 'Deploy Region Selection auto-roles panel with buttons & world map.' },
+      { name: '/setup_global', desc: 'Configure Inter-Server Global Chat relay channel.' },
       { name: '/settings', desc: 'Configure server settings & game toggles.' },
       { name: '/language', desc: 'Change bot output language.' },
       { name: '/status', desc: '24/7 Live bot online status, uptime, connected servers & dashboard link.' },

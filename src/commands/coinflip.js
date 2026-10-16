@@ -5,240 +5,282 @@ import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
   .setName('coinflip')
-  .setDescription('Flip a coin! Bet your coins or flip for fun!')
-  .addStringOption(opt =>
-    opt.setName('choice')
-      .setDescription('Pick Heads or Tails')
-      .setRequired(false)
-      .addChoices(
-        { name: '🪙 Heads', value: 'heads' },
-        { name: '🪙 Tails', value: 'tails' }
-      )
-  )
+  .setDescription('Flip a coin! Place a bet and choose Heads or Tails!')
   .addIntegerOption(opt =>
     opt.setName('bet')
-      .setDescription('Bet amount in coins (minimum $100)')
+      .setDescription('Bet amount in coins (default: $500, minimum: $100)')
       .setRequired(false)
       .setMinValue(100)
   );
 
-export const execute = async (interaction) => {
-  try {
-    // 1. Immediately defer reply to guarantee NO Discord 3-second timeout
-    await interaction.deferReply().catch(() => {});
+/**
+ * Renders the interactive coinflip prompt and handles button collector lifecycle
+ */
+async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
+  const userDoc = await getUserData(userId, guildId);
+  const balance = getBalance(userDoc);
 
-    const rawChoice = interaction.options.getString('choice');
-    const rawBet = interaction.options.getInteger('bet');
+  // Balance verification
+  if (balance < bet) {
+    const errorEmbed = new EmbedBuilder()
+      .setColor('#E74C3C')
+      .setTitle('❌ Insufficient Funds')
+      .setDescription(
+        `Hey <@${userId}>, you need **${formatMoney(bet)}** to play, but your current balance is **${formatMoney(balance)}**.\n\n` +
+        `💡 *Earn coins using \`/work\`, \`/daily\`, or bet a lower amount!*`
+      )
+      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
 
-    const userId = interaction.user.id;
-    const guildId = interaction.guildId;
+    if (interaction.isButton && interaction.isButton()) {
+      return await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
+    } else {
+      return await interaction.editReply({ embeds: [errorEmbed], components: [] });
+    }
+  }
 
-    // 2. Fetch User Data
-    const userDoc = await getUserData(userId, guildId);
-    const currentBalance = getBalance(userDoc);
+  // Step 2: Bot displays an embed with two clickable buttons: [ 🪙 Heads ] [ 🪙 Tails ]
+  const promptEmbed = new EmbedBuilder()
+    .setColor('#F1C40F')
+    .setTitle(`🪙 Coinflip Challenge • Bet: ${formatMoney(bet)}`)
+    .setDescription(
+      `Hey <@${userId}>! Make your prediction to flip the coin.\n\n` +
+      `💰 **Wager Amount:** **${formatMoney(bet)}**\n` +
+      `💳 **Your Balance:** **${formatMoney(balance)}**\n` +
+      `🏆 **Potential Profit:** **+${formatMoney(bet)}** *(2x Payout: ${formatMoney(bet * 2)})*\n\n` +
+      `👇 **Click Heads or Tails below to toss the coin!**`
+    )
+    .setThumbnail('https://cdn-icons-png.flaticon.com/512/217/217853.png')
+    .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+    .setTimestamp();
 
-    // 3. Casual Free Flip (if no bet was placed)
-    if (!rawBet || rawBet <= 0) {
-      const result = Math.random() < 0.5 ? 'heads' : 'tails';
-      const userPrediction = rawChoice ? rawChoice.toLowerCase() : null;
+  const choiceRow = new ActionRowBuilder().addComponents(
+    new ButtonBuilder()
+      .setCustomId(`cf_heads_${userId}_${bet}_${Date.now()}`)
+      .setLabel('Heads')
+      .setEmoji('🪙')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`cf_tails_${userId}_${bet}_${Date.now()}`)
+      .setLabel('Tails')
+      .setEmoji('🪙')
+      .setStyle(ButtonStyle.Secondary)
+  );
 
-      let resultText = `🪙 The coin spun high in the air and landed on **${result.toUpperCase()}**!`;
-      if (userPrediction) {
-        if (userPrediction === result) {
-          resultText += `\n🎯 **Great call!** Your prediction of **${userPrediction.toUpperCase()}** was correct! ✨`;
-        } else {
-          resultText += `\n😅 Better luck next time! You guessed **${userPrediction.toUpperCase()}**.`;
-        }
+  let msg;
+  if (interaction.isButton && interaction.isButton()) {
+    msg = await interaction.editReply({ embeds: [promptEmbed], components: [choiceRow] });
+  } else {
+    msg = await interaction.editReply({ embeds: [promptEmbed], components: [choiceRow] });
+  }
+
+  // Create component collector for choice buttons
+  const collector = msg.createMessageComponentCollector({
+    time: 60000 // 60 seconds to pick
+  });
+
+  collector.on('collect', async (btnInteraction) => {
+    try {
+      // Anti-Cheat: If someone else tries clicking the buttons, deny with private ephemeral warning
+      if (btnInteraction.user.id !== userId) {
+        return await btnInteraction.reply({
+          content: `❌ **Anti-Cheat Warning:** Only <@${userId}> can choose for this coinflip wager! Use \`/coinflip\` to start your own game.`,
+          ephemeral: true
+        });
       }
 
-      resultText += `\n\n💡 *Tip: Place a bet with \`/coinflip bet:1000 choice:heads\` to win double coins!*`;
+      collector.stop('picked');
 
-      const freeEmbed = new EmbedBuilder()
-        .setColor(result === 'heads' ? '#FFD700' : '#E67E22')
-        .setTitle(`🪙 Coinflip Result: ${result.toUpperCase()}`)
-        .setDescription(resultText)
-        .setFooter({ text: `Current Wallet Balance: ${formatMoney(currentBalance)}` })
+      // Determine choice
+      const isHeads = btnInteraction.customId.includes('_heads_');
+      const choice = isHeads ? 'heads' : 'tails';
+
+      // Step 3: The user clicks their choice
+      // Buttons turn disabled immediately to block spamming
+      const disabledChoiceRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId('cf_dis_heads')
+          .setLabel('Heads')
+          .setEmoji('🪙')
+          .setStyle(isHeads ? ButtonStyle.Success : ButtonStyle.Secondary)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId('cf_dis_tails')
+          .setLabel('Tails')
+          .setEmoji('🪙')
+          .setStyle(!isHeads ? ButtonStyle.Success : ButtonStyle.Secondary)
+          .setDisabled(true)
+      );
+
+      // Message edits to 🪙 Flipping the Coin... (spinning in mid-air...)
+      const flippingEmbed = new EmbedBuilder()
+        .setColor('#E67E22')
+        .setTitle('🪙 Flipping the Coin... (spinning in mid-air...)')
+        .setDescription(
+          `🌪️ **The coin is spinning in mid-air...**\n\n` +
+          `🎯 **Your Prediction:** **${choice.toUpperCase()}**\n` +
+          `💰 **Bet Amount:** **${formatMoney(bet)}**\n\n` +
+          `⏳ *Landing in just a moment... Hang tight, baka!* ✨`
+        )
+        .setThumbnail('https://cdn-icons-png.flaticon.com/512/217/217853.png')
+        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+
+      await btnInteraction.update({
+        embeds: [flippingEmbed],
+        components: [disabledChoiceRow]
+      });
+
+      // Step 4: After exactly 1.8 seconds, the embed edits to reveal the result, updates the wallet, and shows profit/loss
+      await new Promise(resolve => setTimeout(resolve, 1800));
+
+      // Refresh user balance & process transaction safely
+      const freshUserDoc = await getUserData(userId, guildId);
+      const freshBalance = getBalance(freshUserDoc);
+
+      if (freshBalance < bet) {
+        return await btnInteraction.editReply({
+          embeds: [
+            new EmbedBuilder()
+              .setColor('#E74C3C')
+              .setTitle('❌ Transaction Cancelled')
+              .setDescription(`Insufficient funds to complete this flip.`)
+              .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+          ],
+          components: []
+        });
+      }
+
+      // Deduct bet from balance
+      await deductBalance(freshUserDoc, bet);
+
+      // Flip the coin
+      const result = Math.random() < 0.5 ? 'heads' : 'tails';
+      const isWin = (result === choice);
+
+      let finalBalance = getBalance(freshUserDoc);
+      let winPayout = 0;
+
+      if (isWin) {
+        winPayout = bet * 2;
+        finalBalance = await addBalance(freshUserDoc, winPayout);
+      }
+
+      await saveUserData(freshUserDoc);
+
+      // Step 4 Reveal Embed
+      const resultEmbed = new EmbedBuilder()
+        .setColor(isWin ? '#00FF7F' : '#FF4500')
+        .setTitle(isWin ? `🪙 Coin Landed on ${result.toUpperCase()}! • YOU WON! 🎉` : `🪙 Coin Landed on ${result.toUpperCase()}! • YOU LOST! ❌`)
+        .setDescription(
+          `🪙 **Coin Result:** **${result.toUpperCase()}**\n` +
+          `🎯 **Your Choice:** **${choice.toUpperCase()}**\n\n` +
+          `💰 **Bet Amount:** **${formatMoney(bet)}**\n` +
+          `💵 **Profit / Loss:** **${isWin ? `+${formatMoney(bet)}` : `-${formatMoney(bet)}`}** ${isWin ? `*(Payout: ${formatMoney(winPayout)})*` : ''}\n` +
+          `💳 **Updated Wallet Balance:** **${formatMoney(finalBalance)}**\n\n` +
+          (isWin 
+            ? `✨ *Amdavadi Riya says: "Saras baka! You called it perfectly! What a win!"* 💖`
+            : `☕ *Amdavadi Riya says: "Arre re baka, don't worry! Double down and win it back!"*`)
+        )
+        .setThumbnail(result === 'heads'
+          ? 'https://cdn-icons-png.flaticon.com/512/217/217853.png'
+          : 'https://cdn-icons-png.flaticon.com/512/217/217854.png')
+        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
         .setTimestamp();
 
-      return await interaction.editReply({ embeds: [freeEmbed] });
-    }
+      // Play Again interactive button
+      const playAgainRow = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`cf_again_${userId}_${bet}_${Date.now()}`)
+          .setLabel(`🪙 Play Again (${formatMoney(bet)})`)
+          .setStyle(isWin ? ButtonStyle.Success : ButtonStyle.Primary)
+      );
 
-    // 4. Bet-based Coinflip Game
-    const bet = rawBet;
-    const choice = (rawChoice || 'heads').toLowerCase();
-
-    // Balance check
-    if (currentBalance < bet) {
-      return await interaction.editReply({
-        content: `❌ **Insufficient Funds!** You need **${formatMoney(bet)}**, but your current balance is **${formatMoney(currentBalance)}**.`
-      });
-    }
-
-    // Deduct bet from balance
-    const deducted = await deductBalance(userDoc, bet);
-    if (!deducted) {
-      return await interaction.editReply({
-        content: `❌ **Transaction Failed:** Could not deduct **${formatMoney(bet)}** from wallet.`
-      });
-    }
-
-    const result = Math.random() < 0.5 ? 'heads' : 'tails';
-    const isWin = (result === choice);
-
-    let finalBal = getBalance(userDoc);
-    let embedColor = '#E74C3C';
-    let title = '';
-    let description = '';
-
-    if (isWin) {
-      const winPayout = bet * 2;
-      finalBal = await addBalance(userDoc, winPayout);
-      embedColor = '#00FF7F';
-      title = `🪙 Coin Landed on ${result.toUpperCase()}! • YOU WON! 🎉`;
-      description = 
-        `🪙 **Coin Result:** **${result.toUpperCase()}**\n` +
-        `🎯 **Your Prediction:** **${choice.toUpperCase()}**\n\n` +
-        `💰 **Bet Placed:** **${formatMoney(bet)}**\n` +
-        `💵 **Profit Won:** **+${formatMoney(bet)}**\n` +
-        `🎉 **Total Payout:** **${formatMoney(winPayout)}**\n\n` +
-        `💳 **Updated Wallet Balance:** **${formatMoney(finalBal)}**`;
-    } else {
-      embedColor = '#FF4500';
-      title = `🪙 Coin Landed on ${result.toUpperCase()}! • YOU LOST! ❌`;
-      description = 
-        `🪙 **Coin Result:** **${result.toUpperCase()}**\n` +
-        `🎯 **Your Prediction:** **${choice.toUpperCase()}**\n\n` +
-        `💰 **Bet Lost:** **-${formatMoney(bet)}**\n` +
-        `💳 **Remaining Wallet Balance:** **${formatMoney(finalBal)}**\n\n` +
-        `*Amdavadi Riya says: "Baka, double down on the next flip and win it back!"* ☕`;
-    }
-
-    await saveUserData(userDoc);
-
-    const embed = new EmbedBuilder()
-      .setColor(embedColor)
-      .setTitle(title)
-      .setDescription(description)
-      .setThumbnail(result === 'heads' 
-        ? 'https://cdn-icons-png.flaticon.com/512/217/217853.png' 
-        : 'https://cdn-icons-png.flaticon.com/512/217/217854.png')
-      .setFooter({ text: 'AHP Group Pvt. Ltd. • Riya Casino Suite 💖' })
-      .setTimestamp();
-
-    // Interactive Re-flip Buttons
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`cf_play_${choice}_${bet}`)
-        .setLabel(`🪙 Flip Again (${choice.toUpperCase()})`)
-        .setStyle(isWin ? ButtonStyle.Success : ButtonStyle.Primary),
-      new ButtonBuilder()
-        .setCustomId(`cf_play_${choice === 'heads' ? 'tails' : 'heads'}_${bet}`)
-        .setLabel(`🔄 Switch to ${(choice === 'heads' ? 'tails' : 'heads').toUpperCase()}`)
-        .setStyle(ButtonStyle.Secondary)
-    );
-
-    const replyMsg = await interaction.editReply({ embeds: [embed], components: [row] });
-
-    // Handle interactive button clicks for 90 seconds
-    if (replyMsg && typeof replyMsg.createMessageComponentCollector === 'function') {
-      const collector = replyMsg.createMessageComponentCollector({
-        filter: i => i.user.id === interaction.user.id,
-        time: 90000
+      const finalMsg = await btnInteraction.editReply({
+        embeds: [resultEmbed],
+        components: [playAgainRow]
       });
 
-      collector.on('collect', async btnInteraction => {
+      // Play Again Collector
+      const againCollector = finalMsg.createMessageComponentCollector({
+        time: 45000
+      });
+
+      againCollector.on('collect', async (againInteraction) => {
         try {
-          await btnInteraction.deferUpdate().catch(() => {});
-
-          const parts = btnInteraction.customId.split('_');
-          const nextChoice = parts[2];
-          const nextBet = parseInt(parts[3], 10);
-
-          const freshUserDoc = await getUserData(userId, guildId);
-          const freshBalance = getBalance(freshUserDoc);
-
-          if (freshBalance < nextBet) {
-            return await btnInteraction.followUp({
-              content: `❌ **Insufficient Funds!** You have **${formatMoney(freshBalance)}**, but need **${formatMoney(nextBet)}** to flip again.`,
+          if (againInteraction.user.id !== userId) {
+            return await againInteraction.reply({
+              content: `❌ **Anti-Cheat Warning:** Only <@${userId}> can play again on this prompt! Run \`/coinflip\` to start your own.`,
               ephemeral: true
             });
           }
 
-          await deductBalance(freshUserDoc, nextBet);
-          const nextResult = Math.random() < 0.5 ? 'heads' : 'tails';
-          const nextWin = (nextResult === nextChoice);
-
-          let updatedBal = getBalance(freshUserDoc);
-          let nextColor = '#FF4500';
-          let nextTitle = '';
-          let nextDesc = '';
-
-          if (nextWin) {
-            const nextPayout = nextBet * 2;
-            updatedBal = await addBalance(freshUserDoc, nextPayout);
-            nextColor = '#00FF7F';
-            nextTitle = `🪙 Coin Landed on ${nextResult.toUpperCase()}! • YOU WON! 🎉`;
-            nextDesc = 
-              `🪙 **Coin Result:** **${nextResult.toUpperCase()}**\n` +
-              `🎯 **Your Prediction:** **${nextChoice.toUpperCase()}**\n\n` +
-              `💰 **Bet Placed:** **${formatMoney(nextBet)}**\n` +
-              `💵 **Profit Won:** **+${formatMoney(nextBet)}**\n` +
-              `🎉 **Total Payout:** **${formatMoney(nextPayout)}**\n\n` +
-              `💳 **Updated Wallet Balance:** **${formatMoney(updatedBal)}**`;
-          } else {
-            nextColor = '#FF4500';
-            nextTitle = `🪙 Coin Landed on ${nextResult.toUpperCase()}! • YOU LOST! ❌`;
-            nextDesc = 
-              `🪙 **Coin Result:** **${nextResult.toUpperCase()}**\n` +
-              `🎯 **Your Prediction:** **${nextChoice.toUpperCase()}**\n\n` +
-              `💰 **Bet Lost:** **-${formatMoney(nextBet)}**\n` +
-              `💳 **Remaining Wallet Balance:** **${formatMoney(updatedBal)}**\n\n` +
-              `*Amdavadi Riya says: "Don't give up baka, try again!"* ☕`;
-          }
-
-          await saveUserData(freshUserDoc);
-
-          const nextEmbed = new EmbedBuilder()
-            .setColor(nextColor)
-            .setTitle(nextTitle)
-            .setDescription(nextDesc)
-            .setThumbnail(nextResult === 'heads' 
-              ? 'https://cdn-icons-png.flaticon.com/512/217/217853.png' 
-              : 'https://cdn-icons-png.flaticon.com/512/217/217854.png')
-            .setFooter({ text: 'AHP Group Pvt. Ltd. • Riya Casino Suite 💖' })
-            .setTimestamp();
-
-          const nextRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder()
-              .setCustomId(`cf_play_${nextChoice}_${nextBet}`)
-              .setLabel(`🪙 Flip Again (${nextChoice.toUpperCase()})`)
-              .setStyle(nextWin ? ButtonStyle.Success : ButtonStyle.Primary),
-            new ButtonBuilder()
-              .setCustomId(`cf_play_${nextChoice === 'heads' ? 'tails' : 'heads'}_${nextBet}`)
-              .setLabel(`🔄 Switch to ${(nextChoice === 'heads' ? 'tails' : 'heads').toUpperCase()}`)
-              .setStyle(ButtonStyle.Secondary)
-          );
-
-          await interaction.editReply({ embeds: [nextEmbed], components: [nextRow] });
-        } catch (bErr) {
-          logger.error('Error handling coinflip button click:', bErr);
+          againCollector.stop('restart');
+          await againInteraction.deferUpdate().catch(() => {});
+          await renderCoinflipPrompt(againInteraction, userId, guildId, bet);
+        } catch (againErr) {
+          logger.error('Error handling coinflip again button:', againErr);
         }
       });
 
-      collector.on('end', async () => {
-        try {
-          const disabledRow = new ActionRowBuilder().addComponents(
-            new ButtonBuilder().setCustomId('cf_done1').setLabel('🪙 Flip Ended').setStyle(ButtonStyle.Secondary).setDisabled(true),
-            new ButtonBuilder().setCustomId('cf_done2').setLabel('Run /coinflip again').setStyle(ButtonStyle.Secondary).setDisabled(true)
-          );
-          await interaction.editReply({ components: [disabledRow] }).catch(() => {});
-        } catch (e) {}
+      againCollector.on('end', async (_, endReason) => {
+        if (endReason !== 'restart') {
+          try {
+            const endedRow = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId('cf_ended')
+                .setLabel('Session Finished')
+                .setStyle(ButtonStyle.Secondary)
+                .setDisabled(true)
+            );
+            await btnInteraction.editReply({ components: [endedRow] }).catch(() => {});
+          } catch (e) {}
+        }
       });
-    }
 
+    } catch (err) {
+      logger.error('Error during coinflip choice collection:', err);
+    }
+  });
+
+  collector.on('end', async (_, reason) => {
+    if (reason === 'time') {
+      try {
+        const timeoutRow = new ActionRowBuilder().addComponents(
+          new ButtonBuilder()
+            .setCustomId('cf_timeout1')
+            .setLabel('Heads')
+            .setEmoji('🪙')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(true),
+          new ButtonBuilder()
+            .setCustomId('cf_timeout2')
+            .setLabel('Tails')
+            .setEmoji('🪙')
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(true)
+        );
+        await interaction.editReply({
+          components: [timeoutRow]
+        }).catch(() => {});
+      } catch (e) {}
+    }
+  });
+}
+
+export const execute = async (interaction) => {
+  try {
+    // 1. Immediately defer reply to eliminate Discord 3-second timeout
+    await interaction.deferReply().catch(() => {});
+
+    const rawBet = interaction.options.getInteger('bet');
+    const bet = (rawBet && rawBet >= 100) ? rawBet : 500;
+
+    const userId = interaction.user.id;
+    const guildId = interaction.guildId;
+
+    await renderCoinflipPrompt(interaction, userId, guildId, bet);
   } catch (error) {
     logger.error('Error in /coinflip command execution:', error);
-    const errContent = '❌ An unexpected error occurred while flipping the coin. Please try again!';
+    const errContent = '❌ An unexpected error occurred while running /coinflip. Please try again!';
     if (interaction.deferred || interaction.replied) {
       await interaction.editReply({ content: errContent }).catch(() => {});
     } else {

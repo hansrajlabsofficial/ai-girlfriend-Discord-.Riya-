@@ -178,14 +178,6 @@ export const buildSocialsInvitePanels = (guild, inviteUrl) => {
     .setDescription(`\`\`\`\n${actualInvite}\n\`\`\``)
     .setFooter({ text: 'Invite friends to earn bonus coins & special community badges! • ' + BRAND_FOOTER });
 
-  // Check if banner image exists
-  const bannerFile = path.join(assetsDir, 'welcome_socials_banner.png');
-  let attachment = null;
-  if (fs.existsSync(bannerFile)) {
-    attachment = new AttachmentBuilder(bannerFile, { name: 'socials_banner.png' });
-    socialsEmbed.setImage('attachment://socials_banner.png');
-  }
-
   const buttons = [
     new ButtonBuilder()
       .setLabel('🌐 Web Dashboard')
@@ -198,7 +190,7 @@ export const buildSocialsInvitePanels = (guild, inviteUrl) => {
   ];
   const row = new ActionRowBuilder().addComponents(buttons);
 
-  return { embeds: [socialsEmbed, inviteEmbed], attachment, row };
+  return { embeds: [socialsEmbed, inviteEmbed], attachment: null, row };
 };
 
 /**

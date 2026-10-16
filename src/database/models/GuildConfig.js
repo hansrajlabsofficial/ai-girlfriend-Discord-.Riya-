@@ -84,6 +84,9 @@ export const getGuildConfig = async (guildId) => {
         data.autoDownloadEnabled = data.autoDownloadEnabled !== undefined ? data.autoDownloadEnabled : true;
         data.welcomeChannelId = data.welcomeChannelId || null;
         data.welcomeEnabled = data.welcomeEnabled !== undefined ? data.welcomeEnabled : false;
+        data.welcomeMessage = data.welcomeMessage || 'Welcome {user} to the {server} matrix!';
+        data.welcomeSendDm = data.welcomeSendDm !== undefined ? data.welcomeSendDm : false;
+        data.welcomeBannerUrl = data.welcomeBannerUrl || null;
         data.welcomeTemplate = data.welcomeTemplate || 'haoc';
         data.welcomeRulesChannelId = data.welcomeRulesChannelId || null;
         data.welcomeChatChannelId = data.welcomeChatChannelId || null;
@@ -112,13 +115,15 @@ export const getGuildConfig = async (guildId) => {
           autoDownloadEnabled: true,
           welcomeChannelId: null,
           welcomeEnabled: false,
+          welcomeMessage: 'Welcome {user} to the {server} matrix!',
+          welcomeSendDm: false,
+          welcomeBannerUrl: null,
           welcomeTemplate: 'haoc',
           welcomeRulesChannelId: null,
           welcomeChatChannelId: null,
           welcomeSupportChannelId: null,
           welcomeYtChannelId: null,
           welcomeInviteUrl: null,
-          welcomeBannerUrl: null,
           currentCountingNumber: 0,
           lastCountingUserId: null,
           language: 'en',
@@ -147,13 +152,15 @@ export const getGuildConfig = async (guildId) => {
       autoDownloadEnabled: true,
       welcomeChannelId: null,
       welcomeEnabled: false,
+      welcomeMessage: 'Welcome {user} to the {server} matrix!',
+      welcomeSendDm: false,
+      welcomeBannerUrl: null,
       welcomeTemplate: 'haoc',
       welcomeRulesChannelId: null,
       welcomeChatChannelId: null,
       welcomeSupportChannelId: null,
       welcomeYtChannelId: null,
       welcomeInviteUrl: null,
-      welcomeBannerUrl: null,
       currentCountingNumber: 0,
       lastCountingUserId: null,
       language: 'en',
@@ -164,6 +171,8 @@ export const getGuildConfig = async (guildId) => {
   if (config.currentCountingNumber === undefined) config.currentCountingNumber = 0;
   if (config.autoDownloadEnabled === undefined) config.autoDownloadEnabled = true;
   if (config.welcomeEnabled === undefined) config.welcomeEnabled = false;
+  if (config.welcomeMessage === undefined) config.welcomeMessage = 'Welcome {user} to the {server} matrix!';
+  if (config.welcomeSendDm === undefined) config.welcomeSendDm = false;
   if (config.welcomeTemplate === undefined) config.welcomeTemplate = 'haoc';
   if (config.language === undefined) config.language = 'en';
   return config;

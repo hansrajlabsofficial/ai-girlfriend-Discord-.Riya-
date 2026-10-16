@@ -243,14 +243,58 @@ export const sendWelcomeMessage = async (member) => {
   }
 
   try {
-    // ALWAYS send only the HAOC Community Welcome greeting (Socials are strictly on-demand via the button)
-    const haoc = buildHAOCWelcomeEmbed(member, guildConfig);
-    const sendOpts = { content: haoc.content, embeds: [haoc.embed] };
-    if (haoc.row) sendOpts.components = [haoc.row];
-    if (haoc.attachment) sendOpts.files = [haoc.attachment];
+    const rawMsg = guildConfig.welcomeMessage || 'Welcome {user} to the {server} matrix!';
+    const formattedMsg = rawMsg
+      .replace(/{user}/g, member.toString())
+      .replace(/{server}/g, member.guild.name)
+      .replace(/{member_count}/g, member.guild.memberCount.toString());
 
-    await channel.send(sendOpts);
-    logger.info(`Sent HAOC welcome greeting for member ${member.user?.tag || member.id} in guild ${member.guild.name}`);
+    const accountAge = member.user?.createdAt ? member.user.createdAt.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric'
+    }) : 'Unknown';
+
+    const embed = new EmbedBuilder()
+      .setTitle('✨ New Connection Established')
+      .setDescription(formattedMsg)
+      .setColor(0x9b59b6)
+      .setThumbnail(member.user?.displayAvatarURL?.({ dynamic: true }) || EMBLEM_ICON)
+      .addFields(
+        { name: 'Account Age Identity', value: accountAge, inline: true },
+        { name: 'Guild Member Count', value: `\`${member.guild.memberCount}\` Total`, inline: true }
+      )
+      .setFooter({ text: `User ID: ${member.id}` })
+      .setTimestamp();
+
+    if (guildConfig.welcomeBannerUrl) {
+      embed.setImage(guildConfig.welcomeBannerUrl);
+    }
+
+    await channel.send({ embeds: [embed] });
+    logger.info(`Sent welcome greeting for member ${member.user?.tag || member.id} in guild ${member.guild.name}`);
+
+    // Optional DM delivery
+    if (guildConfig.welcomeSendDm) {
+      try {
+        const dmEmbed = new EmbedBuilder()
+          .setTitle(`✨ Welcome to ${member.guild.name}!`)
+          .setDescription(formattedMsg)
+          .setColor(0x9b59b6)
+          .setThumbnail(member.guild.iconURL?.({ dynamic: true }) || member.user?.displayAvatarURL?.({ dynamic: true }) || EMBLEM_ICON)
+          .setFooter({ text: `Onboarding Portal • ${member.guild.name}` })
+          .setTimestamp();
+
+        if (guildConfig.welcomeBannerUrl) {
+          dmEmbed.setImage(guildConfig.welcomeBannerUrl);
+        }
+
+        await member.send({ embeds: [dmEmbed] });
+      } catch (dmErr) {
+        logger.warn(`Could not send welcome DM to member ${member.id}: ${dmErr.message}`);
+      }
+    }
+
     return true;
   } catch (err) {
     logger.error(`Error sending welcome message in guild ${member.guild.id}: ${err.message}`);

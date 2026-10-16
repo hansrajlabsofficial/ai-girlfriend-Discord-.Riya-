@@ -164,7 +164,7 @@ const CATEGORIES = {
     commands: [
       { name: '/download <type> <platform> <url>', desc: 'Download Video or Image from Instagram, YouTube, or TikTok.' },
       { name: '/setup_autodownload <channel> [status]', desc: 'Configure channel for automatic media downloads.' },
-      { name: '/setup_welcome <channel> [template]', desc: 'Configure auto-welcome greeting and deploy community boards.' },
+      { name: '/welcome <channel|message|banner|test>', desc: 'Configure onboarding welcome channel, custom greeting & banner.' },
       { name: '/select_channel <channel>', desc: 'Bind Riya\'s primary chat channel.' },
       { name: '/setup_region_roles', desc: 'Deploy Region Selection auto-roles panel with buttons & world map.' },
       { name: '/setup_games_roles', desc: 'Deploy Self Game Roles panel with buttons, emojis & game templates.' },

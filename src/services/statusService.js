@@ -1,11 +1,78 @@
+import { ActivityType } from 'discord.js';
 import { getAll247StatusChannels, getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
 import { buildStatusEmbed } from '../commands/status.js';
 import { logger } from '../utils/logger.js';
 
 let statusInterval = null;
+let presenceInterval = null;
+
+export const startRotatingPresence = (client, intervalMs = 12000) => {
+  if (presenceInterval) clearInterval(presenceInterval);
+  let currentIndex = 0;
+
+  const updatePresence = () => {
+    try {
+      if (!client.user) return;
+
+      const serverCount = client.guilds.cache.size || 1;
+
+      // Calculate live uptime
+      const totalSeconds = Math.floor(process.uptime());
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      let uptimeStr = '';
+      if (days > 0) uptimeStr += `${days}d `;
+      if (hours > 0 || days > 0) uptimeStr += `${hours}h `;
+      if (minutes > 0 || hours > 0 || days > 0) uptimeStr += `${minutes}m `;
+      uptimeStr += `${seconds}s`;
+
+      const statuses = [
+        {
+          name: `Connected to ${serverCount} Servers`,
+          type: ActivityType.Playing
+        },
+        {
+          name: `Developed by HANSRAJ`,
+          type: ActivityType.Playing
+        },
+        {
+          name: `Online: ${uptimeStr.trim()}`,
+          type: ActivityType.Playing
+        },
+        {
+          name: `Use /help for all available commands`,
+          type: ActivityType.Watching
+        }
+      ];
+
+      const current = statuses[currentIndex % statuses.length];
+      client.user.setPresence({
+        activities: [{
+          name: current.name,
+          type: current.type
+        }],
+        status: 'online'
+      });
+
+      currentIndex++;
+    } catch (err) {
+      logger.warn(`Failed to update rotating presence: ${err.message}`);
+    }
+  };
+
+  updatePresence();
+  presenceInterval = setInterval(updatePresence, intervalMs);
+  logger.info(`Started rotating bot activity presence every ${intervalMs / 1000}s! 🔁`);
+};
 
 export const start247StatusAutoUpdater = (client) => {
   if (statusInterval) clearInterval(statusInterval);
+
+  // Also initiate rotating activity presence
+  startRotatingPresence(client, 12000);
 
   logger.info('Starting 24/7 Live Status Channel Auto-Updater service...');
 

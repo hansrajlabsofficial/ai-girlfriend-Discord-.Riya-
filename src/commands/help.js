@@ -29,10 +29,13 @@ const CATEGORIES = {
     ]
   },
   exploration: {
-    label: '🌍 Exploration, Mining & Crafting',
+    label: '🌍 Exploration, Mining & Fishing',
     value: 'exploration',
-    description: 'Adventure, Ore Mining, Crafting & Trading',
+    description: 'Adventure, Ore Mining, Fishing Simulator, Crafting & Trading',
     commands: [
+      { name: '/fish', desc: 'Cast your line to catch fish, ocean creatures or scavenge treasures.' },
+      { name: '/sell [category]', desc: 'Open Fish Market counter with interactive buttons to liquidate catches.' },
+      { name: '/givefish <target> <name>', desc: 'Gift a caught fish or sea creature from your creel to a friend.' },
       { name: '/explore', desc: 'Embark on adventure to loot coins, XP, potions & rare items.' },
       { name: '/mine', desc: 'Mine caverns for Copper, Iron, Gold, and Diamond Gems.' },
       { name: '/dungeon', desc: 'Raid dungeon bosses for epic loot (50% HP penalty on defeat!).' },

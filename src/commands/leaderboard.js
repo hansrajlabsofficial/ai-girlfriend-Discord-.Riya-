@@ -1,12 +1,28 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getGuildLeaderboard, isUserDailyPartner } from '../services/rpgService.js';
+import { getFishingLeaderboard } from '../services/fishingService.js';
+import { formatMoney } from '../services/economyService.js';
 import { triggerDailyDatingInvite } from '../utils/dailyDatingEvent.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
   .setName('leaderboard')
-  .setDescription('View top minigame, quiz, and XP leaderboards!')
+  .setDescription('View top minigame, quiz, XP, and Fishing Hall of Fame leaderboards!')
   .addSubcommand(sub => sub.setName('xp').setDescription('Shows you a leaderboard with the most active minigames players'))
+  .addSubcommand(sub =>
+    sub.setName('fishing')
+      .setDescription('Hall of Fame: Top fishers by heaviest catch, rarest catch, and net earnings!')
+      .addStringOption(opt =>
+        opt.setName('metric')
+          .setDescription('Choose ranking metric')
+          .setRequired(false)
+          .addChoices(
+            { name: '⚖️ Heaviest Catch (Single heaviest fish in kg)', value: 'heaviest' },
+            { name: '💰 Net Earnings (Total coins earned selling catches)', value: 'earnings' },
+            { name: '🎣 Total Catches (Most sea creatures caught)', value: 'caught' }
+          )
+      )
+  )
   .addSubcommand(sub => sub.setName('emojiquiz').setDescription('Shows you the top 10 emojiquiz players'))
   .addSubcommand(sub => sub.setName('antonymquiz').setDescription('Shows you the top 10 antonymquiz players'))
   .addSubcommand(sub => sub.setName('triviaquiz').setDescription('Shows you the top 10 triviaquiz players'))
@@ -19,6 +35,55 @@ export const execute = async (interaction) => {
   try {
     const subcommand = interaction.options.getSubcommand() || 'xp';
     const guildId = interaction.guildId || 'dm';
+
+    // Handle Fishing Hall of Fame
+    if (subcommand === 'fishing') {
+      const metric = interaction.options.getString('metric') || 'heaviest';
+      const fishLeaderboard = await getFishingLeaderboard(guildId, metric, 10);
+
+      const metricTitles = {
+        heaviest: '⚖️ Heaviest Catch (Single Biggest Specimen)',
+        earnings: '💰 Net Fishing Market Earnings',
+        caught: '🎣 Most Sea Creatures Landed'
+      };
+
+      const embed = new EmbedBuilder()
+        .setColor('#00CED1')
+        .setTitle(`🎣 Fishing Hall of Fame: ${metricTitles[metric]}`)
+        .setDescription('Honoring the greatest anglers across the oceans! 🌊')
+        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+        .setTimestamp();
+
+      if (!fishLeaderboard || fishLeaderboard.length === 0) {
+        embed.setDescription('No fishing records registered yet! Cast your line with **/fish** to enter the Hall of Fame!');
+      } else {
+        let text = '';
+        fishLeaderboard.forEach((u, index) => {
+          const medal = index === 0 ? '👑 #1' : index === 1 ? '🥈 #2' : index === 2 ? '🥉 #3' : `#${index + 1}`;
+          const fStats = u.fishing?.stats || {};
+          
+          if (metric === 'earnings') {
+            text += `${medal} <@${u.userId}> — Net Sales: **${formatMoney(fStats.totalEarnings || 0)}**\n`;
+          } else if (metric === 'caught') {
+            const count = fStats.totalCaught || u.fishing?.catches?.length || 0;
+            text += `${medal} <@${u.userId}> — Landed: **${count} catch${count === 1 ? '' : 'es'}**\n`;
+          } else {
+            // Heaviest
+            const h = fStats.heaviestCatch;
+            if (h) {
+              text += `${medal} <@${u.userId}> — ${h.emoji} **${h.name}** (\`${h.weightKg?.toFixed(1)}kg\` • **${formatMoney(h.value)}**)\n`;
+            } else {
+              text += `${medal} <@${u.userId}> — *No catch recorded*\n`;
+            }
+          }
+        });
+        embed.addFields({ name: '🏆 Top Anglers', value: text });
+      }
+
+      return await interaction.editReply({ embeds: [embed] });
+    }
+
+    // Default minigames and RPG leaderboards
     const leaderboard = await getGuildLeaderboard(guildId, 10);
 
     const titles = {
@@ -34,7 +99,7 @@ export const execute = async (interaction) => {
       .setColor('#FF1493')
       .setTitle(titles[subcommand] || '🏆 Leaderboard')
       .setDescription('Top players competing on the leaderboard!')
-      .setFooter({ text: 'The #1 Champion gets an exclusive 24-Hour Special Date invitation with Riya!' });
+      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
 
     if (!leaderboard || leaderboard.length === 0) {
       embed.setDescription('No stats found yet! Play minigames and chat with Riya to get on the leaderboard! ☕✨');

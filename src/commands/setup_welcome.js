@@ -15,7 +15,7 @@ export const data = new SlashCommandBuilder()
       .setName('channel')
       .setDescription('Channel where new members are greeted upon joining')
       .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
-      .setRequired(true)
+      .setRequired(false)
   )
   .addStringOption(opt =>
     opt
@@ -104,13 +104,59 @@ export const execute = async (interaction) => {
   const ytChannel = interaction.options.getChannel('youtube_channel');
   const customInvite = interaction.options.getString('invite_url')?.trim();
   const bannerUrl = interaction.options.getString('banner_url')?.trim();
-  const postNow = interaction.options.getBoolean('post_now') ?? true;
-  const status = interaction.options.getBoolean('status') ?? true;
+  const postNow = interaction.options.getBoolean('post_now') ?? false;
+  const status = interaction.options.getBoolean('status');
 
   try {
     const guildConfig = await getGuildConfig(interaction.guildId);
-    guildConfig.welcomeChannelId = channel.id;
-    guildConfig.welcomeEnabled = status;
+
+    // 1. Explicit disable request
+    if (status === false) {
+      guildConfig.welcomeEnabled = false;
+      await saveGuildConfig(guildConfig);
+
+      const disableEmbed = new EmbedBuilder()
+        .setColor('#FF5555')
+        .setTitle('🔴 Auto-Welcome Greetings Disabled')
+        .setDescription(
+          `Auto-welcome greetings have been **disabled** for **${interaction.guild.name}**.\n\n` +
+          `• **Status:** 🔴 **Disabled (OFF)**\n` +
+          `• Riya will no longer send welcome cards when new members join.\n` +
+          `• To re-enable anytime, run \`/setup_welcome status: True\` or click the button below.`
+        )
+        .setFooter({ text: BRAND_FOOTER, iconURL: EMBLEM_ICON })
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents([
+        new ButtonBuilder()
+          .setLabel('🟢 Re-Enable Welcome')
+          .setStyle(ButtonStyle.Success)
+          .setCustomId('welcome_toggle_enable')
+      ]);
+
+      if (interaction.deferred || interaction.replied) {
+        return await interaction.editReply({ embeds: [disableEmbed], components: [row] }).catch(() => {});
+      } else {
+        return await interaction.reply({ embeds: [disableEmbed], components: [row], ephemeral: true }).catch(() => {});
+      }
+    }
+
+    // 2. Resolve target channel
+    const targetChannel = channel || (guildConfig.welcomeChannelId ? interaction.guild.channels.cache.get(guildConfig.welcomeChannelId) : null);
+    if (!targetChannel) {
+      const warnMsg = {
+        content: '⚠️ **Please specify a channel!** Run `/setup_welcome channel: #welcome` to choose where welcome greetings will be sent, baka!',
+        ephemeral: true
+      };
+      if (interaction.deferred || interaction.replied) {
+        return await interaction.editReply(warnMsg).catch(() => {});
+      } else {
+        return await interaction.reply(warnMsg).catch(() => {});
+      }
+    }
+
+    guildConfig.welcomeChannelId = targetChannel.id;
+    guildConfig.welcomeEnabled = true;
     guildConfig.welcomeTemplate = template;
 
     if (rulesChannel) guildConfig.welcomeRulesChannelId = rulesChannel.id;
@@ -126,42 +172,41 @@ export const execute = async (interaction) => {
     let postedNotice = '';
     if (postNow) {
       const botMember = interaction.guild.members.me || await interaction.guild.members.fetchMe().catch(() => null);
-      const perms = channel.permissionsFor(botMember);
+      const perms = targetChannel.permissionsFor(botMember);
 
       if (!perms || !perms.has('SendMessages') || !perms.has('EmbedLinks')) {
-        postedNotice = '\n⚠️ *Note: Bot lacks SendMessages or EmbedLinks in <#' + channel.id + '> to post immediately. Please verify permissions!*';
+        postedNotice = '\n⚠️ *Note: Bot lacks SendMessages or EmbedLinks in <#' + targetChannel.id + '> to post immediately. Please verify permissions!*';
       } else {
         if (template === 'socials') {
           const socials = buildSocialsInvitePanels(interaction.guild, guildConfig.welcomeInviteUrl);
           const sendOpts = { embeds: socials.embeds, components: [socials.row] };
           if (socials.attachment) sendOpts.files = [socials.attachment];
-          await channel.send(sendOpts);
-          postedNotice = '\n✅ *Posted Socials & Invite Your Friends board to <#' + channel.id + '>!*';
+          await targetChannel.send(sendOpts);
+          postedNotice = '\n✅ *Posted Socials & Invite Your Friends board to <#' + targetChannel.id + '>!*';
         } else {
           // Default: HAOC Community Welcome card with animated GIF banner
           const haoc = buildHAOCWelcomeEmbed(interaction.member, guildConfig);
           const sendOpts = { content: haoc.content, embeds: [haoc.embed] };
           if (haoc.row) sendOpts.components = [haoc.row];
           if (haoc.attachment) sendOpts.files = [haoc.attachment];
-          await channel.send(sendOpts);
-          postedNotice = '\n✅ *Posted HAOC Community Welcome card to <#' + channel.id + '>!*';
+          await targetChannel.send(sendOpts);
+          postedNotice = '\n✅ *Posted HAOC Community Welcome card to <#' + targetChannel.id + '>!*';
         }
       }
     }
 
     const templateNames = {
       haoc: '👑 HAOC Community Welcome',
-      socials: '🌐 Socials & Invite Friends Hub',
-      all_in_one: '🚀 Complete All-in-One Suite'
+      socials: '🌐 Socials & Invite Friends Hub'
     };
 
     const confirmEmbed = new EmbedBuilder()
-      .setColor(status ? '#00E5FF' : '#FF5555')
+      .setColor('#00E5FF')
       .setTitle('🎉 Welcome System Configured!')
       .setDescription(
         `Kem chhe! The server welcome system has been updated successfully! ✨${postedNotice}\n\n` +
-        `• **Welcome Channel:** <#${channel.id}>\n` +
-        `• **Auto-Join Greeting:** ${status ? '🟢 **Active & Enabled**' : '🔴 **Disabled**'}\n` +
+        `• **Welcome Channel:** <#${targetChannel.id}>\n` +
+        `• **Auto-Join Greeting:** 🟢 **Active & Enabled**\n` +
         `• **Template:** \`${templateNames[template] || template}\`\n` +
         `• **Rules Link:** ${guildConfig.welcomeRulesChannelId ? `<#${guildConfig.welcomeRulesChannelId}>` : '*Auto-detected*'}\n` +
         `• **Main Chat:** ${guildConfig.welcomeChatChannelId ? `<#${guildConfig.welcomeChatChannelId}>` : '*Auto-detected*'}\n` +
@@ -181,13 +226,13 @@ export const execute = async (interaction) => {
 
     const buttons = [
       new ButtonBuilder()
-        .setLabel('📢 Post Socials Board')
-        .setStyle(ButtonStyle.Secondary)
-        .setCustomId(`welcome_post_socials_${channel.id}`),
-      new ButtonBuilder()
         .setLabel('🧪 Test Join Greeting')
         .setStyle(ButtonStyle.Primary)
-        .setCustomId(`welcome_test_join_${channel.id}`)
+        .setCustomId(`welcome_test_join_${targetChannel.id}`),
+      new ButtonBuilder()
+        .setLabel('🔴 Disable Welcome')
+        .setStyle(ButtonStyle.Danger)
+        .setCustomId('welcome_toggle_disable')
     ];
     const row = new ActionRowBuilder().addComponents(buttons);
 

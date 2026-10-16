@@ -258,6 +258,50 @@ export const handleWelcomeButton = async (interaction) => {
     return await interaction.reply({ content: `✅ Successfully posted Socials & Invite board to <#${channelId}>!`, ephemeral: true });
   }
 
+  // Toggle Disable Welcome (Admin)
+  if (customId === 'welcome_toggle_disable') {
+    if (!interaction.memberPermissions?.has('ManageGuild') && !interaction.memberPermissions?.has('Administrator')) {
+      return await interaction.reply({ content: '❌ You need Manage Server permission to do that!', ephemeral: true });
+    }
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    guildConfig.welcomeEnabled = false;
+    await saveGuildConfig(guildConfig);
+    return await interaction.reply({
+      content: '🔴 **Auto-Welcome Greetings Disabled!** Riya will no longer send welcome cards when new members join.\n*(Click below or run `/setup_welcome status: True` to re-enable anytime!)*',
+      components: [
+        new ActionRowBuilder().addComponents([
+          new ButtonBuilder()
+            .setLabel('🟢 Re-Enable Welcome')
+            .setStyle(ButtonStyle.Success)
+            .setCustomId('welcome_toggle_enable')
+        ])
+      ],
+      ephemeral: true
+    });
+  }
+
+  // Toggle Enable Welcome (Admin)
+  if (customId === 'welcome_toggle_enable') {
+    if (!interaction.memberPermissions?.has('ManageGuild') && !interaction.memberPermissions?.has('Administrator')) {
+      return await interaction.reply({ content: '❌ You need Manage Server permission to do that!', ephemeral: true });
+    }
+    const guildConfig = await getGuildConfig(interaction.guildId);
+    guildConfig.welcomeEnabled = true;
+    await saveGuildConfig(guildConfig);
+    return await interaction.reply({
+      content: `🟢 **Auto-Welcome Greetings Enabled!** New members will now receive greetings in ${guildConfig.welcomeChannelId ? `<#${guildConfig.welcomeChannelId}>` : 'the designated welcome channel'}!`,
+      components: [
+        new ActionRowBuilder().addComponents([
+          new ButtonBuilder()
+            .setLabel('🔴 Disable Welcome')
+            .setStyle(ButtonStyle.Danger)
+            .setCustomId('welcome_toggle_disable')
+        ])
+      ],
+      ephemeral: true
+    });
+  }
+
   // 2. Test Welcome greeting
   if (customId.startsWith('welcome_test_join_')) {
     if (!interaction.deferred && !interaction.replied) {

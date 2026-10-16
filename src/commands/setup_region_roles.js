@@ -166,7 +166,26 @@ export const execute = async (interaction) => {
       regionRolesMap
     });
 
-    const panelMessage = await targetChannel.send(panelData);
+    let panelMessage;
+    try {
+      panelMessage = await targetChannel.send(panelData);
+    } catch (sendErr) {
+      if (
+        sendErr.message?.includes('COMPONENT_INVALID_EMOJI') ||
+        sendErr.rawError?.message?.includes('Invalid emoji') ||
+        sendErr.code === 50035
+      ) {
+        logger.warn('Failed sending panel with emojis, automatically retrying without button emojis...');
+        panelData.components.forEach(row => {
+          row.components.forEach(btn => {
+            btn.data.emoji = undefined;
+          });
+        });
+        panelMessage = await targetChannel.send(panelData);
+      } else {
+        throw sendErr;
+      }
+    }
 
     // 6. Respond to Admin
     let statusText = `🎉 **Region Selection Panel successfully deployed to <#${targetChannel.id}>!**\n[Jump to Panel Message](${panelMessage.url})\n\n`;

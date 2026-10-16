@@ -10,13 +10,13 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_MAP_PATH = path.resolve(__dirname, '../assets/region_map.png');
 
 export const REGIONS_CONFIG = [
-  { key: 'north_america', name: 'North America', emoji: '🅽', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
-  { key: 'south_america', name: 'South America', emoji: '🆂', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
-  { key: 'east_europe', name: 'East Europe', emoji: '🅴', style: ButtonStyle.Primary, defaultColor: '#3498DB', row: 1 },
-  { key: 'west_europe', name: 'West Europe', emoji: '🆆', style: ButtonStyle.Primary, defaultColor: '#2980B9', row: 1 },
-  { key: 'oceania', name: 'Oceania', emoji: '🅞', style: ButtonStyle.Secondary, defaultColor: '#95A5A6', row: 1 },
-  { key: 'asia', name: 'Asia', emoji: '🅰', style: ButtonStyle.Success, defaultColor: '#2ECC71', row: 2 },
-  { key: 'africa', name: 'Africa', emoji: '🅰', style: ButtonStyle.Success, defaultColor: '#27AE60', row: 2 },
+  { key: 'north_america', name: 'North America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
+  { key: 'south_america', name: 'South America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
+  { key: 'east_europe', name: 'East Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#3498DB', row: 1 },
+  { key: 'west_europe', name: 'West Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#2980B9', row: 1 },
+  { key: 'oceania', name: 'Oceania', emoji: '⬜', style: ButtonStyle.Secondary, defaultColor: '#95A5A6', row: 1 },
+  { key: 'asia', name: 'Asia', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#2ECC71', row: 2 },
+  { key: 'africa', name: 'Africa', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#27AE60', row: 2 },
   { key: 'rather_not_say', name: 'Rather not say', emoji: '⛔', style: ButtonStyle.Secondary, defaultColor: '#7F8C8D', row: 2 }
 ];
 
@@ -54,8 +54,15 @@ export const buildRegionPanel = ({ title = 'Region Selection', description = DEF
     const button = new ButtonBuilder()
       .setCustomId(`region_role:${reg.key}:${roleId}`)
       .setLabel(reg.name)
-      .setStyle(reg.style)
-      .setEmoji(reg.emoji);
+      .setStyle(reg.style);
+
+    if (reg.emoji) {
+      try {
+        button.setEmoji(reg.emoji);
+      } catch (err) {
+        logger.warn(`Could not set emoji ${reg.emoji} on button ${reg.name}`);
+      }
+    }
 
     if (reg.row === 1) {
       row1.addComponents(button);

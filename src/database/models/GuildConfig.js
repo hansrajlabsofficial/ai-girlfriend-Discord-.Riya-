@@ -82,6 +82,14 @@ export const getGuildConfig = async (guildId) => {
         data.status247Enabled = data.status247Enabled || false;
         data.autoDownloadChannelId = data.autoDownloadChannelId || null;
         data.autoDownloadEnabled = data.autoDownloadEnabled !== undefined ? data.autoDownloadEnabled : true;
+        data.welcomeChannelId = data.welcomeChannelId || null;
+        data.welcomeEnabled = data.welcomeEnabled !== undefined ? data.welcomeEnabled : true;
+        data.welcomeTemplate = data.welcomeTemplate || 'haoc';
+        data.welcomeRulesChannelId = data.welcomeRulesChannelId || null;
+        data.welcomeChatChannelId = data.welcomeChatChannelId || null;
+        data.welcomeSupportChannelId = data.welcomeSupportChannelId || null;
+        data.welcomeYtChannelId = data.welcomeYtChannelId || null;
+        data.welcomeInviteUrl = data.welcomeInviteUrl || null;
         data.currentCountingNumber = data.currentCountingNumber || 0;
         data.lastCountingUserId = data.lastCountingUserId || null;
         data.language = data.language || 'en';
@@ -102,6 +110,14 @@ export const getGuildConfig = async (guildId) => {
           status247Enabled: false,
           autoDownloadChannelId: null,
           autoDownloadEnabled: true,
+          welcomeChannelId: null,
+          welcomeEnabled: true,
+          welcomeTemplate: 'haoc',
+          welcomeRulesChannelId: null,
+          welcomeChatChannelId: null,
+          welcomeSupportChannelId: null,
+          welcomeYtChannelId: null,
+          welcomeInviteUrl: null,
           currentCountingNumber: 0,
           lastCountingUserId: null,
           language: 'en',
@@ -128,6 +144,14 @@ export const getGuildConfig = async (guildId) => {
       countingChannelId: null,
       autoDownloadChannelId: null,
       autoDownloadEnabled: true,
+      welcomeChannelId: null,
+      welcomeEnabled: true,
+      welcomeTemplate: 'haoc',
+      welcomeRulesChannelId: null,
+      welcomeChatChannelId: null,
+      welcomeSupportChannelId: null,
+      welcomeYtChannelId: null,
+      welcomeInviteUrl: null,
       currentCountingNumber: 0,
       lastCountingUserId: null,
       language: 'en',
@@ -137,6 +161,8 @@ export const getGuildConfig = async (guildId) => {
   const config = memoryFallbackGuilds.get(guildId);
   if (config.currentCountingNumber === undefined) config.currentCountingNumber = 0;
   if (config.autoDownloadEnabled === undefined) config.autoDownloadEnabled = true;
+  if (config.welcomeEnabled === undefined) config.welcomeEnabled = true;
+  if (config.welcomeTemplate === undefined) config.welcomeTemplate = 'haoc';
   if (config.language === undefined) config.language = 'en';
   return config;
 };

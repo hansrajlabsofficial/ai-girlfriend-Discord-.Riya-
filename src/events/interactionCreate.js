@@ -44,6 +44,11 @@ export const execute = async (interaction) => {
       await handleGridChaseButton(interaction);
       return;
     }
+    if (interaction.customId.startsWith('welcome_')) {
+      const { handleWelcomeButton } = await import('../services/welcomeService.js');
+      await handleWelcomeButton(interaction);
+      return;
+    }
   }
 
   // 2. Handle Slash Chat Input Commands

@@ -7,6 +7,7 @@ import { logger } from './utils/logger.js';
 import * as readyEvent from './events/ready.js';
 import * as interactionCreateEvent from './events/interactionCreate.js';
 import * as messageCreateEvent from './events/messageCreate.js';
+import * as guildMemberAddEvent from './events/guildMemberAdd.js';
 
 import { getDashboardHtml } from './web/dashboard.js';
 import { getLoginHtml } from './web/login.js';
@@ -181,6 +182,7 @@ app.listen(PORT, () => {
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMessageReactions,
@@ -188,13 +190,14 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.DirectMessageReactions
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.Reaction]
+  partials: [Partials.Message, Partials.Channel, Partials.Reaction, Partials.GuildMember]
 });
 
 // Register Event Listeners
 client.once(readyEvent.name, (...args) => readyEvent.execute(...args));
 client.on(interactionCreateEvent.name, (...args) => interactionCreateEvent.execute(...args));
 client.on(messageCreateEvent.name, (...args) => messageCreateEvent.execute(...args));
+client.on(guildMemberAddEvent.name, (...args) => guildMemberAddEvent.execute(...args));
 
 // Handle Unhandled Errors to prevent process crashes
 process.on('unhandledRejection', (reason, promise) => {

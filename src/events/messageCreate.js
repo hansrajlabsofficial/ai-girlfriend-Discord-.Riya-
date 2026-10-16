@@ -14,6 +14,7 @@ import { handlePrefixCommand } from '../utils/prefixAdapter.js';
 import { handleGlobalChatBroadcast } from '../services/globalChatService.js';
 import { handleGlobalCallRelay } from '../services/globalCallService.js';
 import { handleGlobalPrivateCallRelay } from '../services/globalPrivateCallService.js';
+import { handleAutoDownloadMessage } from '../services/mediaDownloadService.js';
 
 export const name = 'messageCreate';
 
@@ -53,7 +54,11 @@ export const execute = async (message) => {
   const isGlobalBroadcast = await handleGlobalChatBroadcast(message);
   if (isGlobalBroadcast) return;
 
-  // 3. Process Prefix Commands (e.g. xhelp, xdaily, xcard_drop, xbank_balance, k!help, etc.)
+  // 4. Media Auto-Downloader Check (Instagram, YouTube, TikTok in configured channel)
+  const isAutoDownload = await handleAutoDownloadMessage(message);
+  if (isAutoDownload) return;
+
+  // 5. Process Prefix Commands (e.g. xhelp, xdaily, xcard_drop, xbank_balance, k!help, etc.)
   const isPrefixCmd = await handlePrefixCommand(message);
   if (isPrefixCmd) return;
 

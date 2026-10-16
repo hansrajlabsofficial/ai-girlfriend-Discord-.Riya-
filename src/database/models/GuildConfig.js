@@ -80,6 +80,8 @@ export const getGuildConfig = async (guildId) => {
         data.statusChannelId = data.statusChannelId || null;
         data.statusMessageId = data.statusMessageId || null;
         data.status247Enabled = data.status247Enabled || false;
+        data.autoDownloadChannelId = data.autoDownloadChannelId || null;
+        data.autoDownloadEnabled = data.autoDownloadEnabled !== undefined ? data.autoDownloadEnabled : true;
         data.currentCountingNumber = data.currentCountingNumber || 0;
         data.lastCountingUserId = data.lastCountingUserId || null;
         data.language = data.language || 'en';
@@ -98,6 +100,8 @@ export const getGuildConfig = async (guildId) => {
           statusChannelId: null,
           statusMessageId: null,
           status247Enabled: false,
+          autoDownloadChannelId: null,
+          autoDownloadEnabled: true,
           currentCountingNumber: 0,
           lastCountingUserId: null,
           language: 'en',
@@ -122,6 +126,8 @@ export const getGuildConfig = async (guildId) => {
       emojiquizChannelId: null,
       antonymquizChannelId: null,
       countingChannelId: null,
+      autoDownloadChannelId: null,
+      autoDownloadEnabled: true,
       currentCountingNumber: 0,
       lastCountingUserId: null,
       language: 'en',
@@ -130,6 +136,7 @@ export const getGuildConfig = async (guildId) => {
   }
   const config = memoryFallbackGuilds.get(guildId);
   if (config.currentCountingNumber === undefined) config.currentCountingNumber = 0;
+  if (config.autoDownloadEnabled === undefined) config.autoDownloadEnabled = true;
   if (config.language === undefined) config.language = 'en';
   return config;
 };
@@ -172,6 +179,14 @@ export const saveGuildConfig = async (guildConfig) => {
 export const setBoundChannel = async (guildId, channelId) => {
   const guildConfig = await getGuildConfig(guildId);
   guildConfig.boundChannelId = channelId;
+  await saveGuildConfig(guildConfig);
+  return guildConfig;
+};
+
+export const setAutoDownloadChannel = async (guildId, channelId, enabled = true) => {
+  const guildConfig = await getGuildConfig(guildId);
+  guildConfig.autoDownloadChannelId = channelId;
+  guildConfig.autoDownloadEnabled = enabled;
   await saveGuildConfig(guildConfig);
   return guildConfig;
 };

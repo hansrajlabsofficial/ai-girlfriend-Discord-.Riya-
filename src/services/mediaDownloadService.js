@@ -407,6 +407,24 @@ export const buildMediaResponse = (result, originalUrl, requestedBy) => {
   return { embed, row };
 };
 
+export const PLATFORM_ASSETS = {
+  instagram: {
+    username: 'INSTAGRAM DOWNLOAD LINK',
+    avatarURL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/600px-Instagram_icon.png',
+    color: '#E1306C'
+  },
+  tiktok: {
+    username: 'TIKTOK DOWNLOAD LINK',
+    avatarURL: 'https://cdn-icons-png.flaticon.com/512/3046/3046121.png',
+    color: '#00F2FE'
+  },
+  youtube: {
+    username: 'YOUTUBE DOWNLOAD LINK',
+    avatarURL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/YouTube_full-color_icon_%282017%29.svg/1024px-YouTube_full-color_icon_%282017%29.svg.png',
+    color: '#FF0000'
+  }
+};
+
 /**
  * Handles incoming messages in the auto-download channel
  */
@@ -443,19 +461,97 @@ export const handleAutoDownloadMessage = async (message) => {
       return false;
     }
 
-    const { embed, row } = buildMediaResponse(result, targetUrl, message.author);
-    const sendOptions = { embeds: [embed] };
-    if (row) sendOptions.components = [row];
+    const pInfo = PLATFORM_ASSETS[platform] || {
+      username: 'MEDIA DOWNLOAD LINK',
+      avatarURL: 'https://cdn-icons-png.flaticon.com/512/2111/2111463.png',
+      color: '#00E5FF'
+    };
+
+    const buttons = [];
+    if (targetUrl && targetUrl.startsWith('http')) {
+      buttons.push(
+        new ButtonBuilder()
+          .setLabel('🔗 Original Post')
+          .setStyle(ButtonStyle.Link)
+          .setURL(targetUrl)
+      );
+    }
+    const directLink = result.directDownloadUrl || result.mediaUrl;
+    if (directLink && directLink.startsWith('http')) {
+      buttons.push(
+        new ButtonBuilder()
+          .setLabel('📥 Direct Media Link')
+          .setStyle(ButtonStyle.Link)
+          .setURL(directLink)
+      );
+    }
+    const row = buttons.length > 0 ? new ActionRowBuilder().addComponents(buttons.slice(0, 5)) : null;
+
+    const contentText = `👤 **Requested by:** <@${message.author.id}>`;
+    const components = row ? [row] : [];
+    const files = [];
 
     if (result.buffer && !result.tooLarge) {
-      const fileAttachment = new AttachmentBuilder(result.buffer, {
-        name: result.filename || `media_${Date.now()}.${result.type === 'image' ? 'jpg' : 'mp4'}`
-      });
-      sendOptions.files = [fileAttachment];
+      const ext = result.type === 'image' ? 'jpg' : 'mp4';
+      files.push(new AttachmentBuilder(result.buffer, {
+        name: result.filename || `${platform}_${Date.now()}.${ext}`
+      }));
     }
 
-    await message.reply(sendOptions);
-    await message.react('✅').catch(() => {});
+    // Try sending via Webhook so it matches user reference screenshot (Avatar: Instagram, Name: INSTAGRAM DOWNLOAD LINK)
+    let postedViaWebhook = false;
+    const botMember = message.guild.members.me || await message.guild.members.fetchMe().catch(() => null);
+    if (botMember && message.channel.permissionsFor(botMember)?.has('ManageWebhooks')) {
+      try {
+        const webhooks = await message.channel.fetchWebhooks().catch(() => null);
+        let webhook = webhooks?.find(wh => wh.name.includes('DOWNLOAD LINK') || wh.owner?.id === message.client.user.id);
+        if (!webhook) {
+          webhook = await message.channel.createWebhook({
+            name: 'MEDIA DOWNLOAD LINK',
+            avatar: pInfo.avatarURL
+          }).catch(() => null);
+        }
+
+        if (webhook) {
+          const payload = {
+            username: pInfo.username,
+            avatarURL: pInfo.avatarURL,
+            content: contentText,
+            components
+          };
+          if (files.length > 0) payload.files = files;
+          else if (directLink) payload.content = `${contentText}\n${directLink}`;
+
+          await webhook.send(payload);
+          postedViaWebhook = true;
+
+          // Delete user original raw link message for clean clutter-free channel
+          if (message.deletable) {
+            await message.delete().catch(() => {});
+          }
+        }
+      } catch (whErr) {
+        logger.debug(`Webhook dispatch failed: ${whErr.message}`);
+      }
+    }
+
+    // Fallback: Send directly as bot reply
+    if (!postedViaWebhook) {
+      const payload = {
+        content: contentText,
+        components
+      };
+      if (files.length > 0) {
+        payload.files = files;
+      } else {
+        const { embed } = buildMediaResponse(result, targetUrl, message.author);
+        payload.embeds = [embed];
+      }
+
+      await message.reply(payload);
+      await message.react('✅').catch(() => {});
+    }
+
     return true;
   } catch (err) {
     logger.error(`Error in handleAutoDownloadMessage: ${err.message}`);

@@ -72,7 +72,9 @@ export const execute = async (interaction) => {
     }
 
     const { embed, row } = buildMediaResponse(result, url, interaction.user);
-    const replyOptions = { embeds: [embed] };
+    const replyOptions = {
+      content: `👤 **Requested by:** <@${interaction.user.id}>`
+    };
     if (row) replyOptions.components = [row];
 
     if (result.buffer && !result.tooLarge) {
@@ -81,6 +83,8 @@ export const execute = async (interaction) => {
         name: result.filename || `download_${Date.now()}.${extension}`
       });
       replyOptions.files = [fileAttachment];
+    } else {
+      replyOptions.embeds = [embed];
     }
 
     await interaction.editReply(replyOptions);

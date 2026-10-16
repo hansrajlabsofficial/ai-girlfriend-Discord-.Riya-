@@ -38,6 +38,7 @@
     "instagram-url-direct": "^2.0.7",
     "openai": "^4.77.0",
     "snapinsta": "^1.0.5",
-    "snapsave-media-downloader": "^2.5.1"
+    "snapsave-media-downloader": "^2.5.1",
+    "ultra-igdl": "^1.0.3"
   }
 }

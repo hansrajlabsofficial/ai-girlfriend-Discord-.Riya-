@@ -16,8 +16,19 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 WEBHOOK_URL = os.getenv('WEBHOOK_URL')
 MAX_FILE_SIZE = 24 * 1024 * 1024  # 24MB
 
-if not TOKEN or not WEBHOOK_URL:
-    raise ValueError("Error: DISCORD_TOKEN or WEBHOOK_URL missing from environment variables.")
+if not TOKEN:
+    raise ValueError("❌ Error: DISCORD_TOKEN missing from environment variables (.env).")
+
+if not WEBHOOK_URL or "discord.com/api/webhooks" not in WEBHOOK_URL:
+    print("\n" + "="*60)
+    print("⚠️  MISSING WEBHOOK_URL in .env file!")
+    print("👉 To run this standalone Python bot:")
+    print("   1. Go to your Discord channel -> Channel Settings (⚙️) -> Integrations -> Webhooks")
+    print("   2. Create a Webhook and click 'Copy Webhook URL'")
+    print("   3. Add it to your .env file:")
+    print("      WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_URL_HERE")
+    print("="*60 + "\n")
+    raise ValueError("Error: Valid WEBHOOK_URL is required in .env to run instagram_downloader.py")
 
 intents = discord.Intents.default()
 intents.message_content = True

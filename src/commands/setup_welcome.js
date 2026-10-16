@@ -191,11 +191,18 @@ export const execute = async (interaction) => {
     ];
     const row = new ActionRowBuilder().addComponents(buttons);
 
-    await interaction.editReply({ embeds: [confirmEmbed], components: [row] });
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply({ embeds: [confirmEmbed], components: [row] }).catch(() => {});
+    } else {
+      await interaction.reply({ embeds: [confirmEmbed], components: [row], ephemeral: true }).catch(() => {});
+    }
   } catch (err) {
     logger.error(`Error in /setup_welcome: ${err.message}`);
-    await interaction.editReply({
-      content: '❌ Arey thodi technical issue aavi gayi baka! Failed to save welcome configuration. Please try again.'
-    });
+    const errMsg = { content: '❌ Arey thodi technical issue aavi gayi baka! Failed to save welcome configuration. Please try again.', ephemeral: true };
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(errMsg).catch(() => {});
+    } else {
+      await interaction.reply(errMsg).catch(() => {});
+    }
   }
 };

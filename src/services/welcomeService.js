@@ -18,6 +18,16 @@ export const WELCOME_TEMPLATES = {
   all_in_one: 'Complete All-in-One Community Suite'
 };
 
+// In-memory cache to prevent duplicate welcome greetings (15-second debounce per member)
+const welcomedMembersCache = new Map();
+const DEBOUNCE_WINDOW_MS = 15000;
+
+export const registerWelcomeDebounce = (guildId, memberId) => {
+  if (guildId && memberId) {
+    welcomedMembersCache.set(`${guildId}_${memberId}`, Date.now());
+  }
+};
+
 /**
  * Resolves channel mention safely
  */
@@ -193,6 +203,27 @@ export const buildSocialsInvitePanels = (guild, inviteUrl) => {
 export const sendWelcomeMessage = async (member) => {
   if (!member || !member.guild) return false;
 
+  // 🛡️ Debounce protection: Prevent duplicate greetings within 15 seconds
+  const cacheKey = `${member.guild.id}_${member.id}`;
+  const now = Date.now();
+  if (welcomedMembersCache.has(cacheKey)) {
+    const lastWelcomed = welcomedMembersCache.get(cacheKey);
+    if (now - lastWelcomed < DEBOUNCE_WINDOW_MS) {
+      logger.warn(`Duplicate welcome prevented for member ${member.id} in guild ${member.guild.id} (last sent ${Math.round((now - lastWelcomed) / 1000)}s ago)`);
+      return false;
+    }
+  }
+  welcomedMembersCache.set(cacheKey, now);
+
+  // Periodically clean cache entries older than 5 minutes
+  if (welcomedMembersCache.size > 500) {
+    for (const [key, timestamp] of welcomedMembersCache.entries()) {
+      if (now - timestamp > 300000) {
+        welcomedMembersCache.delete(key);
+      }
+    }
+  }
+
   const guildConfig = await getGuildConfig(member.guild.id);
   if (!guildConfig.welcomeChannelId || guildConfig.welcomeEnabled === false) {
     return false;
@@ -305,7 +336,7 @@ export const handleWelcomeButton = async (interaction) => {
     if (success) {
       return await interaction.editReply({ content: '🎉 **Test Welcome Sent!** Check the configured welcome channel to view the result!' }).catch(() => {});
     } else {
-      return await interaction.editReply({ content: '⚠️ Could not send test welcome. Please verify bot channel permissions.' }).catch(() => {});
+      return await interaction.editReply({ content: '⚠️ **Welcome greeting was already sent just now!** Please wait 15 seconds before sending another greeting to avoid duplicate cards, baka!' }).catch(() => {});
     }
   }
 

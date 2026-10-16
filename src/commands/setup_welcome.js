@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
-import { buildHAOCWelcomeEmbed, buildSocialsInvitePanels, sendWelcomeMessage } from '../services/welcomeService.js';
+import { buildHAOCWelcomeEmbed, buildSocialsInvitePanels, sendWelcomeMessage, registerWelcomeDebounce } from '../services/welcomeService.js';
 import { logger } from '../utils/logger.js';
 
 const BRAND_FOOTER = '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.';
@@ -70,7 +70,7 @@ export const data = new SlashCommandBuilder()
   .addBooleanOption(opt =>
     opt
       .setName('post_now')
-      .setDescription('Post the welcome & socials board into the channel immediately (Default: True)')
+      .setDescription('Post a sample welcome card immediately (Default: False)')
       .setRequired(false)
   )
   .addBooleanOption(opt =>
@@ -104,7 +104,7 @@ export const execute = async (interaction) => {
   const ytChannel = interaction.options.getChannel('youtube_channel');
   const customInvite = interaction.options.getString('invite_url')?.trim();
   const bannerUrl = interaction.options.getString('banner_url')?.trim();
-  const postNow = interaction.options.getBoolean('post_now') ?? false;
+  const postNow = interaction.options.getBoolean('post_now') === true;
   const status = interaction.options.getBoolean('status');
 
   try {
@@ -190,6 +190,7 @@ export const execute = async (interaction) => {
           if (haoc.row) sendOpts.components = [haoc.row];
           if (haoc.attachment) sendOpts.files = [haoc.attachment];
           await targetChannel.send(sendOpts);
+          registerWelcomeDebounce(interaction.guildId, interaction.member.id);
           postedNotice = '\n✅ *Posted HAOC Community Welcome card to <#' + targetChannel.id + '>!*';
         }
       }

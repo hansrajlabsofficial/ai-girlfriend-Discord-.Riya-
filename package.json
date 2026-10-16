@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "clear-commands": "node src/utils/clearCommands.js"
+    "clear-commands": "node src/utils/clearCommands.js",
+    "deploy-commands": "node src/utils/clearCommands.js",
+    "validate-commands": "node src/utils/validateAllCommands.js"
   },
   "keywords": [
     "discord-bot",

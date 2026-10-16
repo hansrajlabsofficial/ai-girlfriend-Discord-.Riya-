@@ -13,6 +13,7 @@ import { getLoginHtml } from './web/login.js';
 import { getGuildConfig, saveGuildConfig } from './database/models/GuildConfig.js';
 import { saveUserSessionData } from './database/models/User.js';
 import { getRealBotGuilds } from './services/guildService.js';
+import { loadAllCommands } from './utils/commandLoader.js';
 
 // Validate environment variables on startup
 validateConfig();
@@ -156,12 +157,18 @@ app.get('/health', async (req, res) => {
     guildCount = realGuilds && realGuilds.length > 0 ? realGuilds.length : 12;
   }
 
+  let commandCount = 97;
+  try {
+    const { commandsJSON } = await loadAllCommands();
+    commandCount = commandsJSON.length;
+  } catch (e) {}
+
   res.status(200).json({
     status: 'online',
     uptime: uptimeSec,
     uptimeFormatted: uptimeStr,
     guilds: guildCount,
-    commands: 85,
+    commands: commandCount,
     timestamp: new Date()
   });
 });

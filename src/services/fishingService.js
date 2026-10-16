@@ -1,6 +1,8 @@
 import { formatMoney } from './economyService.js';
 import { logger } from '../utils/logger.js';
 
+export const FISHING_EMBLEM_URL = 'https://cdn.discordapp.com/attachments/1450771986031706214/1560613901396086904/Global_Fishing_Emblem_1.png?ex=6ad35a74&is=6ad208f4&hm=c0756eb02f2652d908a466b51026a18c45165dcdd6aad2abf5645b29728cf52c&';
+
 export const RODS = {
   bamboo: {
     id: 'bamboo',

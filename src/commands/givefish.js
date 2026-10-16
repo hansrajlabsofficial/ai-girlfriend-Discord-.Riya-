@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder } from 'discord.js';
 import { getUserData, saveUserData } from '../database/models/User.js';
 import { formatMoney } from '../services/economyService.js';
-import { getUserFishing } from '../services/fishingService.js';
+import { getUserFishing, FISHING_EMBLEM_URL } from '../services/fishingService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -86,7 +86,7 @@ export const execute = async (interaction) => {
         `💰 **Market Worth:** **${formatMoney(giftedFish.value)}**\n\n` +
         `✨ *Amdavadi Riya says: "Dosti ho toh aisi! Take good care of this catch, baka!"* ☕`
       )
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+      .setThumbnail(FISHING_EMBLEM_URL)
       .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
       .setTimestamp();
 

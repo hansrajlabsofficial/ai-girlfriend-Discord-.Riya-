@@ -12,7 +12,8 @@ import {
   FISH_TIERS,
   rollCatch,
   getUserFishing,
-  getFishingQuote
+  getFishingQuote,
+  FISHING_EMBLEM_URL
 } from '../services/fishingService.js';
 import { logger } from '../utils/logger.js';
 
@@ -60,7 +61,7 @@ export const execute = async (interaction) => {
         `🌊 <@${userId}> casts their line into the misty deep ocean waters...\n\n` +
         `🫧 *The bobber drifts quietly with the current... Watching for ripples...*`
       )
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+      .setThumbnail(FISHING_EMBLEM_URL)
       .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
 
     await interaction.editReply({ embeds: [castingEmbed] });
@@ -122,7 +123,7 @@ export const execute = async (interaction) => {
         `🎣 **Equipped Rod:** ${rod.emoji} **${rod.name}** *(Cooldown: ${rod.cooldownSec}s)*\n\n` +
         `✨ *Amdavadi Riya says: "${getFishingQuote(caughtItem.tier)}"*`
       )
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+      .setThumbnail(FISHING_EMBLEM_URL)
       .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
       .setTimestamp();
 

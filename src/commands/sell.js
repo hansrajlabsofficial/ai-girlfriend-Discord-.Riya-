@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { getUserData, saveUserData } from '../database/models/User.js';
 import { addBalance, formatMoney } from '../services/economyService.js';
-import { getUserFishing, sellCatches, RODS } from '../services/fishingService.js';
+import { getUserFishing, sellCatches, RODS, FISHING_EMBLEM_URL } from '../services/fishingService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -91,7 +91,7 @@ export const execute = async (interaction) => {
           `🎒 **Remaining in Creel:** **${remainingCount} item${remainingCount === 1 ? '' : 's'}**\n\n` +
           `✨ *Amdavadi Riya says: "Badiya vyapar baka! Cast your line again with \`/fish\` to restock!"* ☕`
         )
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+        .setThumbnail(FISHING_EMBLEM_URL)
         .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
         .setTimestamp();
 
@@ -139,7 +139,7 @@ export const execute = async (interaction) => {
         `• 🔱 **Mythic / Legendary:** ${breakdown.legendary.count} items *(${formatMoney(breakdown.legendary.val)})*\n\n` +
         `👇 **Select a quick sale option below:**`
       )
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+      .setThumbnail(FISHING_EMBLEM_URL)
       .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
       .setTimestamp();
 

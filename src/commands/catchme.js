@@ -91,7 +91,7 @@ export const execute = async (interaction) => {
         (bet > 0 ? `💰 **Wager Pot:** **${formatMoney(bet * 2)}** *(${formatMoney(bet)} each)*\n\n` : '🎮 **Type:** Casual friendly match\n\n') +
         `Click **Accept** below within 60 seconds to deploy into the city grid!`
       )
-      .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+      .setThumbnail('https://cdn-icons-png.flaticon.com/512/808/808439.png')
       .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
 
     const replyMsg = await interaction.editReply({

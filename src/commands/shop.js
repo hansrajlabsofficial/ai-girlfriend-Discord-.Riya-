@@ -7,7 +7,7 @@ import {
 } from 'discord.js';
 import { getUserData, saveUserData } from '../database/models/User.js';
 import { GIFTS, formatMoney, getBalance, deductBalance } from '../services/economyService.js';
-import { RODS, getUserFishing } from '../services/fishingService.js';
+import { RODS, getUserFishing, FISHING_EMBLEM_URL } from '../services/fishingService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -68,7 +68,7 @@ export const execute = async (interaction) => {
               `*(Send gifts with \`/gift send <item> <user>\`)*`
           }
         )
-        .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+        .setThumbnail(FISHING_EMBLEM_URL)
         .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
         .setTimestamp();
 
@@ -158,7 +158,7 @@ export const execute = async (interaction) => {
             `✨ **Perk:** *${targetRod.desc}*\n\n` +
             `*Amdavadi Riya says: "Wah baka, look at this shiny rod! Go cast your line with \`/fish\` and reel in some sea monsters!"* 🌊`
           )
-          .setThumbnail('https://cdn-icons-png.flaticon.com/512/2913/2913990.png')
+          .setThumbnail(FISHING_EMBLEM_URL)
           .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
 
         await btnInt.update({

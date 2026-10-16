@@ -20,3 +20,10 @@ Thumbs.db
 
 # Scratch & temporary test scripts
 scratch/
+
+# Python cache & temporary files
+__pycache__/
+*.py[cod]
+*$py.class
+downloads/
+cogs/Welcome/welcome_config.json

@@ -40,7 +40,28 @@ if not WEBHOOK_URL or "discord.com/api/webhooks" not in WEBHOOK_URL:
 
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+intents.members = True
+
+
+class InstagramBot(commands.Bot):
+    async def setup_hook(self):
+        # Load Welcome Cog if present
+        if os.path.exists("cogs/Welcome/welcome.py"):
+            try:
+                await self.load_extension("cogs.Welcome.welcome")
+                print("👋 Loaded Welcome Cog successfully!")
+            except Exception as e:
+                print(f"⚠️ Failed to load Welcome Cog: {e}")
+
+        # Sync slash command tree
+        try:
+            synced = await self.tree.sync()
+            print(f"✅ Synced {len(synced)} slash commands with Discord!")
+        except Exception as e:
+            print(f"⚠️ Slash command sync failed: {e}")
+
+
+bot = InstagramBot(command_prefix="!", intents=intents)
 
 TARGET_CHANNEL_ID = None
 processing_links = set()

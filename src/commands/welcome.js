@@ -37,6 +37,29 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand(sub =>
     sub
+      .setName('second_message')
+      .setDescription('Configure a customized second follow-up message sent after the welcome greeting')
+      .addStringOption(opt =>
+        opt
+          .setName('text')
+          .setDescription('Custom text for second message ({user}, {server}, {member_count})')
+          .setRequired(true)
+      )
+      .addBooleanOption(opt =>
+        opt
+          .setName('as_embed')
+          .setDescription('Send second message as an embed card box? (Default: False)')
+          .setRequired(false)
+      )
+      .addBooleanOption(opt =>
+        opt
+          .setName('enabled')
+          .setDescription('Enable or disable sending this second message (Default: True)')
+          .setRequired(false)
+      )
+  )
+  .addSubcommand(sub =>
+    sub
       .setName('banner')
       .setDescription('Configure the image URL background design to showcase with the greeting')
       .addStringOption(opt =>
@@ -57,6 +80,9 @@ export const execute = async (interaction) => {
     return interaction.reply({ content: '❌ This command can only be used in a server!', ephemeral: true });
   }
 
+  // Acknowledge immediately within 3s to prevent DiscordAPIError[10062] Unknown Interaction
+  await interaction.deferReply({ ephemeral: true }).catch(() => {});
+
   const subcommand = interaction.options.getSubcommand();
   const guildConfig = await getGuildConfig(interaction.guild.id);
 
@@ -73,7 +99,7 @@ export const execute = async (interaction) => {
       .setColor(0x2ecc71)
       .setTimestamp();
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.editReply({ embeds: [embed] });
   }
 
   // --- 2. /welcome message ---
@@ -95,17 +121,40 @@ export const execute = async (interaction) => {
       .setFooter({ text: 'Tags verified: {user}, {server}, {member_count}' })
       .setTimestamp();
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.editReply({ embeds: [embed] });
   }
 
-  // --- 3. /welcome banner ---
+  // --- 3. /welcome second_message ---
+  if (subcommand === 'second_message') {
+    const text = interaction.options.getString('text', true);
+    const asEmbed = interaction.options.getBoolean('as_embed') ?? false;
+    const enabled = interaction.options.getBoolean('enabled') ?? true;
+
+    guildConfig.welcomeSecondMessage = text;
+    guildConfig.welcomeSecondMessageAsEmbed = asEmbed;
+    guildConfig.welcomeSecondMessageEnabled = enabled;
+    await saveGuildConfig(guildConfig);
+
+    const statusText = enabled ? '✅ **ENABLED**' : '❌ **DISABLED**';
+    const formatText = asEmbed ? '📦 **Embed Card Box**' : '💬 **Plain Text Message**';
+
+    const embed = new EmbedBuilder()
+      .setTitle('📬 Second Follow-Up Message Configured')
+      .setDescription(`Your second follow-up message has been configured:\n\`\`\`\n${text}\n\`\`\`\n• **Status:** ${statusText}\n• **Format:** ${formatText}`)
+      .setColor(0x3498db)
+      .setFooter({ text: 'Tags verified: {user}, {server}, {member_count}' })
+      .setTimestamp();
+
+    return interaction.editReply({ embeds: [embed] });
+  }
+
+  // --- 4. /welcome banner ---
   if (subcommand === 'banner') {
     const imageUrl = interaction.options.getString('image_url', true);
 
     if (!imageUrl.toLowerCase().startsWith('http://') && !imageUrl.toLowerCase().startsWith('https://')) {
-      return interaction.reply({
-        content: '❌ Verification Error: Please provide a valid web URL starting with `http://` or `https://`.',
-        ephemeral: true
+      return interaction.editReply({
+        content: '❌ Verification Error: Please provide a valid web URL starting with `http://` or `https://`.'
       });
     }
 
@@ -119,24 +168,22 @@ export const execute = async (interaction) => {
       .setColor(0x9b59b6)
       .setTimestamp();
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.editReply({ embeds: [embed] });
   }
 
-  // --- 4. /welcome test ---
+  // --- 5. /welcome test ---
   if (subcommand === 'test') {
     const channelId = guildConfig.welcomeChannelId;
     if (!channelId) {
-      return interaction.reply({
-        content: '❌ Execution Block: Please configure an onboarding text channel first using `/welcome channel`.',
-        ephemeral: true
+      return interaction.editReply({
+        content: '❌ Execution Block: Please configure an onboarding text channel first using `/welcome channel`.'
       });
     }
 
     const channel = interaction.guild.channels.cache.get(channelId);
     if (!channel || !channel.isTextBased()) {
-      return interaction.reply({
-        content: '❌ Route Error: Configured channel could not be found. Please update `/welcome channel`.',
-        ephemeral: true
+      return interaction.editReply({
+        content: '❌ Route Error: Configured channel could not be found. Please update `/welcome channel`.'
       });
     }
 
@@ -177,6 +224,28 @@ export const execute = async (interaction) => {
       logger.warn(`Failed to send test welcome embed to channel: ${err.message}`);
     }
 
+    // Send second message if enabled
+    if (guildConfig.welcomeSecondMessageEnabled && guildConfig.welcomeSecondMessage) {
+      const rawSecond = guildConfig.welcomeSecondMessage;
+      const formattedSecond = rawSecond
+        .replace(/{user}/g, interaction.user.toString())
+        .replace(/{server}/g, interaction.guild.name)
+        .replace(/{member_count}/g, interaction.guild.memberCount.toString());
+
+      try {
+        if (guildConfig.welcomeSecondMessageAsEmbed) {
+          const secondEmbed = new EmbedBuilder()
+            .setDescription(formattedSecond)
+            .setColor(0xffd700);
+          await channel.send({ embeds: [secondEmbed] });
+        } else {
+          await channel.send({ content: formattedSecond });
+        }
+      } catch (err) {
+        logger.warn(`Failed to send test second message: ${err.message}`);
+      }
+    }
+
     // Direct Message Test if enabled
     let dmStatus = '';
     if (guildConfig.welcomeSendDm) {
@@ -201,14 +270,16 @@ export const execute = async (interaction) => {
     }
 
     if (channelSuccess) {
-      return interaction.reply({
-        content: `✅ Dynamic Test Broadcast: Onboarding greeting sent successfully to <#${channel.id}>.${dmStatus}`,
-        ephemeral: true
+      const secondMsgNotice = guildConfig.welcomeSecondMessageEnabled && guildConfig.welcomeSecondMessage
+        ? '\n📬 **Second Message Dispatch:** Included in broadcast!'
+        : '';
+
+      return interaction.editReply({
+        content: `✅ Dynamic Test Broadcast: Onboarding greeting sent successfully to <#${channel.id}>.${secondMsgNotice}${dmStatus}`
       });
     } else {
-      return interaction.reply({
-        content: `❌ Permissions Error: Missing permission settings to send embeds inside configured channel.${dmStatus}`,
-        ephemeral: true
+      return interaction.editReply({
+        content: `❌ Permissions Error: Missing permission settings to send embeds inside configured channel.${dmStatus}`
       });
     }
   }

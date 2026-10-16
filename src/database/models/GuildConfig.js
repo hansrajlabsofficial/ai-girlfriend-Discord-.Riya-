@@ -87,6 +87,9 @@ export const getGuildConfig = async (guildId) => {
         data.welcomeMessage = data.welcomeMessage || 'Welcome {user} to the {server} matrix!';
         data.welcomeSendDm = data.welcomeSendDm !== undefined ? data.welcomeSendDm : false;
         data.welcomeBannerUrl = data.welcomeBannerUrl || null;
+        data.welcomeSecondMessage = data.welcomeSecondMessage || null;
+        data.welcomeSecondMessageEnabled = data.welcomeSecondMessageEnabled !== undefined ? data.welcomeSecondMessageEnabled : false;
+        data.welcomeSecondMessageAsEmbed = data.welcomeSecondMessageAsEmbed !== undefined ? data.welcomeSecondMessageAsEmbed : false;
         data.welcomeTemplate = data.welcomeTemplate || 'haoc';
         data.welcomeRulesChannelId = data.welcomeRulesChannelId || null;
         data.welcomeChatChannelId = data.welcomeChatChannelId || null;
@@ -118,6 +121,9 @@ export const getGuildConfig = async (guildId) => {
           welcomeMessage: 'Welcome {user} to the {server} matrix!',
           welcomeSendDm: false,
           welcomeBannerUrl: null,
+          welcomeSecondMessage: null,
+          welcomeSecondMessageEnabled: false,
+          welcomeSecondMessageAsEmbed: false,
           welcomeTemplate: 'haoc',
           welcomeRulesChannelId: null,
           welcomeChatChannelId: null,
@@ -155,6 +161,9 @@ export const getGuildConfig = async (guildId) => {
       welcomeMessage: 'Welcome {user} to the {server} matrix!',
       welcomeSendDm: false,
       welcomeBannerUrl: null,
+      welcomeSecondMessage: null,
+      welcomeSecondMessageEnabled: false,
+      welcomeSecondMessageAsEmbed: false,
       welcomeTemplate: 'haoc',
       welcomeRulesChannelId: null,
       welcomeChatChannelId: null,
@@ -173,6 +182,9 @@ export const getGuildConfig = async (guildId) => {
   if (config.welcomeEnabled === undefined) config.welcomeEnabled = false;
   if (config.welcomeMessage === undefined) config.welcomeMessage = 'Welcome {user} to the {server} matrix!';
   if (config.welcomeSendDm === undefined) config.welcomeSendDm = false;
+  if (config.welcomeSecondMessage === undefined) config.welcomeSecondMessage = null;
+  if (config.welcomeSecondMessageEnabled === undefined) config.welcomeSecondMessageEnabled = false;
+  if (config.welcomeSecondMessageAsEmbed === undefined) config.welcomeSecondMessageAsEmbed = false;
   if (config.welcomeTemplate === undefined) config.welcomeTemplate = 'haoc';
   if (config.language === undefined) config.language = 'en';
   return config;

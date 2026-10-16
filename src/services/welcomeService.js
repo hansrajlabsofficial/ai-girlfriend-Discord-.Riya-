@@ -91,6 +91,28 @@ export const sendWelcomeMessage = async (member) => {
     await channel.send({ embeds: [embed] });
     logger.info(`Sent onboarding welcome greeting for member ${member.user?.tag || member.id} in guild ${member.guild.name}`);
 
+    // 2. Second Follow-Up Message (Only if specifically configured in /welcome second_message)
+    if (guildConfig.welcomeSecondMessageEnabled && guildConfig.welcomeSecondMessage) {
+      const rawSecond = guildConfig.welcomeSecondMessage;
+      const formattedSecond = rawSecond
+        .replace(/{user}/g, member.toString())
+        .replace(/{server}/g, member.guild.name)
+        .replace(/{member_count}/g, member.guild.memberCount.toString());
+
+      try {
+        if (guildConfig.welcomeSecondMessageAsEmbed) {
+          const secondEmbed = new EmbedBuilder()
+            .setDescription(formattedSecond)
+            .setColor(0xffd700);
+          await channel.send({ embeds: [secondEmbed] });
+        } else {
+          await channel.send({ content: formattedSecond });
+        }
+      } catch (err) {
+        logger.warn(`Failed to send second welcome message: ${err.message}`);
+      }
+    }
+
     // 2. Direct Message Delivery (Only if specifically enabled in /welcome message send_dm: True)
     if (guildConfig.welcomeSendDm) {
       try {

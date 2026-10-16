@@ -48,12 +48,18 @@ class Welcome(commands.GroupCog, name="welcome"):
                 "channel_id": None,
                 "message": "Welcome {user} to the {server} matrix!",
                 "banner_url": None,
-                "send_dm": False
+                "send_dm": False,
+                "second_message": None,
+                "second_message_enabled": False,
+                "second_message_as_embed": False
             }
         else:
-            # Ensure send_dm key is populated for backward compatibility
             if "send_dm" not in self.config[guild_id]:
                 self.config[guild_id]["send_dm"] = False
+            if "second_message" not in self.config[guild_id]:
+                self.config[guild_id]["second_message"] = None
+                self.config[guild_id]["second_message_enabled"] = False
+                self.config[guild_id]["second_message_as_embed"] = False
 
     @app_commands.command(name="channel", description="Configure the target channel where welcome messages will be posted.")
     @app_commands.describe(channel="Text channel to route user onboarding alerts")
@@ -73,7 +79,7 @@ class Welcome(commands.GroupCog, name="welcome"):
         )
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="message", description="Configure the customized greeting text message pattern and DM settings.")
+    @app_commands.command(name="message", description="Configure customized greeting text message pattern and DM settings.")
     @app_commands.describe(
         text="Dynamic greeting text. Supported tags: {user} = mention, {server} = server name, {member_count} = member count",
         send_dm="Should the welcome message also be sent directly to the user's DMs?"
@@ -92,6 +98,34 @@ class Welcome(commands.GroupCog, name="welcome"):
         embed = discord.Embed(
             title="📝 Onboarding Template Updated",
             description=f"Welcome text string successfully configured to:\n```\n{text}\n```\n• **Direct Message (DM) Delivery:** {status_dm}",
+            color=0x3498db,
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        embed.set_footer(text="Tags verified: {user}, {server}, {member_count}")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
+    @app_commands.command(name="second_message", description="Configure a customized second follow-up message sent after the welcome greeting.")
+    @app_commands.describe(
+        text="Custom text for the second message (Tags: {user}, {server}, {member_count})",
+        as_embed="Send second message as an embed card box? (Default: False)",
+        enabled="Enable or disable sending this second message (Default: True)"
+    )
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def set_second_message(self, interaction: discord.Interaction, text: str, as_embed: bool = False, enabled: bool = True):
+        guild_id = str(interaction.guild_id)
+        self.init_guild(guild_id)
+
+        self.config[guild_id]["second_message"] = text
+        self.config[guild_id]["second_message_as_embed"] = as_embed
+        self.config[guild_id]["second_message_enabled"] = enabled
+        self.save_config()
+
+        status_text = "✅ **ENABLED**" if enabled else "❌ **DISABLED**"
+        format_text = "📦 **Embed Card Box**" if as_embed else "💬 **Plain Text Message**"
+
+        embed = discord.Embed(
+            title="📬 Second Follow-Up Message Configured",
+            description=f"Your second message has been configured:\n```\n{text}\n```\n• **Status:** ${status_text}\n• **Format:** ${format_text}",
             color=0x3498db,
             timestamp=datetime.datetime.now(datetime.timezone.utc)
         )
@@ -173,6 +207,19 @@ class Welcome(commands.GroupCog, name="welcome"):
         except discord.Forbidden:
             pass
 
+        # Send second message if enabled
+        if settings.get("second_message_enabled", False) and settings.get("second_message"):
+            raw_second = settings["second_message"]
+            formatted_second = raw_second.replace("{user}", interaction.user.mention).replace("{server}", interaction.guild.name).replace("{member_count}", str(interaction.guild.member_count))
+            try:
+                if settings.get("second_message_as_embed", False):
+                    sec_embed = discord.Embed(description=formatted_second, color=0xffd700)
+                    await channel.send(embed=sec_embed)
+                else:
+                    await channel.send(formatted_second)
+            except Exception:
+                pass
+
         # Post mock DM if enabled
         dm_status = ""
         if settings.get("send_dm", False):
@@ -233,7 +280,20 @@ class Welcome(commands.GroupCog, name="welcome"):
                 except discord.Forbidden:
                     pass
 
-        # --- 2. DM WELCOME SYSTEM (NEW ENHANCEMENT) ---
+                # --- DISPATCH SECOND MESSAGE IF CONFIGURED ---
+                if settings.get("second_message_enabled", False) and settings.get("second_message"):
+                    raw_second = settings["second_message"]
+                    formatted_second = raw_second.replace("{user}", member.mention).replace("{server}", member.guild.name).replace("{member_count}", str(member.guild.member_count))
+                    try:
+                        if settings.get("second_message_as_embed", False):
+                            sec_embed = discord.Embed(description=formatted_second, color=0xffd700)
+                            await channel.send(embed=sec_embed)
+                        else:
+                            await channel.send(formatted_second)
+                    except Exception:
+                        pass
+
+        # --- 2. DM WELCOME SYSTEM ---
         if settings.get("send_dm", False):
             try:
                 dm_embed = discord.Embed(
@@ -251,7 +311,6 @@ class Welcome(commands.GroupCog, name="welcome"):
 
                 await member.send(embed=dm_embed)
             except discord.Forbidden:
-                # Silently catch closed DM exceptions to keep event queue fluid
                 pass
             except Exception as e:
                 print(f"⚠️ Welcome Cog: DM trigger failed: {e}")

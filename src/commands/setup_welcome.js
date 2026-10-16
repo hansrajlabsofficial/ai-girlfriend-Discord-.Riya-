@@ -62,6 +62,12 @@ export const data = new SlashCommandBuilder()
       .setDescription('Custom invite URL for the Invite Your Friends board (e.g. https://discord.gg/...)')
       .setRequired(false)
   )
+  .addStringOption(opt =>
+    opt
+      .setName('banner_url')
+      .setDescription('Custom image or GIF banner URL for the welcome card (e.g. animated GIF link)')
+      .setRequired(false)
+  )
   .addBooleanOption(opt =>
     opt
       .setName('post_now')
@@ -96,6 +102,7 @@ export const execute = async (interaction) => {
   const supportChannel = interaction.options.getChannel('support_channel');
   const ytChannel = interaction.options.getChannel('youtube_channel');
   const customInvite = interaction.options.getString('invite_url')?.trim();
+  const bannerUrl = interaction.options.getString('banner_url')?.trim();
   const postNow = interaction.options.getBoolean('post_now') ?? true;
   const status = interaction.options.getBoolean('status') ?? true;
 
@@ -110,6 +117,7 @@ export const execute = async (interaction) => {
     if (supportChannel) guildConfig.welcomeSupportChannelId = supportChannel.id;
     if (ytChannel) guildConfig.welcomeYtChannelId = ytChannel.id;
     if (customInvite) guildConfig.welcomeInviteUrl = customInvite;
+    if (bannerUrl) guildConfig.welcomeBannerUrl = bannerUrl;
 
     await saveGuildConfig(guildConfig);
 
@@ -169,7 +177,8 @@ export const execute = async (interaction) => {
         `• **Rules Link:** ${guildConfig.welcomeRulesChannelId ? `<#${guildConfig.welcomeRulesChannelId}>` : '*Auto-detected*'}\n` +
         `• **Main Chat:** ${guildConfig.welcomeChatChannelId ? `<#${guildConfig.welcomeChatChannelId}>` : '*Auto-detected*'}\n` +
         `• **Support Link:** ${guildConfig.welcomeSupportChannelId ? `<#${guildConfig.welcomeSupportChannelId}>` : '*Auto-detected*'}\n` +
-        `• **Invite Link:** \`${guildConfig.welcomeInviteUrl || 'https://discord.gg/gametester'}\``
+        `• **Invite Link:** \`${guildConfig.welcomeInviteUrl || 'https://discord.gg/gametester'}\`\n` +
+        `• **Banner:** ${guildConfig.welcomeBannerUrl ? `[Custom Banner URL](${guildConfig.welcomeBannerUrl})` : '`HAOC Animated GIF (Official)`'}`
       )
       .addFields(
         {

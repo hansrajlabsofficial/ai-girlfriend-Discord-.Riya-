@@ -22,15 +22,17 @@ export const WELCOME_TEMPLATES = {
  * Resolves channel mention safely
  */
 const resolveChannelMention = (guild, channelId, fallbackName) => {
-  if (channelId) {
+  if (channelId && guild?.channels?.cache?.get) {
     const ch = guild.channels.cache.get(channelId);
     if (ch) return `<#${ch.id}>`;
   }
   // Try to find channel by keyword
-  const found = guild.channels.cache.find(c =>
-    c.isTextBased() && c.name.toLowerCase().includes(fallbackName.toLowerCase())
-  );
-  if (found) return `<#${found.id}>`;
+  if (guild?.channels?.cache?.find) {
+    const found = guild.channels.cache.find(c =>
+      c.isTextBased && c.isTextBased() && c.name?.toLowerCase().includes(fallbackName.toLowerCase())
+    );
+    if (found) return `<#${found.id}>`;
+  }
   return `# ${fallbackName}`;
 };
 
@@ -72,12 +74,22 @@ export const buildHAOCWelcomeEmbed = (member, guildConfig) => {
     .setFooter({ text: BRAND_FOOTER, iconURL: EMBLEM_ICON })
     .setTimestamp();
 
-  // If local banner asset exists, attach it as the bottom banner
-  const bannerFile = path.join(assetsDir, 'welcome_haoc_card.png');
+  // Handle bottom banner: Custom URL (if configured) or animated HAOC GIF banner or fallback PNG
   let attachment = null;
-  if (fs.existsSync(bannerFile)) {
-    attachment = new AttachmentBuilder(bannerFile, { name: 'hindi_english_bengali.png' });
-    embed.setImage('attachment://hindi_english_bengali.png');
+  if (guildConfig?.welcomeBannerUrl) {
+    embed.setImage(guildConfig.welcomeBannerUrl);
+  } else {
+    const gifFile = path.join(assetsDir, 'welcome_haoc_banner.gif');
+    if (fs.existsSync(gifFile)) {
+      attachment = new AttachmentBuilder(gifFile, { name: 'hansraj_ayan_official_community.gif' });
+      embed.setImage('attachment://hansraj_ayan_official_community.gif');
+    } else {
+      const bannerFile = path.join(assetsDir, 'welcome_haoc_card.png');
+      if (fs.existsSync(bannerFile)) {
+        attachment = new AttachmentBuilder(bannerFile, { name: 'hindi_english_bengali.png' });
+        embed.setImage('attachment://hindi_english_bengali.png');
+      }
+    }
   }
 
   // Interactive quick navigation buttons

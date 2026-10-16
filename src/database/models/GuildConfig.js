@@ -83,7 +83,7 @@ export const getGuildConfig = async (guildId) => {
         data.autoDownloadChannelId = data.autoDownloadChannelId || null;
         data.autoDownloadEnabled = data.autoDownloadEnabled !== undefined ? data.autoDownloadEnabled : true;
         data.welcomeChannelId = data.welcomeChannelId || null;
-        data.welcomeEnabled = data.welcomeEnabled !== undefined ? data.welcomeEnabled : true;
+        data.welcomeEnabled = data.welcomeEnabled !== undefined ? data.welcomeEnabled : false;
         data.welcomeTemplate = data.welcomeTemplate || 'haoc';
         data.welcomeRulesChannelId = data.welcomeRulesChannelId || null;
         data.welcomeChatChannelId = data.welcomeChatChannelId || null;
@@ -111,7 +111,7 @@ export const getGuildConfig = async (guildId) => {
           autoDownloadChannelId: null,
           autoDownloadEnabled: true,
           welcomeChannelId: null,
-          welcomeEnabled: true,
+          welcomeEnabled: false,
           welcomeTemplate: 'haoc',
           welcomeRulesChannelId: null,
           welcomeChatChannelId: null,
@@ -146,7 +146,7 @@ export const getGuildConfig = async (guildId) => {
       autoDownloadChannelId: null,
       autoDownloadEnabled: true,
       welcomeChannelId: null,
-      welcomeEnabled: true,
+      welcomeEnabled: false,
       welcomeTemplate: 'haoc',
       welcomeRulesChannelId: null,
       welcomeChatChannelId: null,
@@ -163,7 +163,7 @@ export const getGuildConfig = async (guildId) => {
   const config = memoryFallbackGuilds.get(guildId);
   if (config.currentCountingNumber === undefined) config.currentCountingNumber = 0;
   if (config.autoDownloadEnabled === undefined) config.autoDownloadEnabled = true;
-  if (config.welcomeEnabled === undefined) config.welcomeEnabled = true;
+  if (config.welcomeEnabled === undefined) config.welcomeEnabled = false;
   if (config.welcomeTemplate === undefined) config.welcomeTemplate = 'haoc';
   if (config.language === undefined) config.language = 'en';
   return config;

@@ -8,6 +8,7 @@ if sys.platform == 'win32':
 
 import discord
 from discord.ext import commands
+from discord import app_commands
 import yt_dlp
 import os
 import re
@@ -15,6 +16,7 @@ import shutil
 import ffmpeg
 import aiohttp
 import asyncio
+import datetime
 from dotenv import load_dotenv
 
 # --- LOAD ENVIRONMENT VARIABLES ---
@@ -45,7 +47,7 @@ intents.members = True
 
 class InstagramBot(commands.Bot):
     async def setup_hook(self):
-        # Load Welcome Cog if present
+        # 1. Load Welcome Cog if present
         if os.path.exists("cogs/Welcome/welcome.py"):
             try:
                 await self.load_extension("cogs.Welcome.welcome")
@@ -53,12 +55,12 @@ class InstagramBot(commands.Bot):
             except Exception as e:
                 print(f"⚠️ Failed to load Welcome Cog: {e}")
 
-        # Sync slash command tree
+        # 2. Register / Sync global slash command tree
         try:
             synced = await self.tree.sync()
-            print(f"✅ Synced {len(synced)} slash commands with Discord!")
+            print(f"🌐 Registered {len(synced)} global slash commands with Discord!")
         except Exception as e:
-            print(f"⚠️ Slash command sync failed: {e}")
+            print(f"⚠️ Global command tree sync notice: {e}")
 
 
 bot = InstagramBot(command_prefix="!", intents=intents)
@@ -227,15 +229,160 @@ async def on_ready():
         except Exception as e:
             print(f"⚠️ Startup error resolving Webhook metadata: {e}")
 
+    # Instant guild-level sync for all servers so new commands update immediately without 1hr wait
+    for guild in bot.guilds:
+        try:
+            bot.tree.copy_global_to(guild=guild)
+            synced_guild = await bot.tree.sync(guild=guild)
+            print(f"⚡ Instantly updated {len(synced_guild)} command(s) for guild: {guild.name} ({guild.id})")
+        except Exception as e:
+            print(f"⚠️ Guild sync notice for {guild.name}: {e}")
+
     print(f'✅ Logged in as {bot.user.name} (Single Server Mode Active)')
 
 
+# --- SLASH COMMAND: /download ---
+@bot.tree.command(name="download", description="📥 Download and upload an Instagram Reel or Post video directly")
+@app_commands.describe(url="Direct link to Instagram Reel or Post")
+async def slash_download(interaction: discord.Interaction, url: str):
+    url_match = re.search(
+        r"(https?://(?:www\.)?instagram\.com/(?:p|reels|reel)/[^\s?/]+(?:/[^\s?]*)?)",
+        url
+    )
+    if not url_match:
+        return await interaction.response.send_message(
+            "❌ Invalid Instagram URL! Please provide a valid link starting with `https://instagram.com/reel/` or `https://instagram.com/p/`.",
+            ephemeral=True
+        )
+
+    clean_url = url_match.group(1)
+    if clean_url in processing_links:
+        return await interaction.response.send_message(
+            "⏳ That Instagram link is already being downloaded! Please wait a moment.",
+            ephemeral=True
+        )
+
+    await interaction.response.defer(thinking=True)
+    processing_links.add(clean_url)
+
+    try:
+        video_file = await download_instagram(clean_url)
+
+        if video_file and os.path.exists(video_file):
+            final_file = video_file
+
+            if os.path.getsize(video_file) > MAX_FILE_SIZE:
+                await interaction.edit_original_response(content="⚙️ **Video is large. Compressing to fit Discord...**")
+                compressed_file = video_file.replace(".mp4", "_min.mp4")
+                final_file = smart_compress(video_file, compressed_file)
+
+            await interaction.edit_original_response(content="📤 **Uploading video via Webhook...**")
+            partial_webhook_msg = await send_to_webhook(final_file, interaction.user)
+            await interaction.delete_original_response()
+
+            if partial_webhook_msg:
+                try:
+                    real_channel_msg = await interaction.channel.fetch_message(partial_webhook_msg.id)
+                    for emoji in REACTION_EMOJIS:
+                        try:
+                            await real_channel_msg.add_reaction(emoji)
+                            await asyncio.sleep(0.25)
+                        except Exception as e:
+                            print(f"Reaction failed {emoji}: {e}")
+                except Exception as fetch_err:
+                    print(f"Could not fetch webhook message: {fetch_err}")
+        else:
+            await interaction.edit_original_response(
+                content=(
+                    "❌ **Download failed.**\n"
+                    "> The post may be private, age-restricted, or Instagram is blocking the request.\n"
+                    "> **Fix:** Upload a valid `cookies.txt` file to your bot's root folder and restart."
+                )
+            )
+    except Exception as e:
+        await interaction.edit_original_response(content=f"❌ **Error during download:** `{e}`")
+    finally:
+        processing_links.discard(clean_url)
+        if os.path.exists('downloads'):
+            try:
+                shutil.rmtree('downloads')
+            except:
+                pass
+
+
+# --- SLASH COMMAND: /sync ---
+@bot.tree.command(name="sync", description="🔄 Force update and re-sync every new command to this server instantly")
+@app_commands.checks.has_permissions(administrator=True)
+async def slash_sync(interaction: discord.Interaction):
+    await interaction.response.defer(ephemeral=True)
+    try:
+        bot.tree.copy_global_to(guild=interaction.guild)
+        synced = await bot.tree.sync(guild=interaction.guild)
+        await bot.tree.sync()
+        await interaction.followup.send(
+            f"✅ **Every new command has been updated and synced successfully!**\n"
+            f"• **Commands Synced:** `{len(synced)}` to **{interaction.guild.name}**\n"
+            f"• **Available Commands:** `/download`, `/welcome channel`, `/welcome message`, `/welcome banner`, `/welcome test`, `/sync`, `/info`\n"
+            f"⚡ All commands are live in your server right now!",
+            ephemeral=True
+        )
+    except Exception as e:
+        await interaction.followup.send(f"❌ Failed to sync commands: `{e}`", ephemeral=True)
+
+
+# --- PREFIX COMMAND: !sync ---
+@bot.command(name="sync")
+@commands.has_permissions(administrator=True)
+async def prefix_sync(ctx):
+    """Admin fallback command: !sync to update every new command."""
+    try:
+        status = await ctx.send("⏳ Updating and syncing every new command...")
+        bot.tree.copy_global_to(guild=ctx.guild)
+        synced = await bot.tree.sync(guild=ctx.guild)
+        await bot.tree.sync()
+        await status.edit(content=f"✅ **Every new command updated!** `{len(synced)}` commands synced to **{ctx.guild.name}** instantly!")
+    except Exception as e:
+        await ctx.send(f"❌ Error syncing commands: `{e}`")
+
+
+# --- SLASH COMMAND: /info ---
+@bot.tree.command(name="info", description="ℹ️ Display bot status, active channel, and available commands")
+async def slash_info(interaction: discord.Interaction):
+    embed = discord.Embed(
+        title="🤖 Instagram Downloader & Onboarding Bot",
+        color=0x3498db,
+        timestamp=datetime.datetime.now(datetime.timezone.utc)
+    )
+    embed.add_field(name="🎯 Auto-Download Channel", value=f"<#{TARGET_CHANNEL_ID}>" if TARGET_CHANNEL_ID else "`Auto-detected`", inline=True)
+    embed.add_field(name="📦 Max Video Size", value="24 MB (Smart Compression)", inline=True)
+    embed.add_field(name="❤️ Reactions Added", value=f"{len(REACTION_EMOJIS)} emojis auto-react", inline=True)
+    embed.add_field(
+        name="📜 Available Commands",
+        value=(
+            "• `/download [url]` — Download Instagram Reel / Post\n"
+            "• `/welcome channel [channel]` — Configure welcome text channel\n"
+            "• `/welcome message [text] [send_dm]` — Configure welcome greeting & DMs\n"
+            "• `/welcome banner [image_url]` — Configure welcome banner\n"
+            "• `/welcome test` — Test welcome mockup broadcast\n"
+            "• `/sync` — Update every command instantly\n"
+            "• `/info` — View bot status and details"
+        ),
+        inline=False
+    )
+    embed.set_footer(text="© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.")
+    await interaction.response.send_message(embed=embed, ephemeral=True)
+
+
+# --- AUTOMATIC ON_MESSAGE HANDLER FOR INSTAGRAM LINKS ---
 @bot.event
 async def on_message(message):
     if message.author == bot.user:
         return
 
-    # Only process messages coming from the locked Webhook channel
+    # Process standard prefix commands (e.g. !sync)
+    await bot.process_commands(message)
+
+    # Only process automatic download for messages coming from the locked Webhook channel
     if TARGET_CHANNEL_ID is None or message.channel.id != TARGET_CHANNEL_ID:
         return
 

@@ -5,6 +5,7 @@ import { hangupGlobalCall } from '../services/globalCallService.js';
 import { hangupGlobalPrivateCall } from '../services/globalPrivateCallService.js';
 import { handleGiveawayEntry } from '../services/giveawayService.js';
 import { handleRegionRoleClick } from '../services/regionRoleService.js';
+import { handleGameRoleClick } from '../services/gameRoleService.js';
 
 let commandsCache = null;
 
@@ -18,6 +19,10 @@ export const execute = async (interaction) => {
 
   // 1. Handle Button Component Interactions
   if (interaction.isButton()) {
+    if (interaction.customId.startsWith('gamerole_toggle:')) {
+      await handleGameRoleClick(interaction);
+      return;
+    }
     if (interaction.customId.startsWith('region_role:')) {
       await handleRegionRoleClick(interaction);
       return;

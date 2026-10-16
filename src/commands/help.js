@@ -160,6 +160,7 @@ const CATEGORIES = {
     commands: [
       { name: '/select_channel <channel>', desc: 'Bind Riya\'s primary chat channel.' },
       { name: '/setup_region_roles', desc: 'Deploy Region Selection auto-roles panel with buttons & world map.' },
+      { name: '/setup_games_roles', desc: 'Deploy Self Game Roles panel with buttons, emojis & game templates.' },
       { name: '/setup_global', desc: 'Configure Inter-Server Global Chat relay channel.' },
       { name: '/settings', desc: 'Configure server settings & game toggles.' },
       { name: '/language', desc: 'Change bot output language.' },

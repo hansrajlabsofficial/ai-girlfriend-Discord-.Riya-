@@ -1054,6 +1054,17 @@ export const getDashboardHtml = (client = null, authData = null) => {
         <div class="cmd-usage">/setup_region_roles channel: [#channel] auto_create_roles: [True]</div>
       </div>
 
+      <div class="command-card" data-cat="config" data-name="setup_games_roles game roles self roles minecraft roblox gta valorant freefire bloodstrike">
+        <div>
+          <div class="cmd-header">
+            <span class="cmd-name">/setup_games_roles</span>
+            <span class="cmd-badge">Game Roles</span>
+          </div>
+          <div class="cmd-desc">Deploy interactive Self Game Roles panel with styled buttons & popular game templates.</div>
+        </div>
+        <div class="cmd-usage">/setup_games_roles template: [HANSRAJ Top 17 Games] channel: [#channel]</div>
+      </div>
+
       <div class="command-card" data-cat="config" data-name="status server member total users count">
         <div>
           <div class="cmd-header">

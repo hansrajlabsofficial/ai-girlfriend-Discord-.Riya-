@@ -39,6 +39,11 @@ export const execute = async (interaction) => {
       await hangupGlobalPrivateCall(interaction);
       return;
     }
+    if (interaction.customId.startsWith('cm_')) {
+      const { handleGridChaseButton } = await import('../services/gridChaseService.js');
+      await handleGridChaseButton(interaction);
+      return;
+    }
   }
 
   // 2. Handle Slash Chat Input Commands

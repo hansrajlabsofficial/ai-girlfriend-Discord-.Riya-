@@ -51,7 +51,7 @@ export function buildStatusEmbed(client, dbUserCount = 0) {
     memoryMB = (process.memoryUsage().heapUsed / 1024 / 1024).toFixed(2);
   } catch(e) {}
 
-  const dashboardUrl = 'https://riya-ai-girlfriend-discord-bot.vercel.app/dashboard';
+  const dashboardUrl = 'https://riya-ai-girlfriend-discord-bot-full.vercel.app/';
 
   const embed = new EmbedBuilder()
     .setColor('#00FF7F')
@@ -87,7 +87,7 @@ export function buildStatusEmbed(client, dbUserCount = 0) {
     new ButtonBuilder()
       .setLabel('👤 User Profile')
       .setStyle(ButtonStyle.Link)
-      .setURL('https://riya-ai-girlfriend-discord-bot.vercel.app/profile')
+      .setURL('https://riya-ai-girlfriend-discord-bot-full.vercel.app/profile')
   );
 
   return { embeds: [embed], components: [row] };

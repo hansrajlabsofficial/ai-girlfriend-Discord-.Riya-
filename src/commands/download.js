@@ -34,7 +34,9 @@ export const data = new SlashCommandBuilder()
   );
 
 export const execute = async (interaction) => {
-  await interaction.deferReply();
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply().catch(() => {});
+  }
 
   const type = interaction.options.getString('type');
   let platform = interaction.options.getString('platform');

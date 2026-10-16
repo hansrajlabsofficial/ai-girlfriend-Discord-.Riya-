@@ -556,7 +556,7 @@ export const buildMediaResponse = (result, originalUrl, requestedBy) => {
 
   const buttons = [];
   const directLink = result.directDownloadUrl || result.mediaUrl;
-  if (directLink && directLink.startsWith('http')) {
+  if (directLink && directLink.startsWith('http') && directLink.length <= 512) {
     buttons.push(
       new ButtonBuilder()
         .setLabel('📥 Direct Media Link')

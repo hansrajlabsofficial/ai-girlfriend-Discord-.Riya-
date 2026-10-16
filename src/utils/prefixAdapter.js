@@ -72,6 +72,9 @@ const COMMAND_ALIASES = {
   'eightball': '8ball',
 
   // System & Config
+  'clear': 'clear',
+  'delete': 'delete',
+  'purge': 'delete',
   'bind': 'select_channel',
   'config': 'settings',
   'lang': 'language',

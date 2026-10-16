@@ -9,39 +9,28 @@ export const once = true;
 export const execute = async (client) => {
   logger.info(`Logged in successfully as ${client.user.tag}! Riya is ready to chat! 💕`);
 
-  const { commandsJSON } = await loadAllCommands();
-  const rest = new REST({ version: '10' }).setToken(config.discordToken);
-
-  try {
-    logger.info(`Cleanly registering ${commandsJSON.length} global slash commands...`);
-    
-    // 1. Register Global Application Commands (Single Source of Truth)
-    await rest.put(
-      Routes.applicationCommands(config.clientId),
-      { body: commandsJSON }
-    );
-    logger.info('Successfully registered all global slash commands cleanly! ✨');
-
-    // 2. Clear any duplicate per-guild command overrides to eliminate double command list in Discord UI
-    for (const [guildId, guild] of client.guilds.cache) {
-      try {
-        await rest.put(
-          Routes.applicationGuildCommands(config.clientId, guildId),
-          { body: [] }
-        );
-        logger.info(`Cleared per-guild command duplicates for server: ${guild.name} (${guildId}) ✨`);
-      } catch (gErr) {
-        logger.error(`Failed to clear per-guild commands for guild ${guildId}:`, gErr);
-      }
-    }
-  } catch (error) {
-    logger.error('Failed to register slash commands:', error);
-  }
-
+  // 1. Instantly start rotating presence and status auto-updater
   try {
     const { start247StatusAutoUpdater } = await import('../services/statusService.js');
     start247StatusAutoUpdater(client);
   } catch (err) {
     logger.error('Failed to initialize 24/7 status auto updater service:', err);
   }
+
+  // 2. Register slash commands asynchronously in background without blocking presence or responsiveness
+  (async () => {
+    try {
+      const { commandsJSON } = await loadAllCommands();
+      const rest = new REST({ version: '10' }).setToken(config.discordToken);
+
+      logger.info(`Registering ${commandsJSON.length} global slash commands in background...`);
+      await rest.put(
+        Routes.applicationCommands(config.clientId),
+        { body: commandsJSON }
+      );
+      logger.info('Successfully registered global slash commands! ✨');
+    } catch (error) {
+      logger.warn(`Background slash command registration notice: ${error.message}`);
+    }
+  })();
 };

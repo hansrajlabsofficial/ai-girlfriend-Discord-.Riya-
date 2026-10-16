@@ -31,27 +31,28 @@ export const startRotatingPresence = (client, intervalMs = 12000) => {
 
       const statuses = [
         {
-          name: `Connected to ${serverCount} Servers`,
-          type: ActivityType.Playing
+          text: `Connected to ${serverCount} Servers`,
+          type: ActivityType.Custom
         },
         {
-          name: `Developed by HANSRAJ`,
-          type: ActivityType.Playing
+          text: `Developed by HANSRAJ`,
+          type: ActivityType.Custom
         },
         {
-          name: `Online: ${uptimeStr.trim()}`,
-          type: ActivityType.Playing
+          text: `Online: ${uptimeStr.trim()}`,
+          type: ActivityType.Custom
         },
         {
-          name: `Use /help for all available commands`,
-          type: ActivityType.Watching
+          text: `Use /help for all available commands`,
+          type: ActivityType.Custom
         }
       ];
 
       const current = statuses[currentIndex % statuses.length];
       client.user.setPresence({
         activities: [{
-          name: current.name,
+          name: current.text,
+          state: current.text,
           type: current.type
         }],
         status: 'online'

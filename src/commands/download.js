@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, AttachmentBuilder, EmbedBuilder } from 'discord.js';
-import { downloadMedia, buildMediaResponse, detectPlatform } from '../services/mediaDownloadService.js';
+import { downloadMedia, buildMediaResponse, detectPlatform, REACTION_EMOJIS } from '../services/mediaDownloadService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -88,6 +88,19 @@ export const execute = async (interaction) => {
     }
 
     await interaction.editReply(replyOptions);
+
+    // Auto-react with all 30 emojis sequentially
+    const replyMsg = await interaction.fetchReply().catch(() => null);
+    if (replyMsg) {
+      for (const emoji of REACTION_EMOJIS) {
+        try {
+          await replyMsg.react(emoji);
+          await new Promise(r => setTimeout(r, 250));
+        } catch (e) {
+          logger.debug(`Reaction failed ${emoji}: ${e.message}`);
+        }
+      }
+    }
   } catch (err) {
     logger.error(`Error in /download execution: ${err.message}`);
     const errEmbed = new EmbedBuilder()

@@ -1,16 +1,32 @@
 import axios from 'axios';
 import btch from 'btch-downloader';
-import { AttachmentBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { AttachmentBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, WebhookClient } from 'discord.js';
 import { getGuildConfig } from '../database/models/GuildConfig.js';
 import { logger } from '../utils/logger.js';
+import { execFile } from 'child_process';
+import fs from 'fs';
+import path from 'path';
 
 const DISCORD_MAX_FILE_BYTES = 24 * 1024 * 1024; // 24MB safety limit (under 25MB cap)
 const BRAND_FOOTER = '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.';
 const EMBLEM_ICON = 'https://cdn.discordapp.com/attachments/1450771986031706214/1560613901396086904/Global_Fishing_Emblem_1.png?ex=6ad35a74&is=6ad208f4&hm=c0756eb02f2652d908a466b51026a18c45165dcdd6aad2abf5645b29728cf52c&';
 
+// Deduplication set for currently processing URLs
+const processingLinks = new Set();
+
+// 30 auto reaction emojis from user reference
+export const REACTION_EMOJIS = [
+  "❤️", "😂", "🔥", "😮", "👍",
+  "👀", "👑", "🌟", "💯", "🎉",
+  "✨", "💥", "🙌", "🤩", "😈",
+  "💀", "🚨", "🎯", "⚡", "🔮",
+  "🤖", "📈", "🤫", "🥶", "🤯",
+  "🍀", "🥳", "🛸", "🍕", "🦾"
+];
+
 // Platform regex patterns
 export const REGEX_PATTERNS = {
-  instagram: /(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|instagr\.am)\/(?:p|reel|tv|stories|share)\/([A-Za-z0-9_-]+)/i,
+  instagram: /(?:https?:\/\/)?(?:www\.)?(?:instagram\.com|instagr\.am)\/(?:p|reels|reel|tv|stories|share)\/([A-Za-z0-9_-]+)/i,
   tiktok: /(?:https?:\/\/)?(?:www\.|vm\.|vt\.)?tiktok\.com\/(?:@[\w.-]+\/video\/\d+|[\w.-]+)/i,
   youtube: /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i
 };
@@ -239,11 +255,167 @@ export const fetchTikTok = async (url, preferredType = 'video') => {
 };
 
 /**
+ * Calculates exact bitrate needed to make the video fit 24MB using ffprobe and ffmpeg
+ */
+export const smartCompress = async (inputPath, outputPath) => {
+  try {
+    const duration = await new Promise((resolve) => {
+      execFile('ffprobe', [
+        '-v', 'error',
+        '-show_entries', 'format=duration',
+        '-of', 'default=noprint_wrappers=1:nokey=1',
+        inputPath
+      ], (err, stdout) => {
+        if (err) return resolve(null);
+        const parsed = parseFloat(stdout.trim());
+        resolve(isNaN(parsed) ? null : parsed);
+      });
+    });
+
+    if (!duration || duration <= 0) return inputPath;
+
+    const targetTotalBitrate = Math.floor((DISCORD_MAX_FILE_BYTES * 8) / duration);
+    const videoBitrate = Math.floor(targetTotalBitrate * 0.9);
+    const audioBitrate = Math.floor(targetTotalBitrate * 0.1);
+
+    logger.info(`[VideoCompressor] Compressing ${path.basename(inputPath)} (target bitrate: ${targetTotalBitrate})`);
+
+    const result = await new Promise((resolve) => {
+      execFile('ffmpeg', [
+        '-i', inputPath,
+        '-b:v', `${videoBitrate}`,
+        '-b:a', `${audioBitrate}`,
+        '-c:v', 'libx264',
+        '-c:a', 'aac',
+        '-y',
+        outputPath
+      ], (err) => {
+        if (err || !fs.existsSync(outputPath) || fs.statSync(outputPath).size === 0) {
+          logger.warn(`[VideoCompressor] Compression error: ${err?.message}`);
+          resolve(inputPath);
+        } else {
+          resolve(outputPath);
+        }
+      });
+    });
+
+    return result;
+  } catch (e) {
+    logger.warn(`[VideoCompressor] Error in smartCompress: ${e.message}`);
+    return inputPath;
+  }
+};
+
+/**
+ * Downloads Instagram video using yt-dlp with multiple fallback strategies and cookies.txt support
+ */
+export const downloadInstagramYtDlp = async (url) => {
+  const downloadsDir = path.resolve(process.cwd(), 'downloads');
+  if (fs.existsSync(downloadsDir)) {
+    try { fs.rmSync(downloadsDir, { recursive: true, force: true }); } catch {}
+  }
+  fs.mkdirSync(downloadsDir, { recursive: true });
+
+  const cleanUrl = url.replace(/\?.*$/, '').replace(/\/$/, '');
+
+  const baseArgs = [
+    '--no-warnings',
+    '--merge-output-format', 'mp4',
+    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+    '--add-header', 'Accept:*/*',
+    '--add-header', 'Accept-Language:en-US,en;q=0.9',
+    '--add-header', 'Accept-Encoding:gzip, deflate, br',
+    '--referer', 'https://www.instagram.com/',
+    '--extractor-args', 'instagram:include_dash_manifest=true',
+    '--retries', '5',
+    '--fragment-retries', '5',
+    '--socket-timeout', '30',
+    '-o', path.join(downloadsDir, '%(id)s.%(ext)s')
+  ];
+
+  if (fs.existsSync('cookies.txt')) {
+    baseArgs.push('--cookiefile', 'cookies.txt');
+    logger.info('🔑 cookies.txt detected — using authenticated session.');
+  } else {
+    logger.info('⚠️ No cookies.txt found. Attempting anonymous download...');
+  }
+
+  const strategies = [
+    { desc: 'Standard download', targetUrl: cleanUrl, extra: ['-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'] },
+    { desc: 'With /?__a=1 API hint', targetUrl: `${cleanUrl}/`, extra: ['-f', 'best'] },
+    { desc: 'Fallback best format', targetUrl: cleanUrl, extra: ['-f', 'best', '--merge-output-format', 'mp4'] }
+  ];
+
+  for (const { desc, targetUrl: tryUrl, extra } of strategies) {
+    logger.debug(`🔄 Trying: ${desc}`);
+    const args = [...baseArgs, ...extra, tryUrl];
+    const ok = await new Promise((resolve) => {
+      execFile('yt-dlp', args, { timeout: 45000 }, (err) => {
+        if (err) {
+          logger.debug(`↳ Error: ${err.message}`);
+          resolve(false);
+        } else {
+          resolve(true);
+        }
+      });
+    });
+
+    if (ok) {
+      const files = fs.readdirSync(downloadsDir);
+      if (files.length > 0) {
+        let filename = path.join(downloadsDir, files[0]);
+        if (!filename.endsWith('.mp4')) {
+          const newName = filename.replace(/\.[^.]+$/, '.mp4');
+          try {
+            fs.renameSync(filename, newName);
+            filename = newName;
+          } catch {}
+        }
+        if (fs.existsSync(filename) && fs.statSync(filename).size > 0) {
+          logger.info(`✅ Success! File: ${filename}`);
+          return filename;
+        }
+      }
+    }
+  }
+
+  logger.warn('❌ All yt-dlp download strategies failed.');
+  return null;
+};
+
+/**
  * Extract Instagram media details
  */
 export const fetchInstagram = async (url, preferredType = 'video') => {
   const match = url.match(REGEX_PATTERNS.instagram);
   const shortcode = match ? match[1] : null;
+
+  // 1. Try yt-dlp native extraction (supports cookies.txt & high-res MP4)
+  try {
+    const ytDlpFile = await downloadInstagramYtDlp(url);
+    if (ytDlpFile && fs.existsSync(ytDlpFile)) {
+      let finalFile = ytDlpFile;
+      if (fs.statSync(ytDlpFile).size > DISCORD_MAX_FILE_BYTES) {
+        const compressed = ytDlpFile.replace('.mp4', '_min.mp4');
+        finalFile = await smartCompress(ytDlpFile, compressed);
+      }
+      const buffer = fs.readFileSync(finalFile);
+      return {
+        success: true,
+        platform: 'instagram',
+        type: 'video',
+        title: `Instagram Post [${shortcode || 'Media'}]`,
+        mediaUrl: url,
+        buffer,
+        filePath: finalFile,
+        tooLarge: buffer.length > DISCORD_MAX_FILE_BYTES,
+        sizeBytes: buffer.length,
+        filename: 'video.mp4'
+      };
+    }
+  } catch (err) {
+    logger.debug(`yt-dlp instagram download attempt error: ${err.message}`);
+  }
 
   // Clean the URL of tracker query params
   const cleanUrl = shortcode ? `https://www.instagram.com/p/${shortcode}/` : url;
@@ -410,7 +582,7 @@ export const buildMediaResponse = (result, originalUrl, requestedBy) => {
 export const PLATFORM_ASSETS = {
   instagram: {
     username: 'INSTAGRAM DOWNLOAD LINK',
-    avatarURL: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/600px-Instagram_icon.png',
+    avatarURL: 'https://cdn.discordapp.com/attachments/1447917590663008329/1515632984240296007/image.png',
     color: '#E1306C'
   },
   tiktok: {
@@ -448,113 +620,174 @@ export const handleAutoDownloadMessage = async (message) => {
   const platform = detectPlatform(targetUrl);
   if (!platform) return false;
 
-  // Suppress original embeds to prevent double clutter in chat
-  await message.suppressEmbeds(true).catch(() => {});
+  const cleanUrl = targetUrl.replace(/\?.*$/, '').replace(/\/$/, '');
+  if (processingLinks.has(cleanUrl)) return false;
+  processingLinks.add(cleanUrl);
 
-  // Send typing indicator
-  await message.channel.sendTyping().catch(() => {});
+  const pInfo = PLATFORM_ASSETS[platform] || {
+    username: 'MEDIA DOWNLOAD LINK',
+    avatarURL: 'https://cdn.discordapp.com/attachments/1447917590663008329/1515632984240296007/image.png',
+    color: '#00E5FF'
+  };
+
+  // Status progression message
+  let statusMsg = await message.channel.send(`⏳ **Downloading from ${platform === 'instagram' ? 'Instagram' : platform}...**`).catch(() => null);
+
+  // Delete original user message
+  if (message.deletable) {
+    await message.delete().catch(() => {});
+  }
 
   try {
-    const result = await downloadMedia({ url: targetUrl, platform, type: 'video' });
-    if (!result.success) {
-      logger.debug(`Auto-download failed for ${targetUrl}: ${result.error}`);
-      return false;
-    }
+    let finalFilePath = null;
 
-    const pInfo = PLATFORM_ASSETS[platform] || {
-      username: 'MEDIA DOWNLOAD LINK',
-      avatarURL: 'https://cdn-icons-png.flaticon.com/512/2111/2111463.png',
-      color: '#00E5FF'
-    };
-
-    const buttons = [];
-    if (targetUrl && targetUrl.startsWith('http')) {
-      buttons.push(
-        new ButtonBuilder()
-          .setLabel('🔗 Original Post')
-          .setStyle(ButtonStyle.Link)
-          .setURL(targetUrl)
-      );
+    if (platform === 'instagram') {
+      const ytDlpFile = await downloadInstagramYtDlp(cleanUrl);
+      if (ytDlpFile && fs.existsSync(ytDlpFile)) {
+        finalFilePath = ytDlpFile;
+        if (fs.statSync(ytDlpFile).size > DISCORD_MAX_FILE_BYTES) {
+          if (statusMsg) await statusMsg.edit('⚙️ **Video is large. Compressing...**').catch(() => {});
+          const compressed = ytDlpFile.replace('.mp4', '_min.mp4');
+          finalFilePath = await smartCompress(ytDlpFile, compressed);
+        }
+      }
     }
-    const directLink = result.directDownloadUrl || result.mediaUrl;
-    if (directLink && directLink.startsWith('http')) {
-      buttons.push(
-        new ButtonBuilder()
-          .setLabel('📥 Direct Media Link')
-          .setStyle(ButtonStyle.Link)
-          .setURL(directLink)
-      );
-    }
-    const row = buttons.length > 0 ? new ActionRowBuilder().addComponents(buttons.slice(0, 5)) : null;
 
     const contentText = `👤 **Requested by:** <@${message.author.id}>`;
-    const components = row ? [row] : [];
-    const files = [];
+    let postedMsgId = null;
 
-    if (result.buffer && !result.tooLarge) {
-      const ext = result.type === 'image' ? 'jpg' : 'mp4';
-      files.push(new AttachmentBuilder(result.buffer, {
-        name: result.filename || `${platform}_${Date.now()}.${ext}`
-      }));
-    }
+    if (finalFilePath && fs.existsSync(finalFilePath) && fs.statSync(finalFilePath).size > 0) {
+      if (statusMsg) await statusMsg.edit('📤 **Uploading...**').catch(() => {});
+      const fileAttachment = new AttachmentBuilder(finalFilePath, { name: 'video.mp4' });
 
-    // Try sending via Webhook so it matches user reference screenshot (Avatar: Instagram, Name: INSTAGRAM DOWNLOAD LINK)
-    let postedViaWebhook = false;
-    const botMember = message.guild.members.me || await message.guild.members.fetchMe().catch(() => null);
-    if (botMember && message.channel.permissionsFor(botMember)?.has('ManageWebhooks')) {
-      try {
-        const webhooks = await message.channel.fetchWebhooks().catch(() => null);
-        let webhook = webhooks?.find(wh => wh.name.includes('DOWNLOAD LINK') || wh.owner?.id === message.client.user.id);
-        if (!webhook) {
-          webhook = await message.channel.createWebhook({
-            name: 'MEDIA DOWNLOAD LINK',
-            avatar: pInfo.avatarURL
-          }).catch(() => null);
-        }
+      // 1. Try sending via custom WEBHOOK_URL from .env or channel webhook
+      const customWebhookUrl = process.env.WEBHOOK_URL;
+      let sentViaWebhook = false;
 
-        if (webhook) {
-          const payload = {
+      if (customWebhookUrl && customWebhookUrl.startsWith('https://discord.com/api/webhooks/')) {
+        try {
+          const webhookClient = new WebhookClient({ url: customWebhookUrl });
+          const whMsg = await webhookClient.send({
+            content: contentText,
             username: pInfo.username,
             avatarURL: pInfo.avatarURL,
-            content: contentText,
-            components
-          };
-          if (files.length > 0) payload.files = files;
-          else if (directLink) payload.content = `${contentText}\n${directLink}`;
+            files: [fileAttachment]
+          });
+          postedMsgId = whMsg.id;
+          sentViaWebhook = true;
+        } catch (whErr) {
+          logger.debug(`Custom WEBHOOK_URL failed: ${whErr.message}`);
+        }
+      }
 
-          await webhook.send(payload);
-          postedViaWebhook = true;
-
-          // Delete user original raw link message for clean clutter-free channel
-          if (message.deletable) {
-            await message.delete().catch(() => {});
+      if (!sentViaWebhook) {
+        const botMember = message.guild.members.me || await message.guild.members.fetchMe().catch(() => null);
+        if (botMember && message.channel.permissionsFor(botMember)?.has('ManageWebhooks')) {
+          try {
+            const webhooks = await message.channel.fetchWebhooks().catch(() => null);
+            let webhook = webhooks?.find(wh => wh.name.includes('DOWNLOAD LINK') || wh.owner?.id === message.client.user.id);
+            if (!webhook) {
+              webhook = await message.channel.createWebhook({
+                name: 'MEDIA DOWNLOAD LINK',
+                avatar: pInfo.avatarURL
+              }).catch(() => null);
+            }
+            if (webhook) {
+              const whMsg = await webhook.send({
+                content: contentText,
+                username: pInfo.username,
+                avatarURL: pInfo.avatarURL,
+                files: [fileAttachment]
+              });
+              postedMsgId = whMsg.id;
+              sentViaWebhook = true;
+            }
+          } catch (whErr) {
+            logger.debug(`Dynamic channel webhook failed: ${whErr.message}`);
           }
         }
-      } catch (whErr) {
-        logger.debug(`Webhook dispatch failed: ${whErr.message}`);
       }
-    }
 
-    // Fallback: Send directly as bot reply
-    if (!postedViaWebhook) {
-      const payload = {
-        content: contentText,
-        components
-      };
-      if (files.length > 0) {
-        payload.files = files;
+      if (!sentViaWebhook) {
+        const botMsg = await message.channel.send({
+          content: contentText,
+          files: [fileAttachment]
+        });
+        postedMsgId = botMsg.id;
+      }
+
+      // Delete status message on success
+      if (statusMsg && statusMsg.deletable) {
+        await statusMsg.delete().catch(() => {});
+      }
+
+      // Add all 30 auto reactions sequentially with 0.25s delay
+      if (postedMsgId) {
+        try {
+          const realMsg = await message.channel.messages.fetch(postedMsgId).catch(() => null);
+          if (realMsg) {
+            for (const emoji of REACTION_EMOJIS) {
+              try {
+                await realMsg.react(emoji);
+                await new Promise(r => setTimeout(r, 250));
+              } catch (e) {
+                logger.debug(`Reaction failed ${emoji}: ${e.message}`);
+              }
+            }
+          }
+        } catch (fetchErr) {
+          logger.debug(`Could not fetch message for reactions: ${fetchErr.message}`);
+        }
+      }
+
+      return true;
+    } else {
+      // yt-dlp failed (no cookies or private post), try generic downloadMedia
+      const result = await downloadMedia({ url: targetUrl, platform, type: 'video' });
+      if (result.success && result.buffer && !result.tooLarge) {
+        if (statusMsg) await statusMsg.edit('📤 **Uploading...**').catch(() => {});
+        const fileAttachment = new AttachmentBuilder(result.buffer, {
+          name: result.filename || `video.mp4`
+        });
+        const msg = await message.channel.send({
+          content: contentText,
+          files: [fileAttachment]
+        });
+        if (statusMsg && statusMsg.deletable) await statusMsg.delete().catch(() => {});
+        if (msg) {
+          for (const emoji of REACTION_EMOJIS) {
+            try {
+              await msg.react(emoji);
+              await new Promise(r => setTimeout(r, 250));
+            } catch {}
+          }
+        }
+        return true;
       } else {
-        const { embed } = buildMediaResponse(result, targetUrl, message.author);
-        payload.embeds = [embed];
+        // Post exact failure notice with cookies.txt fix
+        if (statusMsg) {
+          await statusMsg.edit(
+            '❌ **Download failed.**\n' +
+            '> The post may be private, age-restricted, or Instagram is blocking the request.\n' +
+            '> **Fix:** Upload a valid `cookies.txt` file to your bot\'s root folder and restart.'
+          ).catch(() => {});
+          setTimeout(() => statusMsg.delete().catch(() => {}), 20000);
+        }
+        return false;
       }
-
-      await message.reply(payload);
-      await message.react('✅').catch(() => {});
     }
-
-    return true;
   } catch (err) {
     logger.error(`Error in handleAutoDownloadMessage: ${err.message}`);
+    if (statusMsg) {
+      await statusMsg.edit(`❌ **Error:** \`${err.message}\``).catch(() => {});
+      setTimeout(() => statusMsg.delete().catch(() => {}), 15000);
+    }
     return false;
+  } finally {
+    processingLinks.delete(cleanUrl);
+    const downloadsDir = path.resolve(process.cwd(), 'downloads');
+    if (fs.existsSync(downloadsDir)) {
+      try { fs.rmSync(downloadsDir, { recursive: true, force: true }); } catch {}
+    }
   }
 };

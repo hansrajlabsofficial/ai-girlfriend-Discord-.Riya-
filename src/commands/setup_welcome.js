@@ -92,7 +92,9 @@ export const execute = async (interaction) => {
     });
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  if (!interaction.deferred && !interaction.replied) {
+    await interaction.deferReply({ ephemeral: true }).catch(() => {});
+  }
 
   const channel = interaction.options.getChannel('channel');
   const template = interaction.options.getString('template') || 'haoc';

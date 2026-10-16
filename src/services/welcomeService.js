@@ -268,12 +268,14 @@ export const handleWelcomeButton = async (interaction) => {
 
   // 2. Test Welcome greeting
   if (customId.startsWith('welcome_test_join_')) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.deferred && !interaction.replied) {
+      await interaction.deferReply({ ephemeral: true }).catch(() => {});
+    }
     const success = await sendWelcomeMessage(interaction.member);
     if (success) {
-      return await interaction.editReply({ content: '🎉 **Test Welcome Sent!** Check the configured welcome channel to view the result!' });
+      return await interaction.editReply({ content: '🎉 **Test Welcome Sent!** Check the configured welcome channel to view the result!' }).catch(() => {});
     } else {
-      return await interaction.editReply({ content: '⚠️ Could not send test welcome. Please verify bot channel permissions.' });
+      return await interaction.editReply({ content: '⚠️ Could not send test welcome. Please verify bot channel permissions.' }).catch(() => {});
     }
   }
 

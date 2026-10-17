@@ -50,7 +50,27 @@ export const GAMETESTER_ROLES = [
   { key: 'vr_tests', name: 'VR Tests', customEmojiName: 'vr', defaultEmoji: '👓', style: ButtonStyle.Secondary, color: '#95A5A6', row: 3 }
 ];
 
+export const VIP_ARMY_ROLES = [
+  // Row 1 (5 games)
+  { key: 'ff', name: '🔫 ┃ Free Fire', label: 'Free Fire', defaultEmoji: '🔫', style: ButtonStyle.Secondary, color: '#FF9500', row: 1 },
+  { key: 'codm', name: '🪖 ┃ COD Mobile', label: 'COD Mobile', defaultEmoji: '🪖', style: ButtonStyle.Secondary, color: '#6B8E23', row: 1 },
+  { key: 'bgmi', name: '🍳 ┃ BGMI / PUBG', label: 'BGMI / PUBG', defaultEmoji: '🍳', style: ButtonStyle.Secondary, color: '#E8B923', row: 1 },
+  { key: 'gta', name: '🚗 ┃ GTA 5', label: 'GTA 5', defaultEmoji: '🚗', style: ButtonStyle.Secondary, color: '#00B894', row: 1 },
+  { key: 'mc', name: '⛏️ ┃ Minecraft', label: 'Minecraft', defaultEmoji: '⛏️', style: ButtonStyle.Secondary, color: '#55A630', row: 1 },
+
+  // Row 2 (4 pings)
+  { key: 'pLive', name: '🔴 ┃ LIVE PING', label: 'Live Alerts', defaultEmoji: '🔴', style: ButtonStyle.Secondary, color: '#FF2E4D', row: 2 },
+  { key: 'pVid', name: '🎬 ┃ VIDEO PING', label: 'New Videos', defaultEmoji: '🎬', style: ButtonStyle.Secondary, color: '#FF7A00', row: 2 },
+  { key: 'pGive', name: '🎁 ┃ GIVEAWAY PING', label: 'Giveaways', defaultEmoji: '🎁', style: ButtonStyle.Secondary, color: '#F5B800', row: 2 },
+  { key: 'pEvent', name: '📅 ┃ EVENT PING', label: 'Events', defaultEmoji: '📅', style: ButtonStyle.Secondary, color: '#8A2BE2', row: 2 }
+];
+
 export const TEMPLATES = {
+  vip_army: {
+    title: '🎮 CHOOSE YOUR GAMES',
+    description: 'Jo games khelte ho wo select karo. Dobara dabao to hat jayega.',
+    items: VIP_ARMY_ROLES
+  },
   hansraj_games: {
     title: '🎮 Get Your Self Roles! • HANSRAJ Games',
     description: 
@@ -120,8 +140,8 @@ export const buildGameRolesPanel = ({
       const roleId = rolesMap[item.key] || 'none';
       const button = new ButtonBuilder()
         .setCustomId(`gamerole_toggle:${templateKey}:${item.key}:${roleId}`)
-        .setLabel(item.name)
-        .setStyle(item.style);
+        .setLabel(item.label || item.name)
+        .setStyle(item.style || ButtonStyle.Secondary);
 
       const emojiVal = resolveButtonEmoji(guild, item.customEmojiName, item.defaultEmoji);
       if (emojiVal) {
@@ -136,6 +156,25 @@ export const buildGameRolesPanel = ({
     }
 
     actionRows.push(actionRow);
+  }
+
+  if (templateKey === 'vip_army') {
+    const embed1 = new EmbedBuilder()
+      .setColor('#F5B800')
+      .setTitle(customTitle || '🎮 CHOOSE YOUR GAMES')
+      .setDescription(customDescription || 'Jo games khelte ho wo select karo. Dobara dabao to hat jayega.')
+      .setFooter({ text: 'VIP ARMY ⚡ Khud haso, sabko hasate raho' });
+
+    const embed2 = new EmbedBuilder()
+      .setColor('#FF2E4D')
+      .setTitle('🔔 CHOOSE YOUR PINGS')
+      .setDescription('Sirf wahi alerts lo jo chahiye.')
+      .setFooter({ text: 'VIP ARMY ⚡ Khud haso, sabko hasate raho' });
+
+    return {
+      embeds: [embed1, embed2],
+      components: actionRows
+    };
   }
 
   return {
@@ -194,8 +233,12 @@ export const handleGameRoleClick = async (interaction) => {
   }
 
   if (!role) {
-    // Lookup by role name
-    role = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === itemDef.name.toLowerCase());
+    // Lookup by role name, label, or key
+    role = interaction.guild.roles.cache.find(r => 
+      r.name.toLowerCase() === itemDef.name.toLowerCase() ||
+      (itemDef.label && r.name.toLowerCase() === itemDef.label.toLowerCase()) ||
+      r.name.toLowerCase().includes(itemDef.key.toLowerCase())
+    );
   }
 
   if (!role) {
@@ -217,16 +260,17 @@ export const handleGameRoleClick = async (interaction) => {
   const hasRole = member.roles.cache.has(role.id);
 
   try {
+    const displayLabel = itemDef.label || role.name;
     if (hasRole) {
       await member.roles.remove(role, 'User removed self game role via panel');
       return await interaction.reply({
-        content: `❌ **Removed role:** <@&${role.id}> (\`${role.name}\`)\nYou will no longer receive notifications or access for this game.`,
+        content: `❌ Removed **${displayLabel}**`,
         ephemeral: true
       });
     } else {
       await member.roles.add(role, 'User self-assigned game role via panel');
       return await interaction.reply({
-        content: `✅ **Added role:** <@&${role.id}> (\`${role.name}\`)\nYou now have access to this game's channels and alerts! 🎮✨`,
+        content: `✅ Added **${displayLabel}**`,
         ephemeral: true
       });
     }

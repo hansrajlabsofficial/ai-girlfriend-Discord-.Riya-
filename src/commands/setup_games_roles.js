@@ -17,6 +17,7 @@ export const data = new SlashCommandBuilder()
       .setDescription('Choose a preset template or custom setup')
       .setRequired(false)
       .addChoices(
+        { name: '⚡ VIP ARMY (Games & Pings - Dual Panel)', value: 'vip_army' },
         { name: '🎮 HANSRAJ Top 17 Games (Bloodstrike, FreeFire, Minecraft, GTA5...)', value: 'hansraj_games' },
         { name: '🧪 GameTester & Devices (Game Nights, Competitions, PC/Console...)', value: 'gametester' }
       )
@@ -173,7 +174,7 @@ export const execute = async (interaction) => {
 
     // If raw_json was provided, resolve role from JSON mapping
     if (rawJsonRoles) {
-      const jsonVal = rawJsonRoles[item.key] || rawJsonRoles[item.name] || rawJsonRoles[`${item.key}_role`];
+      const jsonVal = rawJsonRoles[item.key] || rawJsonRoles[item.name] || (item.label && rawJsonRoles[item.label]) || rawJsonRoles[`${item.key}_role`];
       if (jsonVal) {
         const cleanId = String(jsonVal).replace(/[<@&>]/g, '').trim();
         role = guild.roles.cache.get(cleanId) || guild.roles.cache.find(r => r.name.toLowerCase() === cleanId.toLowerCase());
@@ -181,7 +182,10 @@ export const execute = async (interaction) => {
     }
 
     if (!role) {
-      role = guild.roles.cache.find(r => r.name.toLowerCase() === item.name.toLowerCase());
+      role = guild.roles.cache.find(r => 
+        r.name.toLowerCase() === item.name.toLowerCase() ||
+        (item.label && r.name.toLowerCase() === item.label.toLowerCase())
+      );
     }
 
     if (!role && autoCreate) {
@@ -248,7 +252,8 @@ export const execute = async (interaction) => {
   }
 
   // 7. Reply to Admin
-  let statusText = `🎉 **${templateKey === 'hansraj_games' ? 'HANSRAJ Game Roles' : 'GameTester Roles'} Panel deployed to <#${targetChannel.id}>!**\n[Jump to Panel Message](${panelMessage.url})\n\n`;
+  const templateTitle = templateKey === 'vip_army' ? '⚡ VIP ARMY Roles' : (templateKey === 'hansraj_games' ? '🎮 HANSRAJ Game Roles' : '🧪 GameTester Roles');
+  let statusText = `🎉 **${templateTitle} Panel deployed to <#${targetChannel.id}>!**\n[Jump to Panel Message](${panelMessage.url})\n\n`;
   statusText += `**Configured Game Roles (${template.items.length}):**\n`;
 
   for (const item of template.items) {

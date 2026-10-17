@@ -71,6 +71,11 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand(sub =>
     sub
+      .setName('raw_json')
+      .setDescription('Export the full automatic welcome setup as formatted Raw JSON')
+  )
+  .addSubcommand(sub =>
+    sub
       .setName('test')
       .setDescription('Dispatches a mockup greeting to test the current welcome configuration')
   );
@@ -171,7 +176,33 @@ export const execute = async (interaction) => {
     return interaction.editReply({ embeds: [embed] });
   }
 
-  // --- 5. /welcome test ---
+  // --- 5. /welcome raw_json ---
+  if (subcommand === 'raw_json') {
+    const rawConfig = {
+      guildId: interaction.guild.id,
+      guildName: interaction.guild.name,
+      welcomeEnabled: guildConfig.welcomeEnabled ?? true,
+      welcomeChannelId: guildConfig.welcomeChannelId || null,
+      welcomeMessage: guildConfig.welcomeMessage || 'Welcome {user} to the {server} matrix!',
+      welcomeBannerUrl: guildConfig.welcomeBannerUrl || null,
+      welcomeSendDm: guildConfig.welcomeSendDm ?? false,
+      welcomeSecondMessage: guildConfig.welcomeSecondMessage || null,
+      welcomeSecondMessageEnabled: guildConfig.welcomeSecondMessageEnabled ?? false,
+      welcomeSecondMessageAsEmbed: guildConfig.welcomeSecondMessageAsEmbed ?? false
+    };
+
+    const jsonString = JSON.stringify(rawConfig, null, 2);
+    const embed = new EmbedBuilder()
+      .setTitle('⚙️ Automatic Welcome Setup • Raw JSON')
+      .setDescription(`\`\`\`json\n${jsonString.slice(0, 4000)}\n\`\`\``)
+      .setColor(0x9b59b6)
+      .setFooter({ text: 'Riya AI • Welcome Config Matrix' })
+      .setTimestamp();
+
+    return interaction.editReply({ embeds: [embed] });
+  }
+
+  // --- 6. /welcome test ---
   if (subcommand === 'test') {
     const channelId = guildConfig.welcomeChannelId;
     if (!channelId) {

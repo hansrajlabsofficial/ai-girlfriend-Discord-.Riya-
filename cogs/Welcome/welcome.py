@@ -158,6 +158,22 @@ class Welcome(commands.GroupCog, name="welcome"):
         embed.set_image(url=image_url)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
+    @app_commands.command(name="raw_json", description="Export the full automatic welcome setup as formatted Raw JSON.")
+    @app_commands.checks.has_permissions(manage_guild=True)
+    async def get_raw_json(self, interaction: discord.Interaction):
+        guild_id = str(interaction.guild_id)
+        self.init_guild(guild_id)
+        settings = self.config[guild_id]
+        json_str = json.dumps(settings, indent=4)
+        embed = discord.Embed(
+            title="⚙️ Automatic Welcome Setup • Raw JSON",
+            description=f"```json\n{json_str[:4000]}\n```",
+            color=0x9b59b6,
+            timestamp=datetime.datetime.now(datetime.timezone.utc)
+        )
+        embed.set_footer(text="Python Welcome Cog • Config Matrix")
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+
     @app_commands.command(name="test", description="Dispatches a mockup greeting to test the current welcome configuration.")
     @app_commands.checks.has_permissions(manage_guild=True)
     async def test_welcome(self, interaction: discord.Interaction):

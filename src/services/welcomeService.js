@@ -51,6 +51,21 @@ const acquireDistributedWelcomeLock = async (guildId, memberId) => {
   }
 };
 
+export const VIP_ARMY_WELCOME_MESSAGE = 
+`👑 **Welcome to the VIP ARMY, {mention}!** 👑
+
+Aap bane ho hamare **#{membercount}th** VIP member! Yahan **VIP BHAI** aur poori gaming squad ke saath full masti aur gameplay chalega. 🎮🔥
+
+🚀 **Next Steps:**
+1. Pehle <#1560893777957363754> padh lo taaki koi issue na ho.
+2. <#1560893783342850139> me jakar click karo aur server access unlock karo.
+3. <#1560893791240458294> me apne favorite games (Minecraft, BGMI, GTA) select karo.
+4. <#1560893846865313832> me aao aur squad ko "Hello Bhai" bolo!
+
+Mauj lo aur masti karte raho! ❤️`;
+
+export const VIP_ARMY_WELCOME_BANNER = 'https://images-ext-2.discordapp.net/external/ZAfpoUlqyvnZM6eS0iYSu3AoadzJ7p_GhqWxCz8-AUc/https/c.tenor.com/tqVFCM6tIyMAAAAC/welcome-hello.gif';
+
 /**
  * Master dispatcher to send welcome message on member join
  * Formats customized greeting string and dispatches single clean embed
@@ -105,33 +120,47 @@ export const sendWelcomeMessage = async (member) => {
   }
 
   try {
-    const rawMsg = guildConfig.welcomeMessage || 'Welcome {user} to the {server} matrix!';
+    const rawMsg = guildConfig.welcomeMessage || (guildConfig.welcomeTemplate === 'vip_army' ? VIP_ARMY_WELCOME_MESSAGE : 'Welcome {user} to the {server} matrix!');
     const formattedMsg = rawMsg
-      .replace(/{user}/g, member.toString())
-      .replace(/{server}/g, member.guild.name)
-      .replace(/{member_count}/g, member.guild.memberCount.toString());
+      .replace(/{user}/gi, member.toString())
+      .replace(/{mention}/gi, member.toString())
+      .replace(/{server}/gi, member.guild.name)
+      .replace(/{member_count}/gi, member.guild.memberCount.toString())
+      .replace(/{membercount}/gi, member.guild.memberCount.toString());
 
-    const accountAge = member.user?.createdAt ? member.user.createdAt.toLocaleDateString('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric'
-    }) : 'Unknown';
+    let embed;
+    if (guildConfig.welcomeTemplate === 'vip_army') {
+      embed = new EmbedBuilder()
+        .setDescription(formattedMsg)
+        .setColor(guildConfig.welcomeColor || '#FF2E4D')
+        .setThumbnail(member.user?.displayAvatarURL?.({ dynamic: true }) || null);
 
-    // 1. Single Clean Onboarding Embed (No second message, no extra invite links)
-    const embed = new EmbedBuilder()
-      .setTitle('✨ New Connection Established')
-      .setDescription(formattedMsg)
-      .setColor(0x9b59b6)
-      .setThumbnail(member.user?.displayAvatarURL?.({ dynamic: true }) || null)
-      .addFields(
-        { name: 'Account Age Identity', value: accountAge, inline: true },
-        { name: 'Guild Member Count', value: `\`${member.guild.memberCount}\` Total`, inline: true }
-      )
-      .setFooter({ text: `User ID: ${member.id}` })
-      .setTimestamp();
+      const bannerUrl = guildConfig.welcomeBannerUrl || VIP_ARMY_WELCOME_BANNER;
+      if (bannerUrl) {
+        embed.setImage(bannerUrl);
+      }
+    } else {
+      const accountAge = member.user?.createdAt ? member.user.createdAt.toLocaleDateString('en-US', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      }) : 'Unknown';
 
-    if (guildConfig.welcomeBannerUrl) {
-      embed.setImage(guildConfig.welcomeBannerUrl);
+      embed = new EmbedBuilder()
+        .setTitle('✨ New Connection Established')
+        .setDescription(formattedMsg)
+        .setColor(guildConfig.welcomeColor || 0x9b59b6)
+        .setThumbnail(member.user?.displayAvatarURL?.({ dynamic: true }) || null)
+        .addFields(
+          { name: 'Account Age Identity', value: accountAge, inline: true },
+          { name: 'Guild Member Count', value: `\`${member.guild.memberCount}\` Total`, inline: true }
+        )
+        .setFooter({ text: `User ID: ${member.id}` })
+        .setTimestamp();
+
+      if (guildConfig.welcomeBannerUrl) {
+        embed.setImage(guildConfig.welcomeBannerUrl);
+      }
     }
 
     await channel.send({ embeds: [embed] });
@@ -141,9 +170,11 @@ export const sendWelcomeMessage = async (member) => {
     if (guildConfig.welcomeSecondMessageEnabled && guildConfig.welcomeSecondMessage) {
       const rawSecond = guildConfig.welcomeSecondMessage;
       const formattedSecond = rawSecond
-        .replace(/{user}/g, member.toString())
-        .replace(/{server}/g, member.guild.name)
-        .replace(/{member_count}/g, member.guild.memberCount.toString());
+        .replace(/{user}/gi, member.toString())
+        .replace(/{mention}/gi, member.toString())
+        .replace(/{server}/gi, member.guild.name)
+        .replace(/{member_count}/gi, member.guild.memberCount.toString())
+        .replace(/{membercount}/gi, member.guild.memberCount.toString());
 
       try {
         if (guildConfig.welcomeSecondMessageAsEmbed) {
@@ -159,19 +190,32 @@ export const sendWelcomeMessage = async (member) => {
       }
     }
 
-    // 2. Direct Message Delivery (Only if specifically enabled in /welcome message send_dm: True)
+    // 3. Direct Message Delivery (Only if specifically enabled in /welcome message send_dm: True)
     if (guildConfig.welcomeSendDm) {
       try {
-        const dmEmbed = new EmbedBuilder()
-          .setTitle(`✨ Welcome to ${member.guild.name}!`)
-          .setDescription(formattedMsg)
-          .setColor(0x9b59b6)
-          .setThumbnail(member.guild.iconURL?.({ dynamic: true }) || member.user?.displayAvatarURL?.({ dynamic: true }) || null)
-          .setFooter({ text: `Onboarding Portal • ${member.guild.name}` })
-          .setTimestamp();
+        let dmEmbed;
+        if (guildConfig.welcomeTemplate === 'vip_army') {
+          dmEmbed = new EmbedBuilder()
+            .setDescription(formattedMsg)
+            .setColor(guildConfig.welcomeColor || '#FF2E4D')
+            .setThumbnail(member.guild.iconURL?.({ dynamic: true }) || member.user?.displayAvatarURL?.({ dynamic: true }) || null);
 
-        if (guildConfig.welcomeBannerUrl) {
-          dmEmbed.setImage(guildConfig.welcomeBannerUrl);
+          const bannerUrl = guildConfig.welcomeBannerUrl || VIP_ARMY_WELCOME_BANNER;
+          if (bannerUrl) {
+            dmEmbed.setImage(bannerUrl);
+          }
+        } else {
+          dmEmbed = new EmbedBuilder()
+            .setTitle(`✨ Welcome to ${member.guild.name}!`)
+            .setDescription(formattedMsg)
+            .setColor(0x9b59b6)
+            .setThumbnail(member.guild.iconURL?.({ dynamic: true }) || member.user?.displayAvatarURL?.({ dynamic: true }) || null)
+            .setFooter({ text: `Onboarding Portal • ${member.guild.name}` })
+            .setTimestamp();
+
+          if (guildConfig.welcomeBannerUrl) {
+            dmEmbed.setImage(guildConfig.welcomeBannerUrl);
+          }
         }
 
         await member.send({ embeds: [dmEmbed] });

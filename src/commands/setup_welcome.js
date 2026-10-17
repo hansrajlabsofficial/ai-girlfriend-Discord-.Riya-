@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } from 'discord.js';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
+import { VIP_ARMY_WELCOME_MESSAGE, VIP_ARMY_WELCOME_BANNER } from '../services/welcomeService.js';
 import { logger } from '../utils/logger.js';
 
 export const data = new SlashCommandBuilder()
@@ -11,6 +12,16 @@ export const data = new SlashCommandBuilder()
       .setName('raw_json')
       .setDescription('Paste raw JSON code to automatically configure and apply all welcome settings')
       .setRequired(false)
+  )
+  .addStringOption(opt =>
+    opt
+      .setName('template')
+      .setDescription('Choose a preset welcome template')
+      .setRequired(false)
+      .addChoices(
+        { name: '⚡ VIP ARMY (Next Steps, Red Theme & GIF Banner)', value: 'vip_army' },
+        { name: '🌸 Standard Matrix (Account Age, Purple Theme)', value: 'haoc' }
+      )
   )
   .addChannelOption(opt =>
     opt
@@ -78,9 +89,24 @@ export const execute = async (interaction) => {
       const cleaned = rawJsonInput.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
       const parsed = JSON.parse(cleaned);
 
+      if (parsed.template) {
+        guildConfig.welcomeTemplate = parsed.template;
+        if (parsed.template === 'vip_army') {
+          if (!parsed.message && (!guildConfig.welcomeMessage || guildConfig.welcomeMessage.includes('matrix'))) {
+            guildConfig.welcomeMessage = VIP_ARMY_WELCOME_MESSAGE;
+          }
+          if (!parsed.banner_url && !guildConfig.welcomeBannerUrl) {
+            guildConfig.welcomeBannerUrl = VIP_ARMY_WELCOME_BANNER;
+          }
+          guildConfig.welcomeColor = parsed.color || parsed.welcomeColor || '#FF2E4D';
+        }
+      }
+      if (parsed.color || parsed.welcomeColor) {
+        guildConfig.welcomeColor = parsed.color || parsed.welcomeColor;
+      }
       if (parsed.channel_id || parsed.channelId || parsed.welcomeChannelId || parsed.channel) {
         const cId = String(parsed.channel_id || parsed.channelId || parsed.welcomeChannelId || parsed.channel).replace(/[<#>]/g, '').trim();
-        guildConfig.welcomeChannelId = cId;
+        const foundCh = guildConfig.welcomeChannelId = (interaction.guild.channels.cache.get(cId) || interaction.guild.channels.cache.find(c => c.name.toLowerCase() === cId.toLowerCase() || c.name.toLowerCase().includes(cId.toLowerCase())))?.id || cId;
         guildConfig.welcomeEnabled = true;
       }
       if (parsed.message || parsed.welcomeMessage || parsed.text) {
@@ -110,8 +136,10 @@ export const execute = async (interaction) => {
       const updatedConfig = {
         guildId: interaction.guild.id,
         guildName: interaction.guild.name,
+        template: guildConfig.welcomeTemplate || 'vip_army',
         welcomeEnabled: guildConfig.welcomeEnabled ?? true,
         welcomeChannelId: guildConfig.welcomeChannelId || null,
+        welcomeColor: guildConfig.welcomeColor || '#FF2E4D',
         welcomeMessage: guildConfig.welcomeMessage || 'Welcome {user} to the {server} matrix!',
         welcomeBannerUrl: guildConfig.welcomeBannerUrl || null,
         welcomeSendDm: guildConfig.welcomeSendDm ?? false,
@@ -124,13 +152,14 @@ export const execute = async (interaction) => {
         .setTitle('✅ Welcome Setup Updated from Raw JSON!')
         .setDescription(
           `All welcome parameters have been automatically configured from your JSON code!\n\n` +
+          `• **Template:** \`${guildConfig.welcomeTemplate || 'vip_army'}\`\n` +
           `• **Target Channel:** ${guildConfig.welcomeChannelId ? `<#${guildConfig.welcomeChannelId}>` : '*(Not configured)*'}\n` +
           `• **Status:** ${guildConfig.welcomeEnabled ? '🟢 ENABLED' : '🔴 DISABLED'}\n` +
           `• **DM Dispatch:** ${guildConfig.welcomeSendDm ? '✅ ENABLED' : '❌ DISABLED'}\n` +
           `• **Second Message:** ${guildConfig.welcomeSecondMessageEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\n` +
           `**Applied JSON Matrix:**\n\`\`\`json\n${JSON.stringify(updatedConfig, null, 2).slice(0, 3000)}\n\`\`\``
         )
-        .setColor(0x2ecc71)
+        .setColor(guildConfig.welcomeColor || '#FF2E4D')
         .setFooter({ text: 'AHP Group Pvt. Ltd. • Riya Welcome Setup 💖' })
         .setTimestamp();
 
@@ -148,6 +177,26 @@ export const execute = async (interaction) => {
 
   // 2. Process Individual Options
   let changesMade = false;
+
+  const templateOpt = interaction.options.getString('template');
+  if (templateOpt) {
+    guildConfig.welcomeTemplate = templateOpt;
+    if (templateOpt === 'vip_army') {
+      if (!interaction.options.getString('message') && (!guildConfig.welcomeMessage || guildConfig.welcomeMessage.includes('matrix'))) {
+        guildConfig.welcomeMessage = VIP_ARMY_WELCOME_MESSAGE;
+      }
+      if (!interaction.options.getString('banner_url') && !guildConfig.welcomeBannerUrl) {
+        guildConfig.welcomeBannerUrl = VIP_ARMY_WELCOME_BANNER;
+      }
+      guildConfig.welcomeColor = '#FF2E4D';
+      if (!guildConfig.welcomeChannelId) {
+        const autoCh = interaction.guild.channels.cache.find(c => c.name.toLowerCase().includes('welcome'));
+        if (autoCh) guildConfig.welcomeChannelId = autoCh.id;
+      }
+      guildConfig.welcomeEnabled = true;
+    }
+    changesMade = true;
+  }
 
   const channelOpt = interaction.options.getChannel('channel');
   if (channelOpt) {
@@ -206,12 +255,13 @@ export const execute = async (interaction) => {
       .setTitle('⚙️ Welcome Setup Updated!')
       .setDescription(
         `Your welcome configuration changes have been saved!\n\n` +
+        `• **Template:** \`${guildConfig.welcomeTemplate || 'vip_army'}\`\n` +
         `• **Target Channel:** ${guildConfig.welcomeChannelId ? `<#${guildConfig.welcomeChannelId}>` : '*(Not configured)*'}\n` +
         `• **Status:** ${guildConfig.welcomeEnabled ? '🟢 ENABLED' : '🔴 DISABLED'}\n` +
         `• **DM Dispatch:** ${guildConfig.welcomeSendDm ? '✅ ENABLED' : '❌ DISABLED'}\n` +
         `• **Second Message:** ${guildConfig.welcomeSecondMessageEnabled ? '✅ ENABLED' : '❌ DISABLED'}`
       )
-      .setColor(0x2ecc71)
+      .setColor(guildConfig.welcomeColor || '#FF2E4D')
       .setFooter({ text: 'Use /setup_welcome raw_json: <code> to import full JSON matrix' })
       .setTimestamp();
 
@@ -225,10 +275,12 @@ export const execute = async (interaction) => {
   // 3. If no options provided, display current configuration and Raw JSON
   const currentConfig = {
     guild_id: interaction.guild.id,
+    template: guildConfig.welcomeTemplate || 'vip_army',
     welcome_enabled: guildConfig.welcomeEnabled ?? true,
     channel_id: guildConfig.welcomeChannelId || null,
-    message: guildConfig.welcomeMessage || 'Welcome {user} to the {server} matrix!',
-    banner_url: guildConfig.welcomeBannerUrl || null,
+    color: guildConfig.welcomeColor || '#FF2E4D',
+    message: guildConfig.welcomeMessage || VIP_ARMY_WELCOME_MESSAGE,
+    banner_url: guildConfig.welcomeBannerUrl || VIP_ARMY_WELCOME_BANNER,
     send_dm: guildConfig.welcomeSendDm ?? false,
     second_message: guildConfig.welcomeSecondMessage || null,
     second_message_enabled: guildConfig.welcomeSecondMessageEnabled ?? false,

@@ -8,6 +8,11 @@ export const data = new SlashCommandBuilder()
   .setDescription('Deploy interactive Self Game Roles panel with buttons, emojis, and templates')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
   .addStringOption(opt =>
+    opt.setName('raw_json')
+      .setDescription('Paste raw JSON code to automatically configure and deploy all game roles')
+      .setRequired(false)
+  )
+  .addStringOption(opt =>
     opt.setName('template')
       .setDescription('Choose a preset template or custom setup')
       .setRequired(false)
@@ -64,13 +69,47 @@ export const execute = async (interaction) => {
   await interaction.deferReply({ ephemeral: true });
 
   const guild = interaction.guild;
-  const targetChannel = interaction.options.getChannel('channel') || interaction.channel;
-  const templateKey = interaction.options.getString('template') || 'hansraj_games';
-  const autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
+  let targetChannel = interaction.options.getChannel('channel') || interaction.channel;
+  let templateKey = interaction.options.getString('template') || 'hansraj_games';
+  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
   const customRole = interaction.options.getRole('custom_role');
   const customEmojiInput = interaction.options.getString('custom_emoji');
-  const customTitle = interaction.options.getString('custom_title');
-  const customDescription = interaction.options.getString('custom_description');
+  let customTitle = interaction.options.getString('custom_title');
+  let customDescription = interaction.options.getString('custom_description');
+
+  // Process Raw JSON Input if provided
+  const rawJsonInput = interaction.options.getString('raw_json');
+  let rawJsonRoles = null;
+  if (rawJsonInput) {
+    try {
+      const cleaned = rawJsonInput.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.channel_id || parsed.channelId || parsed.channel) {
+        const cId = String(parsed.channel_id || parsed.channelId || parsed.channel).replace(/[<#>]/g, '').trim();
+        const foundCh = guild.channels.cache.get(cId) || guild.channels.cache.find(c => c.name.toLowerCase() === cId.toLowerCase());
+        if (foundCh && foundCh.isTextBased()) targetChannel = foundCh;
+      }
+      if (parsed.template && TEMPLATES[parsed.template]) {
+        templateKey = parsed.template;
+      }
+      if (parsed.custom_title || parsed.title) {
+        customTitle = parsed.custom_title || parsed.title;
+      }
+      if (parsed.custom_description || parsed.description) {
+        customDescription = parsed.custom_description || parsed.description;
+      }
+      if (parsed.auto_create_roles !== undefined) {
+        autoCreate = Boolean(parsed.auto_create_roles);
+      }
+
+      rawJsonRoles = parsed.roles || parsed.gameRoles || parsed;
+    } catch (parseErr) {
+      return await interaction.editReply({
+        content: `❌ **Invalid Raw JSON Syntax:** Please check your JSON format!\n\`\`\`\n${parseErr.message}\n\`\`\``
+      });
+    }
+  }
 
   // 2. Channel Permissions Check for Bot
   const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
@@ -130,7 +169,20 @@ export const execute = async (interaction) => {
   const existingRoles = [];
 
   for (const item of template.items) {
-    let role = guild.roles.cache.find(r => r.name.toLowerCase() === item.name.toLowerCase());
+    let role = null;
+
+    // If raw_json was provided, resolve role from JSON mapping
+    if (rawJsonRoles) {
+      const jsonVal = rawJsonRoles[item.key] || rawJsonRoles[item.name] || rawJsonRoles[`${item.key}_role`];
+      if (jsonVal) {
+        const cleanId = String(jsonVal).replace(/[<@&>]/g, '').trim();
+        role = guild.roles.cache.get(cleanId) || guild.roles.cache.find(r => r.name.toLowerCase() === cleanId.toLowerCase());
+      }
+    }
+
+    if (!role) {
+      role = guild.roles.cache.find(r => r.name.toLowerCase() === item.name.toLowerCase());
+    }
 
     if (!role && autoCreate) {
       try {

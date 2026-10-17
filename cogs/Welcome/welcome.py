@@ -158,11 +158,48 @@ class Welcome(commands.GroupCog, name="welcome"):
         embed.set_image(url=image_url)
         await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @app_commands.command(name="raw_json", description="Export the full automatic welcome setup as formatted Raw JSON.")
+    @app_commands.command(name="raw_json", description="View or automatically import welcome setup using formatted Raw JSON.")
+    @app_commands.describe(code="Paste raw JSON code to automatically update and apply welcome settings")
     @app_commands.checks.has_permissions(manage_guild=True)
-    async def get_raw_json(self, interaction: discord.Interaction):
+    async def get_raw_json(self, interaction: discord.Interaction, code: str = None):
         guild_id = str(interaction.guild_id)
         self.init_guild(guild_id)
+        
+        if code:
+            try:
+                clean_code = code.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+                parsed = json.loads(clean_code)
+                
+                if "channel_id" in parsed or "channel" in parsed or "welcomeChannelId" in parsed:
+                    self.config[guild_id]["channel_id"] = str(parsed.get("channel_id") or parsed.get("channel") or parsed.get("welcomeChannelId")).replace("<#", "").replace(">", "").strip()
+                if "message" in parsed or "welcomeMessage" in parsed or "text" in parsed:
+                    self.config[guild_id]["message"] = parsed.get("message") or parsed.get("welcomeMessage") or parsed.get("text")
+                if "banner_url" in parsed or "welcomeBannerUrl" in parsed or "image_url" in parsed:
+                    self.config[guild_id]["banner_url"] = parsed.get("banner_url") or parsed.get("welcomeBannerUrl") or parsed.get("image_url")
+                if "send_dm" in parsed or "welcomeSendDm" in parsed:
+                    self.config[guild_id]["send_dm"] = bool(parsed.get("send_dm", parsed.get("welcomeSendDm")))
+                if "second_message" in parsed or "welcomeSecondMessage" in parsed:
+                    self.config[guild_id]["second_message"] = parsed.get("second_message") or parsed.get("welcomeSecondMessage")
+                if "second_message_enabled" in parsed or "welcomeSecondMessageEnabled" in parsed:
+                    self.config[guild_id]["second_message_enabled"] = bool(parsed.get("second_message_enabled", parsed.get("welcomeSecondMessageEnabled")))
+                if "second_message_as_embed" in parsed or "welcomeSecondMessageAsEmbed" in parsed:
+                    self.config[guild_id]["second_message_as_embed"] = bool(parsed.get("second_message_as_embed", parsed.get("welcomeSecondMessageAsEmbed")))
+
+                self.save_config()
+                
+                settings = self.config[guild_id]
+                json_str = json.dumps(settings, indent=4)
+                embed = discord.Embed(
+                    title="✅ Welcome Setup Updated from Raw JSON!",
+                    description=f"All welcome configurations updated successfully!\n```json\n{json_str[:3500]}\n```",
+                    color=0x2ecc71,
+                    timestamp=datetime.datetime.now(datetime.timezone.utc)
+                )
+                embed.set_footer(text="Python Welcome Cog • Config Matrix")
+                return await interaction.response.send_message(embed=embed, ephemeral=True)
+            except Exception as e:
+                return await interaction.response.send_message(f"❌ Invalid Raw JSON: {e}", ephemeral=True)
+
         settings = self.config[guild_id]
         json_str = json.dumps(settings, indent=4)
         embed = discord.Embed(

@@ -7,6 +7,11 @@ export const data = new SlashCommandBuilder()
   .setName('setup_region_roles')
   .setDescription('Deploy interactive Region Selection auto-roles panel with buttons and world map')
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
+  .addStringOption(opt =>
+    opt.setName('raw_json')
+      .setDescription('Paste raw JSON code to automatically configure and deploy all region roles')
+      .setRequired(false)
+  )
   .addChannelOption(opt =>
     opt.setName('channel')
       .setDescription('Channel where the region selection panel will be posted (defaults to current channel)')
@@ -90,11 +95,45 @@ export const execute = async (interaction) => {
   await interaction.deferReply({ ephemeral: true });
 
   const guild = interaction.guild;
-  const targetChannel = interaction.options.getChannel('channel') || interaction.channel;
-  const autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
-  const mapImageUrl = interaction.options.getString('map_image_url');
-  const customTitle = interaction.options.getString('custom_title') || 'Region Selection';
-  const customDescription = interaction.options.getString('custom_description') || DEFAULT_REGION_DESCRIPTION;
+  let targetChannel = interaction.options.getChannel('channel') || interaction.channel;
+  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
+  let mapImageUrl = interaction.options.getString('map_image_url');
+  let customTitle = interaction.options.getString('custom_title') || 'Region Selection';
+  let customDescription = interaction.options.getString('custom_description') || DEFAULT_REGION_DESCRIPTION;
+
+  // Process Raw JSON Input if provided
+  const rawJsonInput = interaction.options.getString('raw_json');
+  let rawJsonRoles = null;
+  if (rawJsonInput) {
+    try {
+      const cleaned = rawJsonInput.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.channel_id || parsed.channelId || parsed.channel) {
+        const cId = String(parsed.channel_id || parsed.channelId || parsed.channel).replace(/[<#>]/g, '').trim();
+        const foundCh = guild.channels.cache.get(cId) || guild.channels.cache.find(c => c.name.toLowerCase() === cId.toLowerCase());
+        if (foundCh && foundCh.isTextBased()) targetChannel = foundCh;
+      }
+      if (parsed.map_image_url || parsed.mapImageUrl || parsed.banner_url) {
+        mapImageUrl = parsed.map_image_url || parsed.mapImageUrl || parsed.banner_url;
+      }
+      if (parsed.custom_title || parsed.title) {
+        customTitle = parsed.custom_title || parsed.title;
+      }
+      if (parsed.custom_description || parsed.description) {
+        customDescription = parsed.custom_description || parsed.description;
+      }
+      if (parsed.auto_create_roles !== undefined) {
+        autoCreate = Boolean(parsed.auto_create_roles);
+      }
+
+      rawJsonRoles = parsed.roles || parsed.regionRoles || parsed;
+    } catch (parseErr) {
+      return await interaction.editReply({
+        content: `❌ **Invalid Raw JSON Syntax:** Please check your JSON format!\n\`\`\`\n${parseErr.message}\n\`\`\``
+      });
+    }
+  }
 
   // 2. Channel Permissions Check for Bot
   const botMember = guild.members.me || await guild.members.fetchMe().catch(() => null);
@@ -121,6 +160,15 @@ export const execute = async (interaction) => {
   for (const reg of REGIONS_CONFIG) {
     const optionName = `${reg.key}_role`;
     let role = interaction.options.getRole(optionName);
+
+    // If raw_json was provided, resolve role from JSON mapping
+    if (!role && rawJsonRoles) {
+      const jsonVal = rawJsonRoles[reg.key] || rawJsonRoles[reg.name] || rawJsonRoles[`${reg.key}_role`];
+      if (jsonVal) {
+        const cleanId = String(jsonVal).replace(/[<@&>]/g, '').trim();
+        role = guild.roles.cache.get(cleanId) || guild.roles.cache.find(r => r.name.toLowerCase() === cleanId.toLowerCase());
+      }
+    }
 
     // If not explicitly provided, check existing guild roles by name
     if (!role) {

@@ -72,7 +72,13 @@ export const data = new SlashCommandBuilder()
   .addSubcommand(sub =>
     sub
       .setName('raw_json')
-      .setDescription('Export the full automatic welcome setup as formatted Raw JSON')
+      .setDescription('View or automatically import welcome setup using formatted Raw JSON')
+      .addStringOption(opt =>
+        opt
+          .setName('code')
+          .setDescription('Paste raw JSON code to automatically update and apply welcome settings')
+          .setRequired(false)
+      )
   )
   .addSubcommand(sub =>
     sub
@@ -178,6 +184,73 @@ export const execute = async (interaction) => {
 
   // --- 5. /welcome raw_json ---
   if (subcommand === 'raw_json') {
+    const inputCode = interaction.options.getString('code');
+    if (inputCode) {
+      try {
+        const cleaned = inputCode.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+        const parsed = JSON.parse(cleaned);
+
+        if (parsed.channel_id || parsed.channelId || parsed.welcomeChannelId || parsed.channel) {
+          const cId = String(parsed.channel_id || parsed.channelId || parsed.welcomeChannelId || parsed.channel).replace(/[<#>]/g, '').trim();
+          guildConfig.welcomeChannelId = cId;
+          guildConfig.welcomeEnabled = true;
+        }
+        if (parsed.message || parsed.welcomeMessage || parsed.text) {
+          guildConfig.welcomeMessage = parsed.message || parsed.welcomeMessage || parsed.text;
+        }
+        if (parsed.banner_url || parsed.welcomeBannerUrl || parsed.image_url) {
+          guildConfig.welcomeBannerUrl = parsed.banner_url || parsed.welcomeBannerUrl || parsed.image_url;
+        }
+        if (parsed.send_dm !== undefined || parsed.welcomeSendDm !== undefined) {
+          guildConfig.welcomeSendDm = Boolean(parsed.send_dm ?? parsed.welcomeSendDm);
+        }
+        if (parsed.second_message || parsed.welcomeSecondMessage) {
+          guildConfig.welcomeSecondMessage = parsed.second_message || parsed.welcomeSecondMessage;
+        }
+        if (parsed.second_message_enabled !== undefined || parsed.welcomeSecondMessageEnabled !== undefined) {
+          guildConfig.welcomeSecondMessageEnabled = Boolean(parsed.second_message_enabled ?? parsed.welcomeSecondMessageEnabled);
+        }
+        if (parsed.second_message_as_embed !== undefined || parsed.welcomeSecondMessageAsEmbed !== undefined) {
+          guildConfig.welcomeSecondMessageAsEmbed = Boolean(parsed.second_message_as_embed ?? parsed.welcomeSecondMessageAsEmbed);
+        }
+        if (parsed.welcome_enabled !== undefined || parsed.welcomeEnabled !== undefined) {
+          guildConfig.welcomeEnabled = Boolean(parsed.welcome_enabled ?? parsed.welcomeEnabled);
+        }
+
+        await saveGuildConfig(guildConfig);
+
+        const updatedConfig = {
+          guildId: interaction.guild.id,
+          guildName: interaction.guild.name,
+          welcomeEnabled: guildConfig.welcomeEnabled,
+          welcomeChannelId: guildConfig.welcomeChannelId,
+          welcomeMessage: guildConfig.welcomeMessage,
+          welcomeBannerUrl: guildConfig.welcomeBannerUrl,
+          welcomeSendDm: guildConfig.welcomeSendDm,
+          welcomeSecondMessage: guildConfig.welcomeSecondMessage,
+          welcomeSecondMessageEnabled: guildConfig.welcomeSecondMessageEnabled,
+          welcomeSecondMessageAsEmbed: guildConfig.welcomeSecondMessageAsEmbed
+        };
+
+        const embed = new EmbedBuilder()
+          .setTitle('✅ Automatic Welcome Setup Updated from Raw JSON!')
+          .setDescription(`All welcome configurations have been successfully updated from your JSON code!\n\n• **Target Channel:** ${guildConfig.welcomeChannelId ? `<#${guildConfig.welcomeChannelId}>` : '*(Not configured)*'}\n• **Status:** ${guildConfig.welcomeEnabled ? '🟢 ENABLED' : '🔴 DISABLED'}\n• **DM Dispatch:** ${guildConfig.welcomeSendDm ? '✅ ENABLED' : '❌ DISABLED'}\n• **Second Message:** ${guildConfig.welcomeSecondMessageEnabled ? '✅ ENABLED' : '❌ DISABLED'}\n\n**Applied JSON Matrix:**\n\`\`\`json\n${JSON.stringify(updatedConfig, null, 2).slice(0, 3000)}\n\`\`\``)
+          .setColor(0x2ecc71)
+          .setFooter({ text: 'Riya AI • Welcome Config Matrix' })
+          .setTimestamp();
+
+        if (guildConfig.welcomeBannerUrl) {
+          embed.setImage(guildConfig.welcomeBannerUrl);
+        }
+
+        return interaction.editReply({ embeds: [embed] });
+      } catch (parseErr) {
+        return interaction.editReply({
+          content: `❌ **Invalid Raw JSON Syntax:** Could not parse code!\n\`\`\`\n${parseErr.message}\n\`\`\``
+        });
+      }
+    }
+
     const rawConfig = {
       guildId: interaction.guild.id,
       guildName: interaction.guild.name,

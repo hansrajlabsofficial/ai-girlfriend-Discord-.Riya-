@@ -197,7 +197,7 @@ app.get('/logout', (req, res) => {
   </script></head><body>Logging out...</body></html>`);
 });
 
-app.get('/health', async (req, res) => {
+const getLiveStatsData = async () => {
   const uptimeSec = Math.floor(process.uptime() || 0);
   const days = Math.floor(uptimeSec / 86400);
   const hours = Math.floor((uptimeSec % 86400) / 3600);
@@ -214,14 +214,32 @@ app.get('/health', async (req, res) => {
   const realGuilds = await getRealBotGuilds();
   const guildCount = realGuilds && realGuilds.length > 0 ? realGuilds.length : 12;
 
-  res.status(200).json({
+  return {
     status: 'online',
     uptime: uptimeSec,
     uptimeFormatted: uptimeStr,
     guilds: guildCount,
-    commands: 85,
+    commands: 100,
     timestamp: new Date()
-  });
+  };
+};
+
+app.get('/health', async (req, res) => {
+  try {
+    const data = await getLiveStatsData();
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message, commands: 100 });
+  }
+});
+
+app.get('/api/stats', async (req, res) => {
+  try {
+    const data = await getLiveStatsData();
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message, commands: 100 });
+  }
 });
 
 export default app;

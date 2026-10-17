@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { ALL_COMMANDS } from './commandsData.js';
 
 export const getDashboardHtml = (client = null, authData = null) => {
   const clientId = config.clientId || '1479052475368607926';
@@ -713,7 +714,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       <div class="nav-links">
         <a href="#dashboard" class="active">Dashboard</a>
         <a href="#features">Features</a>
-        <a href="#commands">Commands (85+)</a>
+        <a href="#commands">Commands (100)</a>
         <a href="#system">Live Status</a>
         <a href="${oauthConnectUrl}" class="btn-connect" id="headerAuthBtn">
           🔑 Connect Discord ID
@@ -729,11 +730,11 @@ export const getDashboardHtml = (client = null, authData = null) => {
     <div class="hero-banner" id="dashboard">
       <div class="status-pill">
         <div class="status-dot"></div>
-        24/7 ONLINE & ACTIVE • SANCTUM CORE v4.0
+        24/7 ONLINE & ACTIVE • SANCTUM CORE v4.0 • 100/100 COMMANDS READY
       </div>
 
       <h1>RIYA AI <span>SANCTUM CONTROL</span></h1>
-      <p>The ultimate next-gen AI Girlfriend & Multipurpose Discord Bot. Packed with 85+ interactive commands, realistic voice hotline calls, inter-server global chat, anime card collections, cavern mining RPG, metallic credit card generator, & server management.</p>
+      <p>The ultimate next-gen AI Girlfriend & Multipurpose Discord Bot. Equipped with 100 interactive slash commands, dedicated AI chat channel binding, VIP ARMY & HANSRAJ gaming role hubs, dynamic onboarding welcome banners, world region selector, universal Raw JSON configuration engine, Karuta anime cards, cavern mining RPG, metallic bank cards, and inter-server global chat.</p>
 
       <div class="hero-actions">
         <a href="${inviteUrl}" target="_blank" class="btn-invite">
@@ -759,7 +760,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
           <div class="stat-label">Total Users</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number" id="statCommandCount">85+</div>
+          <div class="stat-number" id="statCommandCount">100</div>
           <div class="stat-label">Interactive Commands</div>
         </div>
         <div class="stat-card">
@@ -803,7 +804,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       `}
     </div>
 
-    <!-- 6 Feature Showcase Cards -->
+    <!-- 10 Feature Showcase Cards -->
     <div class="section-header" id="features">
       <div class="section-title">
         <span>✨</span> Next-Gen Core Features
@@ -813,279 +814,100 @@ export const getDashboardHtml = (client = null, authData = null) => {
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon">👩🏻‍❤️‍👩🏻</div>
-        <h3>AI Partner & Voice Hotline</h3>
-        <p>Dynamic AI companion with expressive response modes, custom voice hotline call calls, customizable moods, memory retention, & interactive social commands.</p>
+        <h3>Dedicated AI Chat Channel</h3>
+        <p>Bind Riya to any channel with <code>/select_channel</code> for natural, continuous ping-free conversations. Features intelligent emotion reactions, memory retention, & affection XP progression.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎮</div>
+        <h3>VIP ARMY Dual-Panel Game Roles</h3>
+        <p>Deploy interactive dual panels with <code>/setup_games_roles</code> (Panel 1: Top 17 PC/Mobile Games like Minecraft, BGMI, GTA, Valorant; Panel 2: Notification Pings) with smart existing-role matching.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">👑</div>
+        <h3>VIP ARMY Welcome Engine</h3>
+        <p>Automate member onboarding via <code>/setup_welcome</code> featuring custom animated GIF banners, quick server buttons, and dynamic tokens (<code>{mention}</code>, <code>{server}</code>, <code>{membercount}</code>).</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🌍</div>
+        <h3>Interactive World Region Selector</h3>
+        <p>Deploy continent auto-role selectors via <code>/setup_region_roles</code> with styled buttons and world map visuals. Assigns regional roles instantly with zero duplicate role conflicts.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⚡</div>
+        <h3>Universal Raw JSON Engine</h3>
+        <p>Instant automated configuration across welcome systems, game roles, and region setups. Paste ready-made Raw JSON or export server configurations with a single command.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3>Atomic Concurrency Mutex Lock</h3>
+        <p>Enterprise-grade Firestore <code>runTransaction</code> mutex locks preventing duplicate bot responses across distributed clusters, cloud instances (Render), and local environments.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">🌐</div>
         <h3>Inter-Server Global Chat</h3>
-        <p>Seamlessly bridge communication across multiple Discord communities with cross-server text relay, avatar sync, system moderation, & custom server badges.</p>
+        <p>Seamlessly bridge communication across multiple Discord communities with cross-server text relays, user avatar syncing, server badges, and automated moderation.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">🎴</div>
         <h3>Karuta Style Anime Cards</h3>
-        <p>Discover, drop, claim, & trade 100+ high-quality anime character cards. Complete album decks, upgrade card rarities, & view card market values.</p>
+        <p>Discover, drop, claim, wishlist, and trade 100+ high-quality anime character cards. Complete album decks, upgrade card rarities, burn cards for gold, & view market values.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">⛏️</div>
         <h3>Cavern Mining & RPG System</h3>
-        <p>Explore deep cavern mines, dig for rare gemstones & ancient relics, craft pickaxes, fight boss encounters, & climb the global mining leaderboard.</p>
+        <p>Explore deep cavern mines, dig for rare gemstones & ancient relics, craft titanium pickaxes, raid boss dungeons, duel server members, & climb global leaderboards.</p>
       </div>
 
       <div class="feature-card">
         <div class="feature-icon">💳</div>
-        <h3>Metallic PNG PNG Bank Cards</h3>
-        <p>Generate shiny metal credit PNG bank cards customized with your Discord avatar, current wallet balance, VIP tier title, & verified badge status.</p>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">🎁</div>
-        <h3>Lucky Box & Economy Hub</h3>
-        <p>Claim daily coin rewards, open mystery lucky boxes, play slots, roll dice, execute work shifts, & manage full server economy balances.</p>
+        <h3>Metallic PNG Bank Cards</h3>
+        <p>Generate shiny metal credit PNG bank cards customized with your Discord avatar, current wallet balance, VIP tier title, and verified status with <code>/bank</code>.</p>
       </div>
     </div>
 
     <!-- Command Directory with Search & Category Pills -->
     <div class="section-header" id="commands">
       <div class="section-title">
-        <span>⚡</span> Interactive Command Directory (85+)
+        <span>⚡</span> Interactive Command Directory (100 Commands)
       </div>
     </div>
 
     <div class="search-filter-container">
-      <input type="text" id="cmdSearchInput" class="search-input" placeholder="🔍 Search command name, description, or category (e.g. hotline, mine, card, balance)...">
+      <input type="text" id="cmdSearchInput" class="search-input" placeholder="🔍 Search 100 commands by name, description, or keyword (e.g. select_channel, setup_welcome, games, bank, card, mine)...">
       <div class="category-pills" id="categoryPills">
-        <button class="pill active" data-cat="all">All (85+)</button>
-        <button class="pill" data-cat="ai">👩🏻‍❤️‍👩🏻 AI & Social</button>
-        <button class="pill" data-cat="anime">🎴 Anime Cards</button>
-        <button class="pill" data-cat="economy">💰 Economy & Bank</button>
-        <button class="pill" data-cat="mining">⛏️ Cavern Mining</button>
-        <button class="pill" data-cat="global">🌐 Global Chat</button>
-        <button class="pill" data-cat="casino">🎮 Casino & Games</button>
-        <button class="pill" data-cat="config">⚙️ Server Setup</button>
+        <button class="pill active" data-cat="all">All (100)</button>
+        <button class="pill" data-cat="ai">👩🏻‍❤️‍👩🏻 AI & Companion (15)</button>
+        <button class="pill" data-cat="anime">🎴 Anime Cards (7)</button>
+        <button class="pill" data-cat="economy">💰 Economy & Bank (16)</button>
+        <button class="pill" data-cat="mining">⛏️ Mining & RPG (13)</button>
+        <button class="pill" data-cat="casino">🎲 Casino & Gambling (12)</button>
+        <button class="pill" data-cat="games">🎮 Minigames & Fun (11)</button>
+        <button class="pill" data-cat="global">🌐 Global Network (3)</button>
+        <button class="pill" data-cat="config">⚙️ Server Setup (23)</button>
       </div>
     </div>
 
-    <!-- Commands Directory Grid -->
+    <!-- Commands Directory Grid (All 100 Commands) -->
     <div class="commands-grid" id="commandsGrid">
-      <!-- 👩🏻‍❤️‍👩🏻 AI & Social -->
-      <div class="command-card" data-cat="ai" data-name="talk call hotline text status">
+      ${ALL_COMMANDS.map(c => `
+      <div class="command-card" data-cat="${c.category}" data-name="${c.keywords}">
         <div>
           <div class="cmd-header">
-            <span class="cmd-name">/talk</span>
-            <span class="cmd-badge">AI Chat</span>
+            <span class="cmd-name">/${c.name}</span>
+            <span class="cmd-badge">${c.badge}</span>
           </div>
-          <div class="cmd-desc">Chat directly with Riya AI girlfriend with expressive responses.</div>
+          <div class="cmd-desc">${c.desc.replace(/"/g, '&quot;')}</div>
         </div>
-        <div class="cmd-usage">/talk message: [your prompt]</div>
-      </div>
-
-      <div class="command-card" data-cat="ai" data-name="hotline call voice audio">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/hotline</span>
-            <span class="cmd-badge">Voice Call</span>
-          </div>
-          <div class="cmd-desc">Start an audio hotline call with Riya AI in voice channels.</div>
-        </div>
-        <div class="cmd-usage">/hotline mode: [connect/disconnect]</div>
-      </div>
-
-      <div class="command-card" data-cat="ai" data-name="hug kiss marry flirt profile">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/love</span>
-            <span class="cmd-badge">Social</span>
-          </div>
-          <div class="cmd-desc">Send love actions, hugs, or inspect relationship status level.</div>
-        </div>
-        <div class="cmd-usage">/love action: [hug/kiss/status] user: [@user]</div>
-      </div>
-
-      <!-- 🎴 Anime Cards -->
-      <div class="command-card" data-cat="anime" data-name="card drop claim collection anime karuta">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/card drop</span>
-            <span class="cmd-badge">Anime Cards</span>
-          </div>
-          <div class="cmd-desc">Drop 3 collectible anime character cards in channel to claim.</div>
-        </div>
-        <div class="cmd-usage">/card drop</div>
-      </div>
-
-      <div class="command-card" data-cat="anime" data-name="card collection album deck view">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/card collection</span>
-            <span class="cmd-badge">Anime Cards</span>
-          </div>
-          <div class="cmd-desc">View your owned anime card inventory & album collection.</div>
-        </div>
-        <div class="cmd-usage">/card collection user: [@user]</div>
-      </div>
-
-      <div class="command-card" data-cat="anime" data-name="card trade market sell buy">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/card trade</span>
-            <span class="cmd-badge">Anime Cards</span>
-          </div>
-          <div class="cmd-desc">Trade character cards with other server members.</div>
-        </div>
-        <div class="cmd-usage">/card trade user: [@user] card_id: [ID]</div>
-      </div>
-
-      <!-- ⛏️ Cavern Mining -->
-      <div class="command-card" data-cat="mining" data-name="mine cavern dig gemstone pickaxe">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/mine</span>
-            <span class="cmd-badge">Mining RPG</span>
-          </div>
-          <div class="cmd-desc">Dig deep into the cavern to collect valuable ores & gemstones.</div>
-        </div>
-        <div class="cmd-usage">/mine</div>
-      </div>
-
-      <div class="command-card" data-cat="mining" data-name="backpack inventory ores gems tools">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/backpack</span>
-            <span class="cmd-badge">Mining RPG</span>
-          </div>
-          <div class="cmd-desc">Check your mined gemstones, crafting materials, & pickaxes.</div>
-        </div>
-        <div class="cmd-usage">/backpack</div>
-      </div>
-
-      <div class="command-card" data-cat="mining" data-name="craft pickaxe tool upgrade">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/craft</span>
-            <span class="cmd-badge">Mining RPG</span>
-          </div>
-          <div class="cmd-desc">Craft stronger titanium & diamond pickaxes for deeper caves.</div>
-        </div>
-        <div class="cmd-usage">/craft item: [pickaxe_tier]</div>
-      </div>
-
-      <!-- 💰 Economy & Bank Cards -->
-      <div class="command-card" data-cat="economy" data-name="bank card metallic png wallet balance">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/bank_card</span>
-            <span class="cmd-badge">PNG Generator</span>
-          </div>
-          <div class="cmd-desc">Generate a dynamic metallic PNG credit card with your balance.</div>
-        </div>
-        <div class="cmd-usage">/bank_card style: [gold/platinum/obsidian]</div>
-      </div>
-
-      <div class="command-card" data-cat="economy" data-name="balance coins wallet bank pay">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/balance</span>
-            <span class="cmd-badge">Economy</span>
-          </div>
-          <div class="cmd-desc">Check current coin wallet balance & bank savings.</div>
-        </div>
-        <div class="cmd-usage">/balance user: [@user]</div>
-      </div>
-
-      <div class="command-card" data-cat="economy" data-name="daily bonus reward claim lucky box">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/daily</span>
-            <span class="cmd-badge">Economy</span>
-          </div>
-          <div class="cmd-desc">Claim daily coin reward streak & bonus lucky mystery box.</div>
-        </div>
-        <div class="cmd-usage">/daily</div>
-      </div>
-
-      <!-- 🌐 Global Chat -->
-      <div class="command-card" data-cat="global" data-name="setup_global global chat channel network">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/setup_global</span>
-            <span class="cmd-badge">Global Chat</span>
-          </div>
-          <div class="cmd-desc">Connect current channel to cross-server global chat network.</div>
-        </div>
-        <div class="cmd-usage">/setup_global action: [enable/disable/setchannel]</div>
-      </div>
-
-      <!-- 🎮 Casino & Mini-games -->
-      <div class="command-card" data-cat="casino" data-name="slots gamble coinflip dice bet">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/slots</span>
-            <span class="cmd-badge">Casino</span>
-          </div>
-          <div class="cmd-desc">Spin slot machine to win big coin multipliers.</div>
-        </div>
-        <div class="cmd-usage">/slots bet: [amount]</div>
-      </div>
-
-      <div class="command-card" data-cat="casino" data-name="coinflip flip heads tails">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/coinflip</span>
-            <span class="cmd-badge">Casino</span>
-          </div>
-          <div class="cmd-desc">Flip coin for 50/50 double-or-nothing coin rewards.</div>
-        </div>
-        <div class="cmd-usage">/coinflip side: [heads/tails] bet: [amount]</div>
-      </div>
-
-      <!-- ⚙️ Server Setup -->
-      <div class="command-card" data-cat="config" data-name="setup_region_roles auto roles continent buttons map regions">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/setup_region_roles</span>
-            <span class="cmd-badge">Auto Roles</span>
-          </div>
-          <div class="cmd-desc">Deploy interactive Region Selection auto-roles panel with styled buttons & continent map.</div>
-        </div>
-        <div class="cmd-usage">/setup_region_roles channel: [#channel] auto_create_roles: [True]</div>
-      </div>
-
-      <div class="command-card" data-cat="config" data-name="setup_games_roles game roles self roles minecraft roblox gta valorant freefire bloodstrike">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/setup_games_roles</span>
-            <span class="cmd-badge">Game Roles</span>
-          </div>
-          <div class="cmd-desc">Deploy interactive Self Game Roles panel with styled buttons & popular game templates.</div>
-        </div>
-        <div class="cmd-usage">/setup_games_roles template: [HANSRAJ Top 17 Games] channel: [#channel]</div>
-      </div>
-
-      <div class="command-card" data-cat="config" data-name="status server member total users count">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/status</span>
-            <span class="cmd-badge">System Config</span>
-          </div>
-          <div class="cmd-desc">Display bot live ping, server stats, & total member count.</div>
-        </div>
-        <div class="cmd-usage">/status option: [add Count every server member]</div>
-      </div>
-
-      <div class="command-card" data-cat="config" data-name="ping latency status delay gateway">
-        <div>
-          <div class="cmd-header">
-            <span class="cmd-name">/ping</span>
-            <span class="cmd-badge">System Config</span>
-          </div>
-          <div class="cmd-desc">Check real-time bot response ping & WebSocket heartbeat.</div>
-        </div>
-        <div class="cmd-usage">/ping</div>
-      </div>
+        <div class="cmd-usage">${c.usage.replace(/"/g, '&quot;')}</div>
+      </div>`).join('')}
     </div>
 
     <!-- 24/7 System Live Status Widget -->
@@ -1223,7 +1045,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
             document.getElementById('statServerCount').innerText = data.guilds > 0 ? data.guilds : '${serverCount}';
           }
           if (document.getElementById('statCommandCount')) {
-            document.getElementById('statCommandCount').innerText = (data.commands || 85) + '+';
+            document.getElementById('statCommandCount').innerText = data.commands || 100;
           }
           if (typeof data.uptime === 'number') {
             clientUptimeSec = data.uptime;

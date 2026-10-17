@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType, ButtonBuilder, ButtonStyle, ActionRowBuilder } from 'discord.js';
 import { TEMPLATES, buildGameRolesPanel, resolveButtonEmoji } from '../services/gameRoleService.js';
+import { findExistingGuildRole } from '../utils/roleMatcher.js';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
 import { logger } from '../utils/logger.js';
 
@@ -30,7 +31,7 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption(opt =>
     opt.setName('auto_create_roles')
-      .setDescription('Automatically create missing game roles with matching theme colors (Default: True)')
+      .setDescription('Auto-create missing game roles ONLY if not found in server (Default: False)')
       .setRequired(false)
   )
   .addRoleOption(opt =>
@@ -72,7 +73,7 @@ export const execute = async (interaction) => {
   const guild = interaction.guild;
   let targetChannel = interaction.options.getChannel('channel') || interaction.channel;
   let templateKey = interaction.options.getString('template') || 'hansraj_games';
-  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
+  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? false;
   const customRole = interaction.options.getRole('custom_role');
   const customEmojiInput = interaction.options.getString('custom_emoji');
   let customTitle = interaction.options.getString('custom_title');
@@ -163,37 +164,30 @@ export const execute = async (interaction) => {
     }
   }
 
-  // 4. Handle Template Deployment (HANSRAJ Games or GameTester)
+  // 4. Handle Template Deployment (HANSRAJ Games, VIP ARMY, or GameTester)
   const template = TEMPLATES[templateKey] || TEMPLATES.hansraj_games;
   const rolesMap = {};
   const createdRoles = [];
   const existingRoles = [];
 
+  // Ensure all server roles are fully fetched before matching
+  await guild.roles.fetch().catch(() => {});
+
   for (const item of template.items) {
     let role = null;
 
-    // If raw_json was provided, resolve role from JSON mapping
-    if (rawJsonRoles) {
-      const jsonVal = rawJsonRoles[item.key] || rawJsonRoles[item.name] || (item.label && rawJsonRoles[item.label]) || rawJsonRoles[`${item.key}_role`];
-      if (jsonVal) {
-        const cleanId = String(jsonVal).replace(/[<@&>]/g, '').trim();
-        role = guild.roles.cache.get(cleanId) || guild.roles.cache.find(r => r.name.toLowerCase() === cleanId.toLowerCase());
-      }
-    }
+    const explicitVal = rawJsonRoles ? (rawJsonRoles[item.key] || rawJsonRoles[item.name] || (item.label && rawJsonRoles[item.label]) || rawJsonRoles[`${item.key}_role`]) : null;
 
-    if (!role) {
-      role = guild.roles.cache.find(r => 
-        r.name.toLowerCase() === item.name.toLowerCase() ||
-        (item.label && r.name.toLowerCase() === item.label.toLowerCase())
-      );
-    }
+    // 1. Thoroughly search for existing server role first!
+    role = await findExistingGuildRole(guild, item, explicitVal);
 
+    // 2. Only create a new role if NOT found and autoCreate is explicitly true
     if (!role && autoCreate) {
       try {
         role = await guild.roles.create({
           name: item.name,
           color: item.color,
-          reason: `Riya Auto Game Roles: Auto-created ${item.name} role`
+          reason: `Riya Auto Game Roles: Auto-created missing ${item.name} role`
         });
         createdRoles.push(role);
       } catch (err) {
@@ -258,15 +252,18 @@ export const execute = async (interaction) => {
 
   for (const item of template.items) {
     const roleId = rolesMap[item.key];
+    const isNew = createdRoles.some(r => r.id === roleId);
     if (roleId) {
-      statusText += `• ${item.defaultEmoji} **${item.name}**: <@&${roleId}>\n`;
+      statusText += `• ${item.defaultEmoji} **${item.name}**: <@&${roleId}> ${isNew ? '*(New Role Created)*' : '*(Existing Role Linked)*'}\n`;
     } else {
-      statusText += `• ${item.defaultEmoji} **${item.name}**: *(No role linked)*\n`;
+      statusText += `• ${item.defaultEmoji} **${item.name}**: ⚠️ *(Not found in server - use \`auto_create_roles: True\` if you want Riya to create it)*\n`;
     }
   }
 
   if (createdRoles.length > 0) {
     statusText += `\n✨ *Auto-created ${createdRoles.length} new role(s) with matching colors!*`;
+  } else if (existingRoles.length > 0) {
+    statusText += `\n🔒 *Reused ${existingRoles.length} existing server role(s) without creating duplicates!*`;
   }
 
   statusText += `\n\n💡 **Tip:** Ensure the bot's highest role is positioned **above** these roles in **Server Settings > Roles** so the bot can assign them!`;

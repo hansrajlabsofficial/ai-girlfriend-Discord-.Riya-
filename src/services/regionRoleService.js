@@ -3,6 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
+import { findExistingGuildRole } from '../utils/roleMatcher.js';
 import { logger } from '../utils/logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -10,14 +11,14 @@ const __dirname = path.dirname(__filename);
 const DEFAULT_MAP_PATH = path.resolve(__dirname, '../assets/region_map.png');
 
 export const REGIONS_CONFIG = [
-  { key: 'north_america', name: 'North America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
-  { key: 'south_america', name: 'South America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', row: 1 },
-  { key: 'east_europe', name: 'East Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#3498DB', row: 1 },
-  { key: 'west_europe', name: 'West Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#2980B9', row: 1 },
-  { key: 'oceania', name: 'Oceania', emoji: '⬜', style: ButtonStyle.Secondary, defaultColor: '#95A5A6', row: 1 },
-  { key: 'asia', name: 'Asia', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#2ECC71', row: 2 },
-  { key: 'africa', name: 'Africa', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#27AE60', row: 2 },
-  { key: 'rather_not_say', name: 'Rather not say', emoji: '⛔', style: ButtonStyle.Secondary, defaultColor: '#7F8C8D', row: 2 }
+  { key: 'north_america', name: 'North America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', aliases: ['north america', 'na', 'usa', 'canada'], row: 1 },
+  { key: 'south_america', name: 'South America', emoji: '🟥', style: ButtonStyle.Danger, defaultColor: '#E74C3C', aliases: ['south america', 'sa', 'brazil', 'latam'], row: 1 },
+  { key: 'east_europe', name: 'East Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#3498DB', aliases: ['east europe', 'eastern europe', 'ee'], row: 1 },
+  { key: 'west_europe', name: 'West Europe', emoji: '🟦', style: ButtonStyle.Primary, defaultColor: '#2980B9', aliases: ['west europe', 'western europe', 'we', 'eu', 'europe'], row: 1 },
+  { key: 'oceania', name: 'Oceania', emoji: '⬜', style: ButtonStyle.Secondary, defaultColor: '#95A5A6', aliases: ['oceania', 'oce', 'australia', 'nz', 'new zealand'], row: 1 },
+  { key: 'asia', name: 'Asia', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#2ECC71', aliases: ['asia', 'india', 'sea', 'japan', 'korea'], row: 2 },
+  { key: 'africa', name: 'Africa', emoji: '🟩', style: ButtonStyle.Success, defaultColor: '#27AE60', aliases: ['africa', 'south africa'], row: 2 },
+  { key: 'rather_not_say', name: 'Rather not say', emoji: '⛔', style: ButtonStyle.Secondary, defaultColor: '#7F8C8D', aliases: ['rather not say', 'no region', 'other', 'none'], row: 2 }
 ];
 
 export const DEFAULT_REGION_DESCRIPTION = 
@@ -126,8 +127,7 @@ export const handleRegionRoleClick = async (interaction) => {
   }
 
   if (!role) {
-    // Fallback: lookup by exact role name
-    role = interaction.guild.roles.cache.find(r => r.name.toLowerCase() === regionDef.name.toLowerCase());
+    role = await findExistingGuildRole(interaction.guild, regionDef);
   }
 
   if (!role) {

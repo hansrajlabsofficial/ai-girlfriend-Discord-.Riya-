@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, ChannelType } from 'discord.js';
 import { REGIONS_CONFIG, buildRegionPanel, DEFAULT_REGION_DESCRIPTION } from '../services/regionRoleService.js';
+import { findExistingGuildRole } from '../utils/roleMatcher.js';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
 import { logger } from '../utils/logger.js';
 
@@ -20,7 +21,7 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption(opt =>
     opt.setName('auto_create_roles')
-      .setDescription('Automatically create missing region roles with matching colors (Default: True)')
+      .setDescription('Auto-create missing region roles ONLY if not found in server (Default: False)')
       .setRequired(false)
   )
   .addRoleOption(opt =>
@@ -96,7 +97,7 @@ export const execute = async (interaction) => {
 
   const guild = interaction.guild;
   let targetChannel = interaction.options.getChannel('channel') || interaction.channel;
-  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? true;
+  let autoCreate = interaction.options.getBoolean('auto_create_roles') ?? false;
   let mapImageUrl = interaction.options.getString('map_image_url');
   let customTitle = interaction.options.getString('custom_title') || 'Region Selection';
   let customDescription = interaction.options.getString('custom_description') || DEFAULT_REGION_DESCRIPTION;
@@ -157,31 +158,25 @@ export const execute = async (interaction) => {
   const createdRoles = [];
   const existingRoles = [];
 
+  // Ensure all server roles are fully fetched before matching
+  await guild.roles.fetch().catch(() => {});
+
   for (const reg of REGIONS_CONFIG) {
     const optionName = `${reg.key}_role`;
-    let role = interaction.options.getRole(optionName);
+    const roleOption = interaction.options.getRole(optionName);
+    const jsonVal = rawJsonRoles ? (rawJsonRoles[reg.key] || rawJsonRoles[reg.name] || rawJsonRoles[`${reg.key}_role`]) : null;
+    const explicitVal = roleOption ? roleOption.id : jsonVal;
 
-    // If raw_json was provided, resolve role from JSON mapping
-    if (!role && rawJsonRoles) {
-      const jsonVal = rawJsonRoles[reg.key] || rawJsonRoles[reg.name] || rawJsonRoles[`${reg.key}_role`];
-      if (jsonVal) {
-        const cleanId = String(jsonVal).replace(/[<@&>]/g, '').trim();
-        role = guild.roles.cache.get(cleanId) || guild.roles.cache.find(r => r.name.toLowerCase() === cleanId.toLowerCase());
-      }
-    }
+    // 1. Thoroughly search for existing server role first!
+    let role = await findExistingGuildRole(guild, reg, explicitVal);
 
-    // If not explicitly provided, check existing guild roles by name
-    if (!role) {
-      role = guild.roles.cache.find(r => r.name.toLowerCase() === reg.name.toLowerCase());
-    }
-
-    // If still not found and auto-create is enabled, create the role
+    // 2. Only create a new role if NOT found and autoCreate is explicitly true
     if (!role && autoCreate) {
       try {
         role = await guild.roles.create({
           name: reg.name,
           color: reg.defaultColor,
-          reason: `Riya Auto-Roles: Auto-created ${reg.name} continent role`
+          reason: `Riya Auto-Roles: Auto-created missing ${reg.name} continent role`
         });
         createdRoles.push(role);
       } catch (err) {
@@ -241,15 +236,18 @@ export const execute = async (interaction) => {
     
     for (const reg of REGIONS_CONFIG) {
       const roleId = regionRolesMap[reg.key];
+      const isNew = createdRoles.some(r => r.id === roleId);
       if (roleId) {
-        statusText += `• ${reg.emoji} **${reg.name}**: <@&${roleId}>\n`;
+        statusText += `• ${reg.emoji} **${reg.name}**: <@&${roleId}> ${isNew ? '*(New Role Created)*' : '*(Existing Role Linked)*'}\n`;
       } else {
-        statusText += `• ${reg.emoji} **${reg.name}**: *(No role linked)*\n`;
+        statusText += `• ${reg.emoji} **${reg.name}**: ⚠️ *(Not found in server - use \`auto_create_roles: True\` if you want Riya to create it)*\n`;
       }
     }
 
     if (createdRoles.length > 0) {
       statusText += `\n✨ *Auto-created ${createdRoles.length} new role(s) with matching colors!*`;
+    } else if (existingRoles.length > 0) {
+      statusText += `\n🔒 *Reused ${existingRoles.length} existing server role(s) without creating duplicates!*`;
     }
 
     statusText += `\n\n💡 **Tip:** Ensure the bot's highest role is positioned **above** these region roles in **Server Settings > Roles** so the bot can assign them!`;

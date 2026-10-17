@@ -1,68 +1,69 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } from 'discord.js';
 import { getGuildConfig, saveGuildConfig } from '../database/models/GuildConfig.js';
+import { findExistingGuildRole } from '../utils/roleMatcher.js';
 import { logger } from '../utils/logger.js';
 
 export const HANSRAJ_GAMES = [
   // Row 1 (5 buttons)
-  { key: 'bloodstrike', name: 'BLOODSTRIKE', customEmojiName: 'BLOODSTRIKE', defaultEmoji: '🩸', style: ButtonStyle.Danger, color: '#E74C3C', row: 1 },
-  { key: 'freefire', name: 'FreeFire', customEmojiName: 'FreeFire', defaultEmoji: '🔥', style: ButtonStyle.Danger, color: '#E67E22', row: 1 },
-  { key: 'minecraft', name: 'MINECRAFT', customEmojiName: 'minecraft', defaultEmoji: '⛏️', style: ButtonStyle.Success, color: '#2ECC71', row: 1 },
-  { key: 'roblox', name: 'ROBLOX', customEmojiName: 'ROBLOX', defaultEmoji: '🟥', style: ButtonStyle.Primary, color: '#3498DB', row: 1 },
-  { key: 'valorant', name: 'VALORANT', customEmojiName: 'VALORANT', defaultEmoji: '🎯', style: ButtonStyle.Danger, color: '#E74C3C', row: 1 },
+  { key: 'bloodstrike', name: 'BLOODSTRIKE', customEmojiName: 'BLOODSTRIKE', defaultEmoji: '🩸', style: ButtonStyle.Danger, color: '#E74C3C', aliases: ['blood strike', 'bloodstrike'], row: 1 },
+  { key: 'freefire', name: 'FreeFire', customEmojiName: 'FreeFire', defaultEmoji: '🔥', style: ButtonStyle.Danger, color: '#E67E22', aliases: ['free fire', 'freefire', 'ff'], row: 1 },
+  { key: 'minecraft', name: 'MINECRAFT', customEmojiName: 'minecraft', defaultEmoji: '⛏️', style: ButtonStyle.Success, color: '#2ECC71', aliases: ['minecraft', 'mc'], row: 1 },
+  { key: 'roblox', name: 'ROBLOX', customEmojiName: 'ROBLOX', defaultEmoji: '🟥', style: ButtonStyle.Primary, color: '#3498DB', aliases: ['roblox'], row: 1 },
+  { key: 'valorant', name: 'VALORANT', customEmojiName: 'VALORANT', defaultEmoji: '🎯', style: ButtonStyle.Danger, color: '#E74C3C', aliases: ['valorant', 'val'], row: 1 },
 
   // Row 2 (5 buttons)
-  { key: 'pubg', name: "PUBG", customEmojiName: 'PLAYERUNKNOWNSBATTLEGROUNDS', defaultEmoji: '🪂', style: ButtonStyle.Secondary, color: '#F39C12', row: 2 },
-  { key: 'r6s', name: 'Rainbow Six Siege', customEmojiName: 'TomClancysRainbowSixSiege', defaultEmoji: '🛡️', style: ButtonStyle.Primary, color: '#2980B9', row: 2 },
-  { key: 'warzone', name: 'MW Warzone', customEmojiName: 'CALLOFDUTYMWWARZONE', defaultEmoji: '💥', style: ButtonStyle.Secondary, color: '#34495E', row: 2 },
-  { key: 'cod', name: 'Call of Duty', customEmojiName: 'COD', defaultEmoji: '🔫', style: ButtonStyle.Secondary, color: '#2C3E50', row: 2 },
-  { key: 'cs2', name: 'Counter Strike 2', customEmojiName: 'COUNTERSTRIKE2', defaultEmoji: '💣', style: ButtonStyle.Primary, color: '#F1C40F', row: 2 },
+  { key: 'pubg', name: "PUBG", customEmojiName: 'PLAYERUNKNOWNSBATTLEGROUNDS', defaultEmoji: '🪂', style: ButtonStyle.Secondary, color: '#F39C12', aliases: ['pubg', 'bgmi', 'battlegrounds'], row: 2 },
+  { key: 'r6s', name: 'Rainbow Six Siege', customEmojiName: 'TomClancysRainbowSixSiege', defaultEmoji: '🛡️', style: ButtonStyle.Primary, color: '#2980B9', aliases: ['rainbow six', 'r6s', 'siege'], row: 2 },
+  { key: 'warzone', name: 'MW Warzone', customEmojiName: 'CALLOFDUTYMWWARZONE', defaultEmoji: '💥', style: ButtonStyle.Secondary, color: '#34495E', aliases: ['warzone', 'mw warzone'], row: 2 },
+  { key: 'cod', name: 'Call of Duty', customEmojiName: 'COD', defaultEmoji: '🔫', style: ButtonStyle.Secondary, color: '#2C3E50', aliases: ['call of duty', 'cod', 'codm'], row: 2 },
+  { key: 'cs2', name: 'Counter Strike 2', customEmojiName: 'COUNTERSTRIKE2', defaultEmoji: '💣', style: ButtonStyle.Primary, color: '#F1C40F', aliases: ['counter strike 2', 'cs2', 'csgo', 'cs:go'], row: 2 },
 
   // Row 3 (5 buttons)
-  { key: 'epiclegends', name: 'EPICLEGENDS', customEmojiName: 'EPICLEGENDS', defaultEmoji: '🏆', style: ButtonStyle.Danger, color: '#9B59B6', row: 3 },
-  { key: 'fortnite', name: 'FORTNITE', customEmojiName: 'FORTNITE', defaultEmoji: '⚡', style: ButtonStyle.Primary, color: '#8E44AD', row: 3 },
-  { key: 'forza5', name: 'FORZA HORIZON 5', customEmojiName: 'FORZAHORIZON5', defaultEmoji: '🏎️', style: ButtonStyle.Success, color: '#27AE60', row: 3 },
-  { key: 'gta5', name: 'GTA 5', customEmojiName: 'GTA5', defaultEmoji: '🚗', style: ButtonStyle.Success, color: '#16A085', row: 3 },
-  { key: 'krunker', name: 'KRUNKER', customEmojiName: 'KRUNKER', defaultEmoji: '🎯', style: ButtonStyle.Secondary, color: '#7F8C8D', row: 3 },
+  { key: 'epiclegends', name: 'EPICLEGENDS', customEmojiName: 'EPICLEGENDS', defaultEmoji: '🏆', style: ButtonStyle.Danger, color: '#9B59B6', aliases: ['apex', 'apex legends', 'epiclegends'], row: 3 },
+  { key: 'fortnite', name: 'FORTNITE', customEmojiName: 'FORTNITE', defaultEmoji: '⚡', style: ButtonStyle.Primary, color: '#8E44AD', aliases: ['fortnite', 'fn'], row: 3 },
+  { key: 'forza5', name: 'FORZA HORIZON 5', customEmojiName: 'FORZAHORIZON5', defaultEmoji: '🏎️', style: ButtonStyle.Success, color: '#27AE60', aliases: ['forza', 'forza 5', 'forza horizon 5'], row: 3 },
+  { key: 'gta5', name: 'GTA 5', customEmojiName: 'GTA5', defaultEmoji: '🚗', style: ButtonStyle.Success, color: '#16A085', aliases: ['gta 5', 'gta v', 'gta', 'grand theft auto'], row: 3 },
+  { key: 'krunker', name: 'KRUNKER', customEmojiName: 'KRUNKER', defaultEmoji: '🎯', style: ButtonStyle.Secondary, color: '#7F8C8D', aliases: ['krunker'], row: 3 },
 
   // Row 4 (2 buttons)
-  { key: 'overwatch2', name: 'OVERWATCH 2', customEmojiName: 'OVERWATCH2', defaultEmoji: '🔶', style: ButtonStyle.Primary, color: '#E67E22', row: 4 },
-  { key: 'hogwarts', name: 'Hogwarts Legacy', customEmojiName: 'Hogwarts_Legacy', defaultEmoji: '🪄', style: ButtonStyle.Primary, color: '#3498DB', row: 4 }
+  { key: 'overwatch2', name: 'OVERWATCH 2', customEmojiName: 'OVERWATCH2', defaultEmoji: '🔶', style: ButtonStyle.Primary, color: '#E67E22', aliases: ['overwatch', 'overwatch 2', 'ow2'], row: 4 },
+  { key: 'hogwarts', name: 'Hogwarts Legacy', customEmojiName: 'Hogwarts_Legacy', defaultEmoji: '🪄', style: ButtonStyle.Primary, color: '#3498DB', aliases: ['hogwarts', 'hogwarts legacy'], row: 4 }
 ];
 
 export const GAMETESTER_ROLES = [
   // Row 1 (5 buttons)
-  { key: 'game_nights', name: 'Game Nights', customEmojiName: 'gamenights', defaultEmoji: '🕹️', style: ButtonStyle.Success, color: '#2ECC71', row: 1 },
-  { key: 'competitions', name: 'Competitions', customEmojiName: 'competitions', defaultEmoji: '🏆', style: ButtonStyle.Success, color: '#F1C40F', row: 1 },
-  { key: 'giveaways', name: 'Giveaways', customEmojiName: 'giveaways', defaultEmoji: '🎫', style: ButtonStyle.Success, color: '#E67E22', row: 1 },
-  { key: 'streamer', name: 'Streamer', customEmojiName: 'streamer', defaultEmoji: '🔴', style: ButtonStyle.Danger, color: '#E74C3C', row: 1 },
-  { key: 'job_vacancies', name: 'Job Vacancies', customEmojiName: 'jobvacancies', defaultEmoji: '📑', style: ButtonStyle.Danger, color: '#C0392B', row: 1 },
+  { key: 'game_nights', name: 'Game Nights', customEmojiName: 'gamenights', defaultEmoji: '🕹️', style: ButtonStyle.Success, color: '#2ECC71', aliases: ['game nights', 'gamenights'], row: 1 },
+  { key: 'competitions', name: 'Competitions', customEmojiName: 'competitions', defaultEmoji: '🏆', style: ButtonStyle.Success, color: '#F1C40F', aliases: ['competitions', 'tournaments'], row: 1 },
+  { key: 'giveaways', name: 'Giveaways', customEmojiName: 'giveaways', defaultEmoji: '🎫', style: ButtonStyle.Success, color: '#E67E22', aliases: ['giveaways', 'giveaway'], row: 1 },
+  { key: 'streamer', name: 'Streamer', customEmojiName: 'streamer', defaultEmoji: '🔴', style: ButtonStyle.Danger, color: '#E74C3C', aliases: ['streamer', 'streamers'], row: 1 },
+  { key: 'job_vacancies', name: 'Job Vacancies', customEmojiName: 'jobvacancies', defaultEmoji: '📑', style: ButtonStyle.Danger, color: '#C0392B', aliases: ['job vacancies', 'jobs'], row: 1 },
 
   // Row 2 (5 buttons)
-  { key: 'gt_community', name: 'GT Community', customEmojiName: 'gtcommunity', defaultEmoji: '🏳️‍🌈', style: ButtonStyle.Primary, color: '#9B59B6', row: 2 },
-  { key: 'gt_socials', name: 'GT Socials', customEmojiName: 'gtsocials', defaultEmoji: '🐦', style: ButtonStyle.Primary, color: '#3498DB', row: 2 },
-  { key: 'gt_partners', name: 'GT Partners', customEmojiName: 'gtpartners', defaultEmoji: '🎷', style: ButtonStyle.Primary, color: '#F39C12', row: 2 },
-  { key: 'android_tests', name: 'Android Tests', customEmojiName: 'android', defaultEmoji: '🤖', style: ButtonStyle.Secondary, color: '#A4C639', row: 2 },
-  { key: 'ios_tests', name: 'iOS Tests', customEmojiName: 'ios', defaultEmoji: '🍏', style: ButtonStyle.Secondary, color: '#BDC3C7', row: 2 },
+  { key: 'gt_community', name: 'GT Community', customEmojiName: 'gtcommunity', defaultEmoji: '🏳️‍🌈', style: ButtonStyle.Primary, color: '#9B59B6', aliases: ['community', 'gt community'], row: 2 },
+  { key: 'gt_socials', name: 'GT Socials', customEmojiName: 'gtsocials', defaultEmoji: '🐦', style: ButtonStyle.Primary, color: '#3498DB', aliases: ['socials', 'gt socials'], row: 2 },
+  { key: 'gt_partners', name: 'GT Partners', customEmojiName: 'gtpartners', defaultEmoji: '🎷', style: ButtonStyle.Primary, color: '#F39C12', aliases: ['partners', 'gt partners'], row: 2 },
+  { key: 'android_tests', name: 'Android Tests', customEmojiName: 'android', defaultEmoji: '🤖', style: ButtonStyle.Secondary, color: '#A4C639', aliases: ['android', 'android tests'], row: 2 },
+  { key: 'ios_tests', name: 'iOS Tests', customEmojiName: 'ios', defaultEmoji: '🍏', style: ButtonStyle.Secondary, color: '#BDC3C7', aliases: ['ios', 'ios tests', 'apple'], row: 2 },
 
   // Row 3 (3 buttons)
-  { key: 'pc_tests', name: 'PC Tests', customEmojiName: 'pc', defaultEmoji: '🖥️', style: ButtonStyle.Secondary, color: '#34495E', row: 3 },
-  { key: 'console_tests', name: 'Console Tests', customEmojiName: 'console', defaultEmoji: '🎮', style: ButtonStyle.Secondary, color: '#7F8C8D', row: 3 },
-  { key: 'vr_tests', name: 'VR Tests', customEmojiName: 'vr', defaultEmoji: '👓', style: ButtonStyle.Secondary, color: '#95A5A6', row: 3 }
+  { key: 'pc_tests', name: 'PC Tests', customEmojiName: 'pc', defaultEmoji: '🖥️', style: ButtonStyle.Secondary, color: '#34495E', aliases: ['pc', 'pc tests', 'windows'], row: 3 },
+  { key: 'console_tests', name: 'Console Tests', customEmojiName: 'console', defaultEmoji: '🎮', style: ButtonStyle.Secondary, color: '#7F8C8D', aliases: ['console', 'console tests', 'playstation', 'xbox'], row: 3 },
+  { key: 'vr_tests', name: 'VR Tests', customEmojiName: 'vr', defaultEmoji: '👓', style: ButtonStyle.Secondary, color: '#95A5A6', aliases: ['vr', 'vr tests', 'oculus'], row: 3 }
 ];
 
 export const VIP_ARMY_ROLES = [
   // Row 1 (5 games)
-  { key: 'ff', name: '🔫 ┃ Free Fire', label: 'Free Fire', defaultEmoji: '🔫', style: ButtonStyle.Secondary, color: '#FF9500', row: 1 },
-  { key: 'codm', name: '🪖 ┃ COD Mobile', label: 'COD Mobile', defaultEmoji: '🪖', style: ButtonStyle.Secondary, color: '#6B8E23', row: 1 },
-  { key: 'bgmi', name: '🍳 ┃ BGMI / PUBG', label: 'BGMI / PUBG', defaultEmoji: '🍳', style: ButtonStyle.Secondary, color: '#E8B923', row: 1 },
-  { key: 'gta', name: '🚗 ┃ GTA 5', label: 'GTA 5', defaultEmoji: '🚗', style: ButtonStyle.Secondary, color: '#00B894', row: 1 },
-  { key: 'mc', name: '⛏️ ┃ Minecraft', label: 'Minecraft', defaultEmoji: '⛏️', style: ButtonStyle.Secondary, color: '#55A630', row: 1 },
+  { key: 'ff', name: '🔫 ┃ Free Fire', label: 'Free Fire', aliases: ['free fire', 'freefire', 'ff'], defaultEmoji: '🔫', style: ButtonStyle.Secondary, color: '#FF9500', row: 1 },
+  { key: 'codm', name: '🪖 ┃ COD Mobile', label: 'COD Mobile', aliases: ['cod mobile', 'codm', 'call of duty mobile', 'cod'], defaultEmoji: '🪖', style: ButtonStyle.Secondary, color: '#6B8E23', row: 1 },
+  { key: 'bgmi', name: '🍳 ┃ BGMI / PUBG', label: 'BGMI / PUBG', aliases: ['bgmi', 'pubg', 'bgmi / pubg', 'battlegrounds mobile india', 'battlegrounds'], defaultEmoji: '🍳', style: ButtonStyle.Secondary, color: '#E8B923', row: 1 },
+  { key: 'gta', name: '🚗 ┃ GTA 5', label: 'GTA 5', aliases: ['gta 5', 'gta v', 'gta', 'grand theft auto'], defaultEmoji: '🚗', style: ButtonStyle.Secondary, color: '#00B894', row: 1 },
+  { key: 'mc', name: '⛏️ ┃ Minecraft', label: 'Minecraft', aliases: ['minecraft', 'mc'], defaultEmoji: '⛏️', style: ButtonStyle.Secondary, color: '#55A630', row: 1 },
 
   // Row 2 (4 pings)
-  { key: 'pLive', name: '🔴 ┃ LIVE PING', label: 'Live Alerts', defaultEmoji: '🔴', style: ButtonStyle.Secondary, color: '#FF2E4D', row: 2 },
-  { key: 'pVid', name: '🎬 ┃ VIDEO PING', label: 'New Videos', defaultEmoji: '🎬', style: ButtonStyle.Secondary, color: '#FF7A00', row: 2 },
-  { key: 'pGive', name: '🎁 ┃ GIVEAWAY PING', label: 'Giveaways', defaultEmoji: '🎁', style: ButtonStyle.Secondary, color: '#F5B800', row: 2 },
-  { key: 'pEvent', name: '📅 ┃ EVENT PING', label: 'Events', defaultEmoji: '📅', style: ButtonStyle.Secondary, color: '#8A2BE2', row: 2 }
+  { key: 'pLive', name: '🔴 ┃ LIVE PING', label: 'Live Alerts', aliases: ['live ping', 'live alerts', 'live alert', 'live stream', 'stream alert', 'live'], defaultEmoji: '🔴', style: ButtonStyle.Secondary, color: '#FF2E4D', row: 2 },
+  { key: 'pVid', name: '🎬 ┃ VIDEO PING', label: 'New Videos', aliases: ['video ping', 'video alerts', 'new videos', 'video alert', 'youtube ping', 'video'], defaultEmoji: '🎬', style: ButtonStyle.Secondary, color: '#FF7A00', row: 2 },
+  { key: 'pGive', name: '🎁 ┃ GIVEAWAY PING', label: 'Giveaways', aliases: ['giveaway ping', 'giveaways', 'giveaway alerts', 'giveaway'], defaultEmoji: '🎁', style: ButtonStyle.Secondary, color: '#F5B800', row: 2 },
+  { key: 'pEvent', name: '📅 ┃ EVENT PING', label: 'Events', aliases: ['event ping', 'events', 'event alerts', 'event'], defaultEmoji: '📅', style: ButtonStyle.Secondary, color: '#8A2BE2', row: 2 }
 ];
 
 export const TEMPLATES = {
@@ -233,12 +234,7 @@ export const handleGameRoleClick = async (interaction) => {
   }
 
   if (!role) {
-    // Lookup by role name, label, or key
-    role = interaction.guild.roles.cache.find(r => 
-      r.name.toLowerCase() === itemDef.name.toLowerCase() ||
-      (itemDef.label && r.name.toLowerCase() === itemDef.label.toLowerCase()) ||
-      r.name.toLowerCase().includes(itemDef.key.toLowerCase())
-    );
+    role = await findExistingGuildRole(interaction.guild, itemDef);
   }
 
   if (!role) {

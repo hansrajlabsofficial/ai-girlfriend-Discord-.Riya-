@@ -751,6 +751,235 @@ export const getDashboardHtml = (client = null, authData = null, externalGuilds 
     footer a:hover {
       text-decoration: underline;
     }
+
+    /* Floating Cyberpunk BGM Music Player Widget */
+    #riya-bgm-bar {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(19, 24, 43, 0.94);
+      border: 1px solid #FF4D8D;
+      padding: 12px 18px;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 77, 141, 0.25);
+      backdrop-filter: blur(16px);
+      max-width: 580px;
+      width: calc(100% - 40px);
+      transition: all 0.3s ease;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .bgm-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .bgm-track-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .bgm-art {
+      width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--cyan-neon);
+      object-fit: cover;
+      box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+      flex-shrink: 0;
+    }
+
+    .bgm-info {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .bgm-now-playing {
+      font-size: 0.88rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: #FFF;
+    }
+
+    .bgm-now-playing .tag {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 800;
+      color: var(--cyan-neon);
+      margin-right: 6px;
+      letter-spacing: 0.5px;
+    }
+
+    .bgm-subtext {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .bgm-subtext .bpm {
+      color: var(--gold-star);
+      font-weight: 700;
+    }
+
+    .bgm-subtext .brand {
+      color: #FF4D8D;
+      font-weight: 700;
+    }
+
+    .bgm-ctrl-btns {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .bgm-nav-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #FFF;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+
+    .bgm-nav-btn:hover {
+      background: var(--cyan-neon);
+      color: #000;
+      border-color: var(--cyan-neon);
+    }
+
+    #riya-play-btn {
+      background: linear-gradient(135deg, #FF1493, #9B51E0);
+      color: #fff;
+      border: none;
+      border-radius: 20px;
+      padding: 0.45rem 1.15rem;
+      font-weight: 800;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.92rem;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 15px rgba(255, 20, 147, 0.45);
+      transition: transform 0.2s, box-shadow 0.2s;
+      white-space: nowrap;
+    }
+
+    #riya-play-btn:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 20px rgba(255, 20, 147, 0.65);
+    }
+
+    /* Sub Controls Row (Visualizer + Volume + Download) */
+    .bgm-bottom-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 16px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      padding-top: 8px;
+    }
+
+    .bgm-visualizer {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 20px;
+      width: 80px;
+    }
+
+    .bgm-visualizer .bar {
+      width: 4px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--cyan-neon);
+      transition: height 0.15s ease;
+    }
+
+    .bgm-visualizer.active .bar:nth-child(1) { animation: barBounce 0.6s ease infinite alternate 0.1s; }
+    .bgm-visualizer.active .bar:nth-child(2) { animation: barBounce 0.8s ease infinite alternate 0.2s; }
+    .bgm-visualizer.active .bar:nth-child(3) { animation: barBounce 0.5s ease infinite alternate 0.3s; }
+    .bgm-visualizer.active .bar:nth-child(4) { animation: barBounce 0.9s ease infinite alternate 0.15s; }
+    .bgm-visualizer.active .bar:nth-child(5) { animation: barBounce 0.7s ease infinite alternate 0.25s; }
+    .bgm-visualizer.active .bar:nth-child(6) { animation: barBounce 0.6s ease infinite alternate 0.05s; }
+    .bgm-visualizer.active .bar:nth-child(7) { animation: barBounce 0.85s ease infinite alternate 0.35s; }
+    .bgm-visualizer.active .bar:nth-child(8) { animation: barBounce 0.55s ease infinite alternate 0.2s; }
+
+    @keyframes barBounce {
+      0% { height: 4px; background: var(--cyan-neon); }
+      100% { height: 20px; background: var(--pink-primary); }
+    }
+
+    .bgm-vol-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .bgm-vol-slider {
+      accent-color: var(--pink-primary);
+      width: 75px;
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .bgm-dl-btn {
+      color: var(--cyan-neon);
+      font-size: 0.78rem;
+      text-decoration: none;
+      border: 1px solid rgba(0, 240, 255, 0.35);
+      padding: 0.25rem 0.65rem;
+      border-radius: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bgm-dl-btn:hover {
+      background: rgba(0, 240, 255, 0.15);
+      border-color: var(--cyan-neon);
+      color: #fff;
+    }
+
+    @media (max-width: 600px) {
+      #riya-bgm-bar {
+        bottom: 12px;
+        right: 12px;
+        width: calc(100% - 24px);
+        padding: 10px 14px;
+      }
+      .bgm-now-playing {
+        max-width: 170px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1006,6 +1235,59 @@ export const getDashboardHtml = (client = null, authData = null, externalGuilds 
     <p style="margin-top: 0.4rem; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;">All code, assets, and branding for Riya AI Girlfriend Discord Bot are protected under copyright.</p>
   </footer>
 
+  <!-- 1. Looping Audio Element -->
+  <audio id="riya-bgm" src="riya_lofi_bgm.mp3" loop preload="auto"></audio>
+
+  <!-- 2. Floating Cyberpunk BGM Control Widget -->
+  <div id="riya-bgm-bar">
+    <div class="bgm-top-row">
+      <div class="bgm-track-meta">
+        <img src="/riya_lofi_cover.jpg" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3081/3081840.png'" class="bgm-art" alt="Riya Avatar" id="bgm-art">
+        <div class="bgm-info">
+          <div class="bgm-now-playing">
+            <span class="tag">NOW PLAYING:</span><span id="bgm-title">Duo Partner Stream Hype Synthwave</span>
+          </div>
+          <div class="bgm-subtext">
+            <span id="bgm-timer">0:00 / 0:00</span> • <span class="bpm" id="bgm-bpm">124 BPM</span> • <span class="brand">HL.Hansraj Labs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bgm-ctrl-btns">
+        <button id="bgm-prev-btn" class="bgm-nav-btn" title="Previous Track">❮</button>
+        <button id="riya-play-btn" title="Play / Pause BGM">
+          <span id="riya-play-icon">▶</span> <span id="riya-play-text">Play BGM</span>
+        </button>
+        <button id="bgm-next-btn" class="bgm-nav-btn" title="Next Track">❯</button>
+      </div>
+    </div>
+
+    <div class="bgm-bottom-row">
+      <!-- Animated Neon Audio Equalizer Visualizer -->
+      <div class="bgm-visualizer" id="riya-visualizer" title="Equalizer Audio Waves">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+      </div>
+
+      <!-- Volume Slider -->
+      <div class="bgm-vol-wrap">
+        <span id="bgm-vol-icon" style="cursor: pointer;" title="Toggle Mute">🔊</span>
+        <input type="range" id="bgm-volume-slider" class="bgm-vol-slider" min="0" max="1" step="0.05" value="0.65" title="Volume">
+      </div>
+
+      <!-- Download Track Button -->
+      <a id="riya-download-btn" href="riya_lofi_bgm.mp3" download="riya_lofi_bgm.mp3" class="bgm-dl-btn" title="Download Audio File">
+        <span>⬇️</span> Download MP3
+      </a>
+    </div>
+  </div>
+
   <script>
     // Initial Loader Hide Logic
     window.addEventListener('load', function() {
@@ -1167,6 +1449,189 @@ export const getDashboardHtml = (client = null, authData = null, externalGuilds 
         });
       }
     });
+
+    // --- 3. BGM Music Player Controller & Autoplay Handler ---
+    (function() {
+      var bgm = document.getElementById('riya-bgm');
+      var playBtn = document.getElementById('riya-play-btn');
+      var playIcon = document.getElementById('riya-play-icon');
+      var playText = document.getElementById('riya-play-text');
+      var titleEl = document.getElementById('bgm-title');
+      var bpmEl = document.getElementById('bgm-bpm');
+      var timerEl = document.getElementById('bgm-timer');
+      var visualizer = document.getElementById('riya-visualizer');
+      var volSlider = document.getElementById('bgm-volume-slider');
+      var volIcon = document.getElementById('bgm-vol-icon');
+      var prevBtn = document.getElementById('bgm-prev-btn');
+      var nextBtn = document.getElementById('bgm-next-btn');
+      var dlBtn = document.getElementById('riya-download-btn');
+      var artEl = document.getElementById('bgm-art');
+
+      if (!bgm || !playBtn) return;
+
+      var playlist = [
+        {
+          title: 'Duo Partner Stream Hype Synthwave',
+          bpm: '124 BPM',
+          src: 'riya_lofi_bgm.mp3',
+          cover: '/riya_lofi_cover.jpg'
+        },
+        {
+          title: '☕ Riya - Chai & Clutch',
+          bpm: '80 BPM',
+          src: 'https://raw.githubusercontent.com/goldfire/howler.js/master/examples/player/audio/80s_vibe.mp3',
+          cover: '/riya_lofi_cover.jpg'
+        },
+        {
+          title: '⚡ Cyberpunk Neon Drift',
+          bpm: '128 BPM',
+          src: 'https://raw.githubusercontent.com/goldfire/howler.js/master/examples/player/audio/rave_digger.mp3',
+          cover: '/riya_lofi_cover.jpg'
+        },
+        {
+          title: '🌙 Midnight Amdavadi Chill',
+          bpm: '75 BPM',
+          src: 'riya_lofi_bgm.mp3',
+          cover: '/riya_lofi_cover.jpg'
+        }
+      ];
+
+      var currentIndex = 0;
+      bgm.volume = 0.65;
+      if (volSlider) volSlider.value = 0.65;
+
+      function formatTime(sec) {
+        if (isNaN(sec) || !isFinite(sec)) return '0:00';
+        var m = Math.floor(sec / 60);
+        var s = Math.floor(sec % 60);
+        return m + ':' + (s < 10 ? '0' : '') + s;
+      }
+
+      function updateTrackUI() {
+        var track = playlist[currentIndex];
+        if (titleEl) titleEl.textContent = track.title;
+        if (bpmEl) bpmEl.textContent = track.bpm;
+        if (dlBtn) {
+          dlBtn.href = track.src;
+          dlBtn.setAttribute('download', track.title.replace(/[^a-zA-Z0-9_-]/g, '_') + '.mp3');
+        }
+        if (artEl && track.cover) {
+          artEl.src = track.cover;
+        }
+      }
+
+      function updateButton() {
+        var isPaused = bgm.paused;
+        if (playIcon) playIcon.textContent = isPaused ? '▶' : '⏸';
+        if (playText) playText.textContent = isPaused ? 'Play BGM' : 'Pause BGM';
+        if (visualizer) {
+          if (!isPaused) {
+            visualizer.classList.add('active');
+          } else {
+            visualizer.classList.remove('active');
+          }
+        }
+      }
+
+      function loadTrack(index, autoPlay) {
+        currentIndex = (index + playlist.length) % playlist.length;
+        var track = playlist[currentIndex];
+        bgm.src = track.src;
+        bgm.load();
+        updateTrackUI();
+        if (autoPlay) {
+          bgm.play().then(updateButton).catch(function(e) { console.log('Autoplay error:', e); });
+        } else {
+          updateButton();
+        }
+      }
+
+      playBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (bgm.paused) {
+          bgm.play().then(updateButton).catch(function(err) {
+            console.log('Playback error:', err);
+          });
+        } else {
+          bgm.pause();
+          updateButton();
+        }
+      });
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          loadTrack(currentIndex - 1, !bgm.paused);
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', function(e) {
+          e.stopPropagation();
+          loadTrack(currentIndex + 1, !bgm.paused);
+        });
+      }
+
+      // Time update listener
+      bgm.addEventListener('timeupdate', function() {
+        if (timerEl) {
+          var cur = formatTime(bgm.currentTime);
+          var dur = formatTime(bgm.duration);
+          timerEl.textContent = cur + ' / ' + dur;
+        }
+      });
+
+      // Track ended auto next
+      bgm.addEventListener('ended', function() {
+        loadTrack(currentIndex + 1, true);
+      });
+
+      // Volume slider
+      if (volSlider) {
+        volSlider.addEventListener('input', function() {
+          bgm.volume = parseFloat(this.value);
+          if (volIcon) {
+            volIcon.textContent = bgm.volume === 0 ? '🔇' : (bgm.volume < 0.5 ? '🔉' : '🔊');
+          }
+        });
+      }
+
+      // Mute toggle on icon click
+      if (volIcon) {
+        volIcon.addEventListener('click', function(e) {
+          e.stopPropagation();
+          if (bgm.volume > 0) {
+            bgm.dataset.prevVol = bgm.volume;
+            bgm.volume = 0;
+            if (volSlider) volSlider.value = 0;
+            volIcon.textContent = '🔇';
+          } else {
+            var prev = parseFloat(bgm.dataset.prevVol || 0.65);
+            bgm.volume = prev;
+            if (volSlider) volSlider.value = prev;
+            volIcon.textContent = prev < 0.5 ? '🔉' : '🔊';
+          }
+        });
+      }
+
+      // Automatically start on user's first interaction to bypass browser autoplay blocks
+      function triggerFirstPlay() {
+        if (bgm.paused && !sessionStorage.getItem('bgm_started')) {
+          bgm.play().then(function() {
+            sessionStorage.setItem('bgm_started', 'true');
+            updateButton();
+          }).catch(function() {});
+        }
+      }
+
+      window.addEventListener('click', triggerFirstPlay, { once: true });
+      window.addEventListener('keydown', triggerFirstPlay, { once: true });
+      window.addEventListener('touchstart', triggerFirstPlay, { once: true });
+
+      // Initial state setup
+      updateTrackUI();
+      updateButton();
+    })();
 
     (function() {
       // 1. Disable Right Click Context Menu

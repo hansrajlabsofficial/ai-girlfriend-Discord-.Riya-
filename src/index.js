@@ -1,4 +1,6 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
 import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { config, validateConfig } from './config.js';
 import { connectDatabase } from './database/connect.js';
@@ -25,6 +27,35 @@ const PORT = config.port;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static('public'));
+
+app.get('/riya_lofi_bgm.mp3', (req, res) => {
+  const localFile = path.resolve('public/riya_lofi_bgm.mp3');
+  const rootFile = path.resolve('riya_lofi_bgm.mp3');
+  if (fs.existsSync(localFile)) {
+    res.setHeader('Content-Type', 'audio/mpeg');
+    return res.sendFile(localFile);
+  }
+  if (fs.existsSync(rootFile)) {
+    res.setHeader('Content-Type', 'audio/mpeg');
+    return res.sendFile(rootFile);
+  }
+  res.redirect('https://raw.githubusercontent.com/goldfire/howler.js/master/examples/player/audio/80s_vibe.mp3');
+});
+
+app.get('/riya_lofi_cover.jpg', (req, res) => {
+  const localFile = path.resolve('public/riya_lofi_cover.jpg');
+  const rootFile = path.resolve('riya_lofi_cover.jpg');
+  if (fs.existsSync(localFile)) {
+    res.setHeader('Content-Type', 'image/jpeg');
+    return res.sendFile(localFile);
+  }
+  if (fs.existsSync(rootFile)) {
+    res.setHeader('Content-Type', 'image/jpeg');
+    return res.sendFile(rootFile);
+  }
+  res.redirect('https://cdn-icons-png.flaticon.com/512/3081/3081840.png');
+});
 
 app.get('/api/guilds', async (req, res) => {
   try {

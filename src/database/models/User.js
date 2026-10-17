@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, runTransaction } from 'firebase/firestore';
 import { getDb, getAdminDb } from '../connect.js';
 import { logger } from '../../utils/logger.js';
 
@@ -494,24 +494,29 @@ export const claimMessageLock = async (messageId) => {
   if (db) {
     try {
       const lockRef = doc(db, 'message_locks', messageId);
-      const lockSnap = await getDoc(lockRef);
-
-      if (lockSnap.exists()) {
-        const data = lockSnap.data();
-        const lockAge = Date.now() - (data.timestamp ? new Date(data.timestamp).getTime() : 0);
-        if (lockAge < 15000) {
-          return false;
+      const acquired = await runTransaction(db, async (transaction) => {
+        const lockDoc = await transaction.get(lockRef);
+        const now = Date.now();
+        if (lockDoc.exists()) {
+          const data = lockDoc.data();
+          const lockTime = data.timestampMs || (data.timestamp ? new Date(data.timestamp).getTime() : 0);
+          if (now - lockTime < 30000) {
+            return false; // Lock held by another instance
+          }
         }
-      }
-
-      await setDoc(lockRef, {
-        claimedAt: new Date().toISOString(),
-        timestamp: new Date().toISOString(),
-        pid: process.pid || 'node'
+        transaction.set(lockRef, {
+          claimedAt: new Date().toISOString(),
+          timestamp: new Date().toISOString(),
+          timestampMs: now,
+          instance: process.env.RENDER ? 'render' : (process.pid ? `local_${process.pid}` : 'local')
+        });
+        return true;
       });
-      return true;
+
+      return Boolean(acquired);
     } catch (err) {
-      return true;
+      logger.info(`[DEDUP] Message ${messageId} lock contention (${err.message}) - skipping duplicate reply.`);
+      return false;
     }
   }
 

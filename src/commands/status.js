@@ -69,10 +69,10 @@ export function buildStatusEmbed(client, dbUserCount = 0) {
       { name: '👤 Total Users Count', value: `\`${finalUniqueUsers.toLocaleString()} Users\``, inline: true },
       { name: '⚡ Websocket Ping', value: `\`${ping}\``, inline: true },
       { name: '💻 Heap Memory', value: `\`${memoryMB} MB\``, inline: true },
-      { name: '👑 Lead Developer', value: '**HANSRAJ** (`AHP Group Pvt. Ltd.`)', inline: true },
+      { name: '👑 Lead Developer', value: '**HANSRAJ** (`HL.Hansraj Labs`)', inline: true },
       { name: '🌐 Website Dashboard', value: `[Open Dashboard](${dashboardUrl})`, inline: true }
     )
-    .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved' })
+    .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved' })
     .setTimestamp();
 
   const row = new ActionRowBuilder().addComponents(
@@ -175,7 +175,7 @@ export const execute = async (interaction) => {
           `✅ Successfully set <#${chan.id}> as the official **24/7 Live Status Monitor Channel**!\n\n` +
           `Riya Bot will now automatically edit and update the live status message in <#${chan.id}> 24/7 every 30 seconds!`
         )
-        .setFooter({ text: 'Riya Official 24/7 Status Monitor System • AHP Group' });
+        .setFooter({ text: 'Riya Official 24/7 Status Monitor System • HL.Hansraj Labs' });
 
       return await sendResponse(interaction, { embeds: [embed] });
     }

@@ -1001,8 +1001,9 @@ export const getDashboardHtml = (client = null, authData = null, externalGuilds 
 
   <!-- Footer -->
   <footer>
-    <p>© 2026 | Developed by <strong>AHP Group Pvt. Ltd.</strong> | All Rights Reserved.</p>
-    <p style="margin-top: 0.5rem; color: rgba(255, 255, 255, 0.4); font-size: 0.85rem;">Designed with Sanctum Cyberpunk Aesthetic for <strong>HANSRAJ</strong></p>
+    <p style="font-size: 1.05rem; font-weight: 700; color: #FFF; margin-bottom: 0.35rem;">📄 License & Copyright</p>
+    <p>© 2026 | Developed by <strong>HL.Hansraj Labs</strong> | All Rights Reserved.</p>
+    <p style="margin-top: 0.4rem; color: rgba(255, 255, 255, 0.5); font-size: 0.85rem;">All code, assets, and branding for Riya AI Girlfriend Discord Bot are protected under copyright.</p>
   </footer>
 
   <script>

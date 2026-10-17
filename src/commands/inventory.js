@@ -122,7 +122,7 @@ export const execute = async (interaction) => {
           inline: false
         }
       )
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
       .setTimestamp();
 
     const row = new ActionRowBuilder().addComponents(

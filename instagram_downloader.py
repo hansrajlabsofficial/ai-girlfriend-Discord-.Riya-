@@ -369,7 +369,7 @@ async def slash_info(interaction: discord.Interaction):
         ),
         inline=False
     )
-    embed.set_footer(text="© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.")
+    embed.set_footer(text="© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.")
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
 

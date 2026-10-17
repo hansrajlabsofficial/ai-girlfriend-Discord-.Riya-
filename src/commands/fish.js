@@ -48,7 +48,7 @@ export const execute = async (interaction) => {
           `⏰ **Ready to fish again:** <t:${readyAtUnix}:R> (<t:${readyAtUnix}:T>)\n\n` +
           `💡 *Tip: Upgrade your rod in \`/shop\` to cut your cooldown down to 15 seconds!*`
         )
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
       return await interaction.editReply({ embeds: [cdEmbed] });
     }
@@ -62,7 +62,7 @@ export const execute = async (interaction) => {
         `🫧 *The bobber drifts quietly with the current... Watching for ripples...*`
       )
       .setThumbnail(FISHING_EMBLEM_URL)
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     await interaction.editReply({ embeds: [castingEmbed] });
 
@@ -124,7 +124,7 @@ export const execute = async (interaction) => {
         `✨ *Amdavadi Riya says: "${getFishingQuote(caughtItem.tier)}"*`
       )
       .setThumbnail(FISHING_EMBLEM_URL)
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
       .setTimestamp();
 
     // Quick action buttons

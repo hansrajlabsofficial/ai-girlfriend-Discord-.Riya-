@@ -47,7 +47,7 @@ export const execute = async (interaction) => {
       .setColor('#FF0055')
       .setTitle('❌ Invalid URL')
       .setDescription('Arey baka, please provide a valid HTTP or HTTPS media link! 🥺\nExample: `https://www.instagram.com/reel/...` or `https://youtube.com/shorts/...`')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
     return await interaction.editReply({ embeds: [errorEmbed] });
   }
 
@@ -69,7 +69,7 @@ export const execute = async (interaction) => {
           `• Make sure the post or account is **public**.\n` +
           `• Check if the URL is correct and not expired.`
         )
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
       return await interaction.editReply({ embeds: [failEmbed] });
     }
 
@@ -109,7 +109,7 @@ export const execute = async (interaction) => {
       .setColor('#FF0000')
       .setTitle('❌ Download Failed')
       .setDescription('Arey thodi technical issue aavi gayi baka! Please try again in a few moments.')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
     await interaction.editReply({ embeds: [errEmbed] }).catch(() => {});
   }
 };

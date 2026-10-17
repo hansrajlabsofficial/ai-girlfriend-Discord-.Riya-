@@ -8,7 +8,7 @@ import fs from 'fs';
 import path from 'path';
 
 const DISCORD_MAX_FILE_BYTES = 24 * 1024 * 1024; // 24MB safety limit (under 25MB cap)
-const BRAND_FOOTER = '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.';
+const BRAND_FOOTER = '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.';
 const EMBLEM_ICON = 'https://cdn.discordapp.com/attachments/1450771986031706214/1560613901396086904/Global_Fishing_Emblem_1.png?ex=6ad35a74&is=6ad208f4&hm=c0756eb02f2652d908a466b51026a18c45165dcdd6aad2abf5645b29728cf52c&';
 
 // Deduplication set for currently processing URLs

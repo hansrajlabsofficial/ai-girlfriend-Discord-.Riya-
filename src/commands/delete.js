@@ -75,7 +75,7 @@ export const execute = async (interaction) => {
         (targetUser ? `\n👤 **Filtered by User:** ${targetUser}` : '')
       )
       .setColor(0x2ecc71)
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
       .setTimestamp();
 
     return interaction.editReply({ embeds: [embed] });

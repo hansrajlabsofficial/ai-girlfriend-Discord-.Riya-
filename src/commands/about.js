@@ -18,10 +18,10 @@ export const execute = async (interaction) => {
     .addFields(
       { name: '📡 Latency', value: `\`${ping} ms\``, inline: true },
       { name: '🌐 Guilds Connected', value: `\`${guildCount} Servers\``, inline: true },
-      { name: '👑 Creator', value: 'Antigravity AI Team', inline: true },
+      { name: '👑 Creator & Studio', value: 'HL.Hansraj Labs', inline: true },
       { name: '💖 Key Features', value: 'AI Chatting, RPG Relationship Leveling, Bank Balance Economy, Gift Shop, Daily Quiz/Task, Connect Four, Counting, TicTacToe, Emoji Quiz, Antonym Quiz!' }
     )
-    .setFooter({ text: 'Riya AI Girlfriend • Version 2.5' });
+    .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
   await interaction.reply({ embeds: [embed] });
 };

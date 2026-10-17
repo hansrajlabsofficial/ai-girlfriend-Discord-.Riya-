@@ -51,7 +51,7 @@ export const execute = async (interaction) => {
         .setColor('#00CED1')
         .setTitle(`🎣 Fishing Hall of Fame: ${metricTitles[metric]}`)
         .setDescription('Honoring the greatest anglers across the oceans! 🌊')
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
         .setTimestamp();
 
       if (!fishLeaderboard || fishLeaderboard.length === 0) {
@@ -99,7 +99,7 @@ export const execute = async (interaction) => {
       .setColor('#FF1493')
       .setTitle(titles[subcommand] || '🏆 Leaderboard')
       .setDescription('Top players competing on the leaderboard!')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     if (!leaderboard || leaderboard.length === 0) {
       embed.setDescription('No stats found yet! Play minigames and chat with Riya to get on the leaderboard! ☕✨');

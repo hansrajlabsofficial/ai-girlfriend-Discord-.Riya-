@@ -92,7 +92,7 @@ export const execute = async (interaction) => {
           `✨ *Amdavadi Riya says: "Badiya vyapar baka! Cast your line again with \`/fish\` to restock!"* ☕`
         )
         .setThumbnail(FISHING_EMBLEM_URL)
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
         .setTimestamp();
 
       return { success: true, embed: receiptEmbed };
@@ -116,7 +116,7 @@ export const execute = async (interaction) => {
           `Hey <@${userId}>, your fishing creel is currently empty!\n\n` +
           `🌊 Head over to the waters and cast your line with **/fish** to catch some seafood, or scavenge treasures!`
         )
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
       return await interaction.editReply({ embeds: [emptyEmbed] });
     }
@@ -140,7 +140,7 @@ export const execute = async (interaction) => {
         `👇 **Select a quick sale option below:**`
       )
       .setThumbnail(FISHING_EMBLEM_URL)
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
       .setTimestamp();
 
     const actionRow = new ActionRowBuilder().addComponents(
@@ -210,7 +210,7 @@ export const execute = async (interaction) => {
               `📊 **Total Lifetime Catches:** **${fishing.stats?.totalCaught || catches.length}**\n\n` +
               `**Recent Catches in Storage:**\n${invList}`
             )
-            .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+            .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
           return await interaction.editReply({ embeds: [invEmbed], components: [] });
         }

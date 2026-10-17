@@ -87,7 +87,7 @@ export const execute = async (interaction) => {
         `✨ *Amdavadi Riya says: "Dosti ho toh aisi! Take good care of this catch, baka!"* ☕`
       )
       .setThumbnail(FISHING_EMBLEM_URL)
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
       .setTimestamp();
 
     await interaction.editReply({ embeds: [giftEmbed] });

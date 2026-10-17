@@ -29,7 +29,7 @@ async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
         `Hey <@${userId}>, you need **${formatMoney(bet)}** to play, but your current balance is **${formatMoney(balance)}**.\n\n` +
         `💡 *Earn coins using \`/work\`, \`/daily\`, or bet a lower amount!*`
       )
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     if (interaction.isButton && interaction.isButton()) {
       return await interaction.followUp({ embeds: [errorEmbed], ephemeral: true });
@@ -50,7 +50,7 @@ async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
       `👇 **Click Heads or Tails below to toss the coin!**`
     )
     .setThumbnail('https://cdn-icons-png.flaticon.com/512/217/217853.png')
-    .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+    .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
     .setTimestamp();
 
   const choiceRow = new ActionRowBuilder().addComponents(
@@ -122,7 +122,7 @@ async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
           `⏳ *Landing in just a moment... Hang tight, baka!* ✨`
         )
         .setThumbnail('https://cdn-icons-png.flaticon.com/512/217/217853.png')
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
       await btnInteraction.update({
         embeds: [flippingEmbed],
@@ -143,7 +143,7 @@ async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
               .setColor('#E74C3C')
               .setTitle('❌ Transaction Cancelled')
               .setDescription(`Insufficient funds to complete this flip.`)
-              .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+              .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
           ],
           components: []
         });
@@ -183,7 +183,7 @@ async function renderCoinflipPrompt(interaction, userId, guildId, bet) {
         .setThumbnail(result === 'heads'
           ? 'https://cdn-icons-png.flaticon.com/512/217/217853.png'
           : 'https://cdn-icons-png.flaticon.com/512/217/217854.png')
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
         .setTimestamp();
 
       // Play Again interactive button

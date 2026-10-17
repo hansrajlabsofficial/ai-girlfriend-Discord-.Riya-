@@ -92,7 +92,7 @@ export const execute = async (interaction) => {
         `Click **Accept** below within 60 seconds to deploy into the city grid!`
       )
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/808/808439.png')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     const replyMsg = await interaction.editReply({
       content: `<@${opponent.id}>`,
@@ -163,7 +163,7 @@ export const execute = async (interaction) => {
             .setColor('#7F8C8D')
             .setTitle('⌛ Challenge Expired')
             .setDescription(`The challenge to <@${opponent.id}> timed out without a response.`)
-            .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+            .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
           await interaction.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => {});
         } catch (e) {}

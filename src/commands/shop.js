@@ -69,7 +69,7 @@ export const execute = async (interaction) => {
           }
         )
         .setThumbnail(FISHING_EMBLEM_URL)
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' })
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' })
         .setTimestamp();
 
       return embed;
@@ -159,7 +159,7 @@ export const execute = async (interaction) => {
             `*Amdavadi Riya says: "Wah baka, look at this shiny rod! Go cast your line with \`/fish\` and reel in some sea monsters!"* 🌊`
           )
           .setThumbnail(FISHING_EMBLEM_URL)
-          .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+          .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
         await btnInt.update({
           embeds: [successEmbed],

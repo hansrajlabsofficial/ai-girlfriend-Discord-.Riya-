@@ -247,7 +247,9 @@ export const getLoginHtml = () => {
   </div>
 
   <footer>
-    © 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.
+    <div style="font-weight: 700; color: #FFF; margin-bottom: 0.25rem;">📄 License & Copyright</div>
+    © 2026 | Developed by <strong>HL.Hansraj Labs</strong> | All Rights Reserved.<br>
+    <span style="color: rgba(255, 255, 255, 0.45); font-size: 0.82rem;">All code, assets, and branding for Riya AI Girlfriend Discord Bot are protected under copyright.</span>
   </footer>
 
   <script>

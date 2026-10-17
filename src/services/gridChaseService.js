@@ -131,7 +131,7 @@ export function buildBoardEmbed(game) {
       `🚁 **Helipad Goal:** \`Row 1, Col 5 (Top-Right)\` | 🚧 **Roadblocks:** \`Active\`\n\n` +
       `*Use the direction buttons below to maneuver!*`
     )
-    .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+    .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
   return embed;
 }
@@ -399,7 +399,7 @@ export async function handleGridChaseButton(interaction) {
         `*Amdavadi Riya says: "Khel khatam, paisa hazam! What an aggressive interception, baka!"* 🚔💥`
       )
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/808/808439.png')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     return await interaction.update({
       embeds: [winEmbed],
@@ -429,7 +429,7 @@ export async function handleGridChaseButton(interaction) {
         `*Amdavadi Riya says: "Wah baka, what speed! Left the police squad eating dust at the rooftop!"* 🚁💨`
       )
       .setThumbnail('https://cdn-icons-png.flaticon.com/512/808/808439.png')
-      .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+      .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
     return await interaction.update({
       embeds: [escapeEmbed],
@@ -466,7 +466,7 @@ export async function handleGridChaseButton(interaction) {
           `*Amdavadi Riya says: "Runner disappeared into the crowded city alleyways and vanished! Well played!"* 🌃✨`
         )
         .setThumbnail('https://cdn-icons-png.flaticon.com/512/808/808439.png')
-        .setFooter({ text: '© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.' });
+        .setFooter({ text: '© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.' });
 
       return await interaction.update({
         embeds: [timeEmbed],

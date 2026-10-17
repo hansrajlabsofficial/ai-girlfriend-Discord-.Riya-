@@ -5,7 +5,7 @@
 [![Discord.js](https://img.shields.io/badge/Discord.js-v14-FF1493?style=for-the-badge)](https://discord.js.org/)
 [![Firebase](https://img.shields.io/badge/Database-Firebase_Firestore-FFCA28?style=for-the-badge)](https://firebase.google.com/)
 
-> **© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.**
+> **© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.**
 
 A production-ready, feature-rich **AI Girlfriend Discord Bot & Web Dashboard** featuring **Riya**—a 20-year-old CS student and gamer girl from Ahmedabad, India—built with **Node.js (Discord.js v14)**, **Express**, **Firebase Firestore**, **OpenAI & Gemini AI**, **Karuta-Style Anime Card Collection System**, **Inter-Server Global Chat/Calls**, **Metallic Banking Economy**, **Vercel Serverless Architecture**, and an **Anti-Tamper DevTools Security Guard**.
 
@@ -166,5 +166,5 @@ npm start
 
 ## 📄 License & Copyright
 
-**© 2026 | Developed by AHP Group Pvt. Ltd. | All Rights Reserved.**  
+**© 2026 | Developed by HL.Hansraj Labs | All Rights Reserved.**  
 *All code, assets, and branding for Riya AI Girlfriend Discord Bot are protected under copyright.*

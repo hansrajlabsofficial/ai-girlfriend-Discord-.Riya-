@@ -1,27 +1,88 @@
 import { config } from '../config.js';
 import { ALL_COMMANDS } from './commandsData.js';
 
-export const getDashboardHtml = (client = null, authData = null) => {
+export const DEFAULT_CONNECTED_GUILDS = [
+  {
+    id: '1205579847863369788',
+    name: '⚡ VIP ARMY ┃ VIP BHAI',
+    icon: 'https://cdn.discordapp.com/icons/1205579847863369788/70b8ada9bd0eb40ab23d559c92b1830f.png',
+    memberCount: 169
+  },
+  {
+    id: '1275436284390674443',
+    name: '🌐FG eSports🏆',
+    icon: 'https://cdn.discordapp.com/icons/1275436284390674443/587f70373973667ff2f44e12b5a86554.png',
+    memberCount: 5
+  },
+  {
+    id: '1361649010623910020',
+    name: "Gamer's Galaxy",
+    icon: 'https://cdn.discordapp.com/icons/1361649010623910020/2a3b15ccfe8adce32ce0554737a013e3.png',
+    memberCount: 51
+  },
+  {
+    id: '1378386158685388920',
+    name: 'GLOBAL HQ',
+    icon: 'https://cdn.discordapp.com/icons/1378386158685388920/5ae888e8b96707ea289d9d90cbc7606b.png',
+    memberCount: 16
+  },
+  {
+    id: '1388437540461346877',
+    name: 'HANSRAJ AYAN OFFICIAL COMMUNITY',
+    icon: 'https://cdn.discordapp.com/icons/1388437540461346877/dd6d7f9c887a210b7b624a8514cfe800.png',
+    memberCount: 309
+  },
+  {
+    id: '1480210158348009704',
+    name: 'XXXXXXXXXXXXXXXX',
+    icon: 'https://cdn.discordapp.com/icons/1480210158348009704/ae23eda385a9e199d4ad94e481883bdc.png',
+    memberCount: 9
+  },
+  {
+    id: '1517106528258097182',
+    name: "HANSRAJxFPS's serverxxx",
+    icon: 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+    memberCount: 7
+  }
+];
+
+export const getDashboardHtml = (client = null, authData = null, externalGuilds = null) => {
   const clientId = config.clientId || '1479052475368607926';
   const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${clientId}&permissions=51200&integration_type=0&scope=bot+applications.commands+guilds.join+gdm.join`;
   const oauthConnectUrl = `/connect`;
 
-  const serverCount = client?.guilds?.cache?.size || 12;
-  const userCount = client?.users?.cache?.size || 1500;
+  let rawGuilds = [];
+  if (externalGuilds && Array.isArray(externalGuilds) && externalGuilds.length > 0) {
+    rawGuilds = externalGuilds;
+  } else if (client?.guilds?.cache?.size > 0) {
+    rawGuilds = client.guilds.cache.map(g => ({
+      id: g.id,
+      name: g.name,
+      icon: g.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+      memberCount: g.memberCount,
+      botActive: true
+    }));
+  } else {
+    rawGuilds = DEFAULT_CONNECTED_GUILDS;
+  }
+
+  const guildsList = rawGuilds.map(g => ({
+    id: g.id,
+    name: g.name,
+    icon: g.icon || g.iconURL?.() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
+    memberCount: g.memberCount !== undefined ? g.memberCount : (g.approximate_member_count || 0),
+    botActive: true
+  }));
+
+  const serverCount = guildsList.length > 0 ? guildsList.length : (client?.guilds?.cache?.size || 7);
+  const totalMembers = guildsList.reduce((acc, g) => acc + (Number(g.memberCount) || 0), 0);
+  const userCount = totalMembers > 0 ? totalMembers : (client?.users?.cache?.size || 566);
   const uptimeSec = Math.floor(process.uptime() || 0);
   const uDays = Math.floor(uptimeSec / 86400);
   const uHours = Math.floor((uptimeSec % 86400) / 3600);
   const uMins = Math.floor((uptimeSec % 3600) / 60);
   const uSecs = Math.floor(uptimeSec % 60);
   const uptimeFormatted = uDays > 0 ? `${uDays}d ${uHours}h ${uMins}m ${uSecs}s` : (uHours > 0 ? `${uHours}h ${uMins}m ${uSecs}s` : (uMins > 0 ? `${uMins}m ${uSecs}s` : `${uSecs}s`));
-
-  const guildsList = client?.guilds?.cache?.map(g => ({
-    id: g.id,
-    name: g.name,
-    icon: g.iconURL() || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png',
-    memberCount: g.memberCount,
-    botActive: true
-  })) || [];
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -774,15 +835,15 @@ export const getDashboardHtml = (client = null, authData = null) => {
       </div>
     </div>
 
-    <!-- Interactive Discord Server Manager / Picker -->
+    <!-- BOT Connected Discord Servers & Guild -->
     <div class="section-header">
       <div class="section-title">
-        <span>🌐</span> Discord Servers & Guild Manager
+        <span>🌐</span> BOT Connected Discord Servers & Guild
       </div>
     </div>
 
-    <div class="servers-grid">
-      ${guildsList.length > 0 ? guildsList.map(g => `
+    <div class="servers-grid" id="serversGrid">
+      ${guildsList.map(g => `
         <div class="server-card">
           <img src="${g.icon}" class="server-icon" alt="${g.name}">
           <div class="server-info">
@@ -790,18 +851,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
             <p>👥 ${g.memberCount || 0} Members • Active</p>
           </div>
         </div>
-      `).join('') : `
-        <div class="server-card" style="grid-column: 1 / -1; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 1rem;">
-            <img src="https://cdn-icons-png.flaticon.com/512/2913/2913990.png" class="server-icon" alt="Default Server">
-            <div class="server-info">
-              <h4>Connect Your Discord Account</h4>
-              <p>Log in with Discord to view your active servers & manage configuration</p>
-            </div>
-          </div>
-          <a href="${oauthConnectUrl}" class="btn-connect">Connect Now</a>
-        </div>
-      `}
+      `).join('')}
     </div>
 
     <!-- 10 Feature Showcase Cards -->
@@ -1057,9 +1107,39 @@ export const getDashboardHtml = (client = null, authData = null) => {
       } catch(e) {}
     }
 
+    async function updateConnectedGuilds() {
+      try {
+        const res = await fetch('/api/guilds');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.guilds && Array.isArray(data.guilds) && data.guilds.length > 0) {
+            const grid = document.getElementById('serversGrid');
+            if (grid) {
+              grid.innerHTML = data.guilds.map(function(g) {
+                var icon = g.icon || 'https://cdn-icons-png.flaticon.com/512/2913/2913990.png';
+                var mCount = g.memberCount !== undefined ? g.memberCount : (g.approximate_member_count || 0);
+                return '<div class="server-card">' +
+                  '<img src="' + icon + '" class="server-icon" alt="' + g.name + '">' +
+                  '<div class="server-info">' +
+                    '<h4>' + g.name + '</h4>' +
+                    '<p>👥 ' + mCount + ' Members • Active</p>' +
+                  '</div>' +
+                '</div>';
+              }).join('');
+            }
+            if (document.getElementById('statServerCount')) {
+              document.getElementById('statServerCount').innerText = data.guilds.length;
+            }
+          }
+        }
+      } catch(e) {}
+    }
+
     window.addEventListener('DOMContentLoaded', function() {
+      updateConnectedGuilds();
       updateRealTimeStats();
       setInterval(updateRealTimeStats, 10000);
+      setInterval(updateConnectedGuilds, 30000);
 
       setInterval(function() {
         if (clientUptimeSec !== null) {
@@ -1075,6 +1155,7 @@ export const getDashboardHtml = (client = null, authData = null) => {
       if (btnRefresh) {
         btnRefresh.addEventListener('click', function() {
           btnRefresh.innerText = '⌛ Syncing Gateway...';
+          updateConnectedGuilds();
           updateRealTimeStats();
           setTimeout(function() {
             btnRefresh.innerText = '✅ Live Status Synced!';

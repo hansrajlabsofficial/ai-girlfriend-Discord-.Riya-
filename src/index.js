@@ -48,6 +48,7 @@ app.get('/api/guilds', async (req, res) => {
           id: g.id,
           name: g.name,
           icon: g.icon,
+          memberCount: g.memberCount || 0,
           config: guildConfig
         };
       }));

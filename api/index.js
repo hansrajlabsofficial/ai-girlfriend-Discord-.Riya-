@@ -27,6 +27,7 @@ app.get('/api/guilds', async (req, res) => {
         id: g.id,
         name: g.name,
         icon: g.icon,
+        memberCount: g.memberCount || 0,
         config: guildConfig
       };
     }));
@@ -156,8 +157,9 @@ app.post('/api/guilds/:guildId/config', async (req, res) => {
   res.status(200).json({ success: true, config: guildConfig });
 });
 
-app.get('/', (req, res) => {
-  res.status(200).send(getDashboardHtml(null));
+app.get('/', async (req, res) => {
+  const realGuilds = await getRealBotGuilds();
+  res.status(200).send(getDashboardHtml(null, null, realGuilds));
 });
 
 app.get('/login', (req, res) => {
@@ -168,24 +170,28 @@ app.get('/profile', (req, res) => {
   res.status(200).send(getProfileHtml());
 });
 
-app.get('/dashboard', (req, res) => {
-  res.status(200).send(getDashboardHtml(null));
+app.get('/dashboard', async (req, res) => {
+  const realGuilds = await getRealBotGuilds();
+  res.status(200).send(getDashboardHtml(null, null, realGuilds));
 });
 
-app.get('/guide', (req, res) => {
-  res.status(200).send(getDashboardHtml(null));
+app.get('/guide', async (req, res) => {
+  const realGuilds = await getRealBotGuilds();
+  res.status(200).send(getDashboardHtml(null, null, realGuilds));
 });
 
-app.get('/commands', (req, res) => {
-  res.status(200).send(getDashboardHtml(null));
+app.get('/commands', async (req, res) => {
+  const realGuilds = await getRealBotGuilds();
+  res.status(200).send(getDashboardHtml(null, null, realGuilds));
 });
 
 app.get('/connect', (req, res) => {
   res.redirect('/login');
 });
 
-app.get('/auth/callback', (req, res) => {
-  res.status(200).send(getDashboardHtml(null, { connected: true }));
+app.get('/auth/callback', async (req, res) => {
+  const realGuilds = await getRealBotGuilds();
+  res.status(200).send(getDashboardHtml(null, { connected: true }, realGuilds));
 });
 
 app.get('/logout', (req, res) => {

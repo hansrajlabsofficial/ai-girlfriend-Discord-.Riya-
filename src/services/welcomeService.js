@@ -1,14 +1,53 @@
 import { EmbedBuilder } from 'discord.js';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { getGuildConfig } from '../database/models/GuildConfig.js';
+import { getDb } from '../database/connect.js';
 import { logger } from '../utils/logger.js';
 
-// In-memory cache to prevent duplicate welcome greetings (15-second debounce per member)
+// In-memory cache to prevent duplicate welcome greetings (30-second debounce per member)
 const welcomedMembersCache = new Map();
-const DEBOUNCE_WINDOW_MS = 15000;
+const DEBOUNCE_WINDOW_MS = 30000;
 
 export const registerWelcomeDebounce = (guildId, memberId) => {
   if (guildId && memberId) {
     welcomedMembersCache.set(`${guildId}_${memberId}`, Date.now());
+  }
+};
+
+/**
+ * Distributed multi-instance lock checker using Firestore
+ * Ensures that if multiple bot instances (cloud and local) are running simultaneously,
+ * only the FIRST instance to acquire the lock will send the greeting.
+ */
+const acquireDistributedWelcomeLock = async (guildId, memberId) => {
+  try {
+    const db = getDb();
+    if (!db) return true; // Fallback to memory debounce if db offline
+
+    const lockId = `${guildId}_${memberId}`;
+    const lockRef = doc(db, 'welcome_locks', lockId);
+    const snap = await getDoc(lockRef);
+    const now = Date.now();
+
+    if (snap.exists()) {
+      const data = snap.data();
+      const lastSent = data.timestamp || 0;
+      if (now - lastSent < DEBOUNCE_WINDOW_MS) {
+        return false; // Lock already held by another instance
+      }
+    }
+
+    await setDoc(lockRef, {
+      guildId,
+      memberId,
+      timestamp: now,
+      senderInstance: process.pid || 'cloud'
+    }, { merge: true });
+
+    return true;
+  } catch (err) {
+    logger.warn(`Distributed welcome lock error: ${err.message}`);
+    return true; // Fallback to allowing send if error
   }
 };
 
@@ -19,17 +58,24 @@ export const registerWelcomeDebounce = (guildId, memberId) => {
 export const sendWelcomeMessage = async (member) => {
   if (!member || !member.guild) return false;
 
-  // 🛡️ Debounce protection: Prevent duplicate greetings within 15 seconds
+  // 🛡️ 1. Local In-Memory Debounce Protection
   const cacheKey = `${member.guild.id}_${member.id}`;
   const now = Date.now();
   if (welcomedMembersCache.has(cacheKey)) {
     const lastWelcomed = welcomedMembersCache.get(cacheKey);
     if (now - lastWelcomed < DEBOUNCE_WINDOW_MS) {
-      logger.warn(`Duplicate welcome prevented for member ${member.id} in guild ${member.guild.id} (last sent ${Math.round((now - lastWelcomed) / 1000)}s ago)`);
+      logger.warn(`Duplicate welcome prevented in-memory for member ${member.id} in guild ${member.guild.id} (last sent ${Math.round((now - lastWelcomed) / 1000)}s ago)`);
       return false;
     }
   }
   welcomedMembersCache.set(cacheKey, now);
+
+  // 🛡️ 2. Cross-Instance Distributed Firestore Lock (Multi-Process / Cloud + Local Protection)
+  const lockAcquired = await acquireDistributedWelcomeLock(member.guild.id, member.id);
+  if (!lockAcquired) {
+    logger.warn(`Duplicate welcome prevented by distributed lock for member ${member.id} in guild ${member.guild.id}`);
+    return false;
+  }
 
   // Periodically clean cache entries older than 5 minutes
   if (welcomedMembersCache.size > 500) {

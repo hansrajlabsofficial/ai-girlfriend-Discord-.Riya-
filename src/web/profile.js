@@ -59,13 +59,32 @@ export const getProfileHtml = (client = null) => {
     body {
       font-family: 'Outfit', sans-serif;
       background-color: var(--bg-dark);
-      background-image: 
-        radial-gradient(circle at 10% 20%, rgba(255, 20, 147, 0.15) 0%, transparent 40%),
-        radial-gradient(circle at 90% 80%, rgba(0, 240, 255, 0.12) 0%, transparent 40%),
-        radial-gradient(circle at 50% 50%, rgba(155, 81, 224, 0.1) 0%, transparent 60%);
       color: var(--text-main);
       min-height: 100vh;
       line-height: 1.6;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: 
+        radial-gradient(circle at 15% 25%, rgba(255, 20, 147, 0.22) 0%, transparent 50%),
+        radial-gradient(circle at 85% 75%, rgba(0, 240, 255, 0.20) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(2, 2, 5, 0.76) 0%, rgba(11, 3, 20, 0.88) 100%),
+        url('/website_bg.jpg');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: -1;
+      pointer-events: none;
+      filter: saturate(1.1) brightness(0.9);
+      transform: translateZ(0);
     }
 
     /* Profile Content Area */

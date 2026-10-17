@@ -57,6 +57,20 @@ app.get('/riya_lofi_cover.jpg', (req, res) => {
   res.redirect('https://cdn-icons-png.flaticon.com/512/3081/3081840.png');
 });
 
+app.get('/website_bg.jpg', (req, res) => {
+  const localFile = path.resolve('public/website_bg.jpg');
+  const rootFile = path.resolve('website_bg.jpg');
+  if (fs.existsSync(localFile)) {
+    res.setHeader('Content-Type', 'image/jpeg');
+    return res.sendFile(localFile);
+  }
+  if (fs.existsSync(rootFile)) {
+    res.setHeader('Content-Type', 'image/jpeg');
+    return res.sendFile(rootFile);
+  }
+  res.redirect('/riya_lofi_cover.jpg');
+});
+
 app.get('/api/guilds', async (req, res) => {
   try {
     let guildsList = [];

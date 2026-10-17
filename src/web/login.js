@@ -31,7 +31,7 @@ export const getLoginHtml = () => {
 
     body {
       font-family: 'Outfit', sans-serif;
-      background: radial-gradient(circle at top right, #2C0845, #0B0314 60%);
+      background-color: var(--bg-dark);
       color: var(--text-main);
       min-height: 100vh;
       display: flex;
@@ -39,6 +39,29 @@ export const getLoginHtml = () => {
       justify-content: center;
       align-items: center;
       padding: 1.5rem;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: 
+        radial-gradient(circle at 15% 25%, rgba(255, 20, 147, 0.25) 0%, transparent 50%),
+        radial-gradient(circle at 85% 75%, rgba(0, 240, 255, 0.20) 0%, transparent 50%),
+        linear-gradient(180deg, rgba(11, 3, 20, 0.78) 0%, rgba(2, 2, 5, 0.90) 100%),
+        url('/website_bg.jpg');
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      z-index: -1;
+      pointer-events: none;
+      filter: saturate(1.1) brightness(0.9);
+      transform: translateZ(0);
     }
 
     .login-container {

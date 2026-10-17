@@ -55,13 +55,16 @@ export const extractUrlsFromText = (text) => {
 /**
  * Download a remote URL into a Buffer with size limit checking
  */
-export const downloadBuffer = async (mediaUrl, maxBytes = DISCORD_MAX_FILE_BYTES) => {
+export const downloadBuffer = async (mediaUrl, maxBytes = DISCORD_MAX_FILE_BYTES, customHeaders = {}) => {
   try {
+    const reqHeaders = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      ...customHeaders
+    };
+
     const headRes = await axios.head(mediaUrl, {
       timeout: 7000,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+      headers: reqHeaders
     }).catch(() => null);
 
     const contentLength = headRes?.headers?.['content-length'] ? parseInt(headRes.headers['content-length'], 10) : 0;
@@ -73,9 +76,7 @@ export const downloadBuffer = async (mediaUrl, maxBytes = DISCORD_MAX_FILE_BYTES
       responseType: 'arraybuffer',
       timeout: 30000,
       maxContentLength: maxBytes,
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-      }
+      headers: reqHeaders
     });
 
     const buffer = Buffer.from(response.data);
@@ -316,43 +317,44 @@ export const downloadInstagramYtDlp = async (url) => {
   }
   fs.mkdirSync(downloadsDir, { recursive: true });
 
-  const cleanUrl = url.replace(/\?.*$/, '').replace(/\/$/, '');
+  const match = url.match(REGEX_PATTERNS.instagram);
+  const shortcode = match ? match[1] : null;
+
+  // Ensure canonical URL with trailing slash
+  let cleanUrl = url.trim().replace(/\?.*$/, '');
+  if (!cleanUrl.endsWith('/')) {
+    cleanUrl += '/';
+  }
 
   const baseArgs = [
     '--no-warnings',
     '--merge-output-format', 'mp4',
-    '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-    '--add-header', 'Accept:*/*',
-    '--add-header', 'Accept-Language:en-US,en;q=0.9',
-    '--add-header', 'Accept-Encoding:gzip, deflate, br',
-    '--referer', 'https://www.instagram.com/',
-    '--extractor-args', 'instagram:include_dash_manifest=true',
-    '--retries', '5',
-    '--fragment-retries', '5',
     '--socket-timeout', '30',
+    '--retries', '3',
     '-o', path.join(downloadsDir, '%(id)s.%(ext)s')
   ];
 
   if (fs.existsSync('cookies.txt')) {
-    baseArgs.push('--cookiefile', 'cookies.txt');
+    baseArgs.push('--cookies', 'cookies.txt');
     logger.info('🔑 cookies.txt detected — using authenticated session.');
-  } else {
-    logger.info('⚠️ No cookies.txt found. Attempting anonymous download...');
   }
 
   const strategies = [
-    { desc: 'Standard download', targetUrl: cleanUrl, extra: ['-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'] },
-    { desc: 'With /?__a=1 API hint', targetUrl: `${cleanUrl}/`, extra: ['-f', 'best'] },
-    { desc: 'Fallback best format', targetUrl: cleanUrl, extra: ['-f', 'best', '--merge-output-format', 'mp4'] }
+    { desc: 'Clean native extraction', targetUrl: cleanUrl, extra: [] },
+    { desc: 'Best mp4 format', targetUrl: cleanUrl, extra: ['-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'] },
+    ...(shortcode ? [
+      { desc: 'Canonical /reel/ URL', targetUrl: `https://www.instagram.com/reel/${shortcode}/`, extra: [] },
+      { desc: 'Canonical /p/ URL', targetUrl: `https://www.instagram.com/p/${shortcode}/`, extra: [] }
+    ] : [])
   ];
 
   for (const { desc, targetUrl: tryUrl, extra } of strategies) {
-    logger.debug(`🔄 Trying: ${desc}`);
+    logger.debug(`🔄 [Instagram] Trying: ${desc} -> ${tryUrl}`);
     const args = [...baseArgs, ...extra, tryUrl];
     const ok = await new Promise((resolve) => {
-      execFile('yt-dlp', args, { timeout: 45000 }, (err) => {
+      execFile('yt-dlp', args, { timeout: 60000 }, (err, stdout, stderr) => {
         if (err) {
-          logger.debug(`↳ Error: ${err.message}`);
+          logger.debug(`↳ yt-dlp error [${desc}]: ${err.message}`);
           resolve(false);
         } else {
           resolve(true);
@@ -372,14 +374,14 @@ export const downloadInstagramYtDlp = async (url) => {
           } catch {}
         }
         if (fs.existsSync(filename) && fs.statSync(filename).size > 0) {
-          logger.info(`✅ Success! File: ${filename}`);
+          logger.info(`✅ [Instagram] Success! Downloaded: ${filename} (${(fs.statSync(filename).size / (1024*1024)).toFixed(2)} MB)`);
           return filename;
         }
       }
     }
   }
 
-  logger.warn('❌ All yt-dlp download strategies failed.');
+  logger.warn('❌ All yt-dlp download strategies failed for Instagram.');
   return null;
 };
 
@@ -390,9 +392,15 @@ export const fetchInstagram = async (url, preferredType = 'video') => {
   const match = url.match(REGEX_PATTERNS.instagram);
   const shortcode = match ? match[1] : null;
 
-  // 1. Try yt-dlp native extraction (supports cookies.txt & high-res MP4)
+  // Clean the URL of tracker query params with trailing slash
+  let cleanUrl = url.trim().replace(/\?.*$/, '');
+  if (!cleanUrl.endsWith('/')) {
+    cleanUrl += '/';
+  }
+
+  // 1. Try yt-dlp native extraction (fast, direct, full HD)
   try {
-    const ytDlpFile = await downloadInstagramYtDlp(url);
+    const ytDlpFile = await downloadInstagramYtDlp(cleanUrl);
     if (ytDlpFile && fs.existsSync(ytDlpFile)) {
       let finalFile = ytDlpFile;
       if (fs.statSync(ytDlpFile).size > DISCORD_MAX_FILE_BYTES) {
@@ -405,7 +413,7 @@ export const fetchInstagram = async (url, preferredType = 'video') => {
         platform: 'instagram',
         type: 'video',
         title: `Instagram Post [${shortcode || 'Media'}]`,
-        mediaUrl: url,
+        mediaUrl: cleanUrl,
         buffer,
         filePath: finalFile,
         tooLarge: buffer.length > DISCORD_MAX_FILE_BYTES,
@@ -417,69 +425,44 @@ export const fetchInstagram = async (url, preferredType = 'video') => {
     logger.debug(`yt-dlp instagram download attempt error: ${err.message}`);
   }
 
-  // Clean the URL of tracker query params
-  const cleanUrl = shortcode ? `https://www.instagram.com/p/${shortcode}/` : url;
-  const ogProxyUrl = shortcode ? `https://oginstagram.com/p/${shortcode}/` : url;
-  const directProxyUrl = shortcode ? `https://d.oginstagram.com/p/${shortcode}/` : url;
-
-  // 1. Try btch.igdl
+  // 2. Try btch.igdl with item headers support
   try {
     const res = await btch.igdl(cleanUrl);
     if (res && res.status && Array.isArray(res.result) && res.result.length > 0) {
       const valid = res.result.find(item => item.url && item.url.length > 10);
       if (valid) {
         const isVideo = valid.url.includes('.mp4') || preferredType === 'video';
-        const download = await downloadBuffer(valid.url);
-        return {
-          success: true,
-          platform: 'instagram',
-          type: isVideo ? 'video' : 'image',
-          title: `Instagram Post [${shortcode || 'Media'}]`,
-          mediaUrl: valid.url,
-          thumbnailUrl: valid.thumbnail || null,
-          buffer: download.buffer,
-          tooLarge: download.tooLarge,
-          sizeBytes: download.sizeBytes,
-          filename: `instagram_${shortcode || Date.now()}.${isVideo ? 'mp4' : 'jpg'}`
-        };
+        const customHeaders = valid.headers || res.headers || {};
+        const download = await downloadBuffer(valid.url, DISCORD_MAX_FILE_BYTES, customHeaders);
+        if (download && download.buffer) {
+          return {
+            success: true,
+            platform: 'instagram',
+            type: isVideo ? 'video' : 'image',
+            title: `Instagram Post [${shortcode || 'Media'}]`,
+            mediaUrl: valid.url,
+            thumbnailUrl: valid.thumbnail || null,
+            buffer: download.buffer,
+            tooLarge: download.tooLarge,
+            sizeBytes: download.sizeBytes,
+            filename: `instagram_${shortcode || Date.now()}.${isVideo ? 'mp4' : 'jpg'}`
+          };
+        }
       }
     }
   } catch (err) {
     logger.debug(`btch.igdl failed: ${err.message}`);
   }
 
-  // 2. Try direct proxy buffer download
-  if (directProxyUrl) {
-    try {
-      const download = await downloadBuffer(directProxyUrl);
-      if (download.buffer) {
-        const isVideo = preferredType === 'video';
-        return {
-          success: true,
-          platform: 'instagram',
-          type: preferredType || 'video',
-          title: `Instagram Media [${shortcode || 'Post'}]`,
-          mediaUrl: directProxyUrl,
-          thumbnailUrl: null,
-          buffer: download.buffer,
-          tooLarge: download.tooLarge,
-          sizeBytes: download.sizeBytes,
-          filename: `instagram_${shortcode || Date.now()}.${isVideo ? 'mp4' : 'jpg'}`
-        };
-      }
-    } catch (e) {
-      logger.debug(`directProxyUrl download failed: ${e.message}`);
-    }
-  }
-
-  // 3. Fallback: Return rich embed link proxy that Discord and users can play directly!
+  // 3. Fallback: Return ddinstagram proxy that Discord natively plays & embeds!
+  const ddProxyUrl = shortcode ? `https://www.ddinstagram.com/reel/${shortcode}/` : cleanUrl;
   return {
     success: true,
     platform: 'instagram',
     type: preferredType || 'video',
     title: `Instagram Media [${shortcode || 'Post'}]`,
-    mediaUrl: ogProxyUrl,
-    directDownloadUrl: directProxyUrl,
+    mediaUrl: ddProxyUrl,
+    directDownloadUrl: ddProxyUrl,
     thumbnailUrl: null,
     buffer: null,
     tooLarge: true,
@@ -620,7 +603,10 @@ export const handleAutoDownloadMessage = async (message) => {
   const platform = detectPlatform(targetUrl);
   if (!platform) return false;
 
-  const cleanUrl = targetUrl.replace(/\?.*$/, '').replace(/\/$/, '');
+  let cleanUrl = targetUrl.replace(/\?.*$/, '');
+  if (!cleanUrl.endsWith('/')) {
+    cleanUrl += '/';
+  }
   if (processingLinks.has(cleanUrl)) return false;
   processingLinks.add(cleanUrl);
 
@@ -764,6 +750,26 @@ export const handleAutoDownloadMessage = async (message) => {
         }
         return true;
       } else {
+        // Fallback: If direct attachment failed or too large, send ddinstagram link proxy so Discord embeds and plays the video!
+        const match = targetUrl.match(REGEX_PATTERNS.instagram);
+        const shortcode = match ? match[1] : null;
+        if (platform === 'instagram' && shortcode) {
+          const ddUrl = `https://www.ddinstagram.com/reel/${shortcode}/`;
+          if (statusMsg && statusMsg.deletable) await statusMsg.delete().catch(() => {});
+          const botMsg = await message.channel.send({
+            content: `${contentText}\n${ddUrl}`
+          }).catch(() => null);
+          if (botMsg) {
+            for (const emoji of REACTION_EMOJIS) {
+              try {
+                await botMsg.react(emoji);
+                await new Promise(r => setTimeout(r, 250));
+              } catch {}
+            }
+          }
+          return true;
+        }
+
         // Post exact failure notice with cookies.txt fix
         if (statusMsg) {
           await statusMsg.edit(

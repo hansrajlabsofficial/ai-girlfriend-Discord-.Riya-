@@ -23,14 +23,7 @@ export const execute = async (client) => {
       const { commandsJSON } = await loadAllCommands();
       const rest = new REST({ version: '10' }).setToken(config.discordToken);
 
-      logger.info(`Registering ${commandsJSON.length} global slash commands in background...`);
-      await rest.put(
-        Routes.applicationCommands(config.clientId),
-        { body: commandsJSON }
-      );
-      logger.info('Successfully registered global slash commands! ✨');
-
-      // Instantly sync to connected guilds so commands update immediately on Discord clients
+      // ⚡ Prioritize instant guild sync: Immediately updates all connected servers without waiting for global cache
       for (const [guildId, guild] of client.guilds.cache) {
         try {
           await rest.put(
@@ -41,6 +34,17 @@ export const execute = async (client) => {
         } catch (gErr) {
           logger.warn(`Could not sync guild commands to ${guild.name}: ${gErr.message}`);
         }
+      }
+
+      // Also register global slash commands
+      try {
+        await rest.put(
+          Routes.applicationCommands(config.clientId),
+          { body: commandsJSON }
+        );
+        logger.info('Successfully registered global slash commands! ✨');
+      } catch (globalErr) {
+        logger.warn(`Global slash command registration notice: ${globalErr.message}`);
       }
     } catch (error) {
       logger.warn(`Background slash command registration notice: ${error.message}`);

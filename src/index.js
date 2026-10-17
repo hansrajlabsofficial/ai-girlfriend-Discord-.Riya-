@@ -138,7 +138,7 @@ app.get('/logout', (req, res) => {
   res.redirect('/');
 });
 
-app.get('/health', async (req, res) => {
+const getLiveStatusPayload = async () => {
   const uptimeSec = Math.floor(process.uptime() || 0);
   const days = Math.floor(uptimeSec / 86400);
   const hours = Math.floor((uptimeSec % 86400) / 3600);
@@ -158,20 +158,38 @@ app.get('/health', async (req, res) => {
     guildCount = realGuilds && realGuilds.length > 0 ? realGuilds.length : 12;
   }
 
-  let commandCount = 97;
+  let commandCount = 100;
   try {
     const { commandsJSON } = await loadAllCommands();
     commandCount = commandsJSON.length;
   } catch (e) {}
 
-  res.status(200).json({
+  return {
     status: 'online',
     uptime: uptimeSec,
     uptimeFormatted: uptimeStr,
     guilds: guildCount,
     commands: commandCount,
     timestamp: new Date()
-  });
+  };
+};
+
+app.get('/health', async (req, res) => {
+  try {
+    const data = await getLiveStatusPayload();
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message, commands: 100 });
+  }
+});
+
+app.get('/api/stats', async (req, res) => {
+  try {
+    const data = await getLiveStatusPayload();
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(500).json({ status: 'error', error: err.message, commands: 100 });
+  }
 });
 
 app.listen(PORT, () => {
